@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int        @id @default(autoincrement())
+  name       String     @db.VarChar(100)
+  email      String     @unique @db.VarChar(150)
+  password   String     @db.VarChar(255)
+  avatar     String?    @db.VarChar(255)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  categories Category[]
+  tasks      Task[]
+
+  @@map("users")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(50)
+  color     String   @default("#6366f1") @db.VarChar(7)
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+
+  @@index([userId], map: "categories_user_id_fkey")
+  @@map("categories")
+}
+
+model Task {
+  id            Int        @id @default(autoincrement())
+  title         String     @db.VarChar(200)
+  description   String?    @db.Text
+  status        TaskStatus @default(BELUM_MULAI)
+  priority      Priority   @default(NORMAL)
+  deadline      DateTime?
+  userId        Int        @map("user_id")
+  categoryId    Int?       @map("category_id")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  isRecurring   Boolean    @default(false) @map("is_recurring")
+  recurrence    String?    @db.VarChar(20)
+  reminderHours Int        @default(0)
+  subtasks      SubTask[]
+  category      Category?  @relation(fields: [categoryId], references: [id])
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId], map: "tasks_category_id_fkey")
+  @@index([userId], map: "tasks_user_id_fkey")
+  @@map("tasks")
+}
+
+model SubTask {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(200)
+  isDone    Boolean  @default(false) @map("is_done")
+  taskId    Int      @map("task_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId], map: "sub_tasks_task_id_fkey")
+  @@map("sub_tasks")
+}
+
+enum TaskStatus {
+  BELUM_MULAI
+  SEDANG_DIKERJAKAN
+  SELESAI
+  TERLEWAT
+}
+
+enum Priority {
+  RENDAH
+  NORMAL
+  TINGGI
+}

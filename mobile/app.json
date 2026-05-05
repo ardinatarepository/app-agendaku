@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "AgendaKu",
+    "slug": "agendaku",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#171523"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.agendaku.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#171523"
+      },
+      "package": "com.agendaku.app"
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
