@@ -3,8 +3,8 @@
 
 // Ganti dengan IP lokal komputer Anda (cek pakai ipconfig) jika test di HP asli
 // Atau gunakan alamat dari Railway/Render/ngrok nanti
-const SERVER_IP = '10.0.2.2'; // Alamat default Android Emulator
-const PORT = '5000';
+const PROD_URL = 'https://app-agendaku-production.up.railway.app';
 
-export const BASE_URL = `http://${SERVER_IP}:${PORT}/api`;
-export const AVATAR_URL = `http://${SERVER_IP}:${PORT}/uploads/avatars/`;
+export const BASE_URL = `${PROD_URL}/api`;
+export const AVATAR_URL = `${PROD_URL}/uploads/avatars/`;
+
