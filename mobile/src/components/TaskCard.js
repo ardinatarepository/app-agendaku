@@ -39,9 +39,9 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   const progressColor = progress >= 0.7 ? '#10b981' : progress > 0.3 ? '#f59e0b' : '#94a3b8';
 
   const isFinished = task.status === 'SELESAI';
-  const nextStatus = task.status === 'BELUM_MULAI' ? 'SEDANG_DIKERJAKAN' : 'SELESAI';
-  const nextLabel  = task.status === 'BELUM_MULAI' ? 'Mulai' : 'Selesai';
-  const nextIcon   = 'chevron-right';
+  const nextStatus = task.status === 'SELESAI' ? 'BELUM_MULAI' : 'SELESAI';
+  const nextLabel  = task.status === 'SELESAI' ? 'Batal Selesai' : 'Selesai';
+  const nextIcon   = task.status === 'SELESAI' ? 'undo' : 'check';
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext({
@@ -234,16 +234,16 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
           </Text>
         </View>
 
-        {task.status !== 'SELESAI' && !readonly && (
+        {!readonly && (
           <TouchableOpacity
-            onPress={() => onStatusChange(task.id, task.status === 'BELUM_MULAI' ? 'SEDANG_DIKERJAKAN' : 'SELESAI')}
+            onPress={() => onStatusChange(task.id, nextStatus)}
             activeOpacity={0.7}
           >
             <View style={styles.quickActionBadge}>
               <Text style={styles.quickActionText}>
-                {task.status === 'BELUM_MULAI' ? 'Mulai' : 'Selesai'}
+                {nextLabel}
               </Text>
-              <MaterialIcons name="chevron-right" size={16} color={COLORS.primary} />
+              <MaterialIcons name={nextIcon} size={16} color={COLORS.primary} />
             </View>
           </TouchableOpacity>
         )}

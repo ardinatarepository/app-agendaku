@@ -39,8 +39,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password);
-      toast.success('Akun berhasil dibuat! Selamat datang 🎉');
-      navigate('/');
+      toast.success('Akun berhasil dibuat! Silakan masuk.');
+      navigate('/login');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registrasi gagal. Coba lagi.');
     } finally {

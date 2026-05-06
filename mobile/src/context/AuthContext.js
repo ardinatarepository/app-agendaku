@@ -43,14 +43,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(async (name, email, password) => {
     const res = await authAPI.register({ name, email, password });
-    const { user: userData, token: newToken } = res.data.data;
-    await AsyncStorage.multiSet([
-      ['agendaku_token', newToken],
-      ['agendaku_user',  JSON.stringify(userData)],
-    ]);
-    setToken(newToken);
-    setUser(userData);
-    return userData;
+    return res.data.data.user;
   }, []);
 
   const logout = useCallback(async () => {

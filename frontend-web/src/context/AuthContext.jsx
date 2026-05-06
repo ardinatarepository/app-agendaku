@@ -31,14 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(async (name, email, password) => {
     const res = await authAPI.register({ name, email, password });
-    const { user: userData, token: newToken } = res.data.data;
-
-    localStorage.setItem('agendaku_token', newToken);
-    localStorage.setItem('agendaku_user', JSON.stringify(userData));
-    setToken(newToken);
-    setUser(userData);
-
-    return userData;
+    return res.data.data.user;
   }, []);
 
   const logout = useCallback(() => {

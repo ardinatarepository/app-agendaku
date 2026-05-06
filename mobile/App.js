@@ -81,7 +81,7 @@ function AppTabs() {
           backgroundColor: COLORS.surface,
           borderTopColor:  COLORS.border,
           height:          Platform.OS === 'ios' ? 84 : 70,
-          paddingBottom:   Platform.OS === 'ios' ? 24 : 10,
+          paddingBottom:   Platform.OS === 'ios' ? 24 : 16,
           paddingTop:      10,
           ...SHADOW.md,
         },

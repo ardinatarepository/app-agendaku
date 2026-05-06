@@ -32,6 +32,11 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     try {
       await register(form.name.trim(), form.email.trim().toLowerCase(), form.password);
+      Alert.alert(
+        'Registrasi Berhasil',
+        'Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan.',
+        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+      );
     } catch (err) {
       Alert.alert('Registrasi Gagal', err.response?.data?.message || 'Terjadi kesalahan. Coba lagi.');
     } finally {
