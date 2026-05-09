@@ -88,7 +88,7 @@ function MiniCalendar({ year, month, selectedDate, onSelectDate, taskDates }) {
 
 // ─── Task Mini Card ───────────────────────────────────────────────────────────
 function TaskMiniCard({ task, onPress }) {
-  const sc = STATUS_CONFIG[task.status];
+  const sc = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
   const pc = PRIORITY_CONFIG[task.priority];
   return (
     <TouchableOpacity style={tcard.wrap} onPress={() => onPress(task)} activeOpacity={0.85}>

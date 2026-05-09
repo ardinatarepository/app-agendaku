@@ -8,6 +8,7 @@ export const authAPI = {
   getMe:         ()     => api.get('/auth/me'),
   updateProfile: (data) => api.post('/auth/profile', data),
   deleteAvatar:  () => api.delete('/auth/avatar'),
+  changePassword: (data) => api.put('/auth/password', data),
 };
 
 export const taskAPI = {

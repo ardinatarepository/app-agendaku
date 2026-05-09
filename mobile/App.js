@@ -55,6 +55,7 @@ import TaskListScreen  from './src/screens/app/TaskListScreen';
 import CalendarScreen  from './src/screens/app/CalendarScreen';
 import ProfileScreen   from './src/screens/app/ProfileScreen';
 import EditProfileScreen from './src/screens/app/EditProfileScreen';
+import ChangePasswordScreen from './src/screens/app/ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -133,6 +134,7 @@ function RootNavigator() {
         <>
           <Stack.Screen name="App" component={AppTabs} />
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         </>
       ) : (
         <>

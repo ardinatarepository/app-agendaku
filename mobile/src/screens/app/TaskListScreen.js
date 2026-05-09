@@ -17,9 +17,9 @@ import { Button, Input, EmptyState, Card, ConfirmModal, Toast, TaskSkeleton } fr
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../../utils/theme';
 import { groupTasksByDate, formatDateTime } from '../../utils/helpers';
 
-const STATUSES = ['BELUM_MULAI', 'SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT'];
+const STATUSES = ['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT'];
 const PRIORITIES = ['RENDAH', 'NORMAL', 'TINGGI'];
-const STATUS_LBL = { BELUM_MULAI: 'Belum Mulai', SEDANG_DIKERJAKAN: 'Dikerjakan', SELESAI: 'Selesai', TERLEWAT: 'Terlewat' };
+const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai', TERLEWAT: 'Terlewat' };
 const PRIORITY_LBL = { RENDAH: 'Rendah', NORMAL: 'Normal', TINGGI: 'Tinggi' };
 
 const SORT_OPTIONS = [
@@ -99,7 +99,7 @@ function FilterSheet({ visible, filters, sortKey, onSortChange, categories, onAp
             <Text style={fStyle.secLabel}>Status</Text>
             <View style={fStyle.chipRow}>
               {STATUSES.map(s => {
-                const cfg = STATUS_CONFIG[s];
+                const cfg = STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
                 const active = local.status === s;
                 return (
                   <TouchableOpacity key={s} onPress={() => set('status', s)}
@@ -385,7 +385,7 @@ const tpStyle = StyleSheet.create({
 
 function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories }) {
   const [form, setForm] = useState({
-    title: '', description: '', status: 'BELUM_MULAI',
+    title: '', description: '', status: 'SEDANG_DIKERJAKAN',
     priority: 'NORMAL', deadline: '', time: '12:00', reminderHours: '0', categoryId: '',
     subtasks: [], isRecurring: false, recurrence: 'DAILY'
   });
@@ -400,7 +400,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
         setForm({
           title: task.title || '',
           description: task.description || '',
-          status: task.status || 'BELUM_MULAI',
+          status: task.status || 'SEDANG_DIKERJAKAN',
           priority: task.priority || 'NORMAL',
           deadline: d ? d.toISOString().split('T')[0] : '',
           time: d ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : '12:00',
@@ -411,7 +411,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           recurrence: task.recurrence || 'HARIAN',
         });
       } else {
-        setForm({ title: '', description: '', status: 'BELUM_MULAI', priority: 'NORMAL', deadline: '', time: '12:00', reminderHours: '0', categoryId: '', subtasks: [], isRecurring: false, recurrence: 'HARIAN' });
+        setForm({ title: '', description: '', status: 'SEDANG_DIKERJAKAN', priority: 'NORMAL', deadline: '', time: '12:00', reminderHours: '0', categoryId: '', subtasks: [], isRecurring: false, recurrence: 'HARIAN' });
       }
     }
   }, [task, visible]);
@@ -471,7 +471,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           <Text style={mStyle.label}>Status</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
             {STATUSES.map(s => {
-              const cfg = STATUS_CONFIG[s];
+              const cfg = STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
               const active = form.status === s;
               return (
                 <TouchableOpacity key={s} onPress={() => set('status')(s)}
@@ -657,7 +657,7 @@ export default function TaskListScreen({ route }) {
   const [successData, setSuccessData] = useState(null);
   const statusRef = useRef(null);
 
-  const CHIP_DATA = [{ id: '', label: 'Semua' }, ...STATUSES.map(s => ({ id: s, label: STATUS_CONFIG[s].label }))];
+  const CHIP_DATA = [{ id: '', label: 'Semua' }, ...STATUSES.map(s => ({ id: s, label: (STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN']).label }))];
 
   useEffect(() => {
     const idx = CHIP_DATA.findIndex(c => c.id === filters.status);
@@ -838,7 +838,7 @@ export default function TaskListScreen({ route }) {
           onScrollToIndexFailed={() => {}}
           renderItem={({ item }) => {
             const active = filters.status === item.id;
-            const cfg = item.id ? STATUS_CONFIG[item.id] : { bg: COLORS.primaryLight, text: COLORS.primary, dot: COLORS.primary };
+            const cfg = item.id ? (STATUS_CONFIG[item.id] || STATUS_CONFIG['SEDANG_DIKERJAKAN']) : { bg: COLORS.primaryLight, text: COLORS.primary, dot: COLORS.primary };
             return (
               <TouchableOpacity 
                 onPress={() => {

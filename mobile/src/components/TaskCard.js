@@ -25,7 +25,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
     }).start();
   }, []);
   
-  const statusCfg   = STATUS_CONFIG[task.status];
+  const statusCfg   = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
   const priorityCfg = PRIORITY_CONFIG[task.priority];
   const overdue     = task.deadline && task.status !== 'SELESAI' && isOverdue(task.deadline);
   const nearDl      = task.deadline && task.status !== 'SELESAI' && isNearDeadline(task.deadline);
@@ -41,7 +41,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   const isFinished = task.status === 'SELESAI';
   const nextStatus = task.status === 'SELESAI' ? 'BELUM_MULAI' : 'SELESAI';
   const nextLabel  = task.status === 'SELESAI' ? 'Batal Selesai' : 'Selesai';
-  const nextIcon   = task.status === 'SELESAI' ? 'undo' : 'check';
+  const nextIcon   = task.status === 'SELESAI' ? 'chevron-left' : 'chevron-right';
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext({

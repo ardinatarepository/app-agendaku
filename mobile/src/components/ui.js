@@ -133,6 +133,22 @@ export const ConfirmModal = ({ visible, title, message, onConfirm, onCancel, con
   </Modal>
 );
 
+// ─── AlertModal ─────────────────────────────────────────────────────────────
+export const AlertModal = ({ visible, title, message, onClose, buttonText = 'OK', variant = 'danger', iconName }) => (
+  <Modal visible={visible} transparent animationType="fade">
+    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+       <View style={{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: variant === 'danger' ? '#fee2e2' : variant === 'success' ? '#d1fae5' : COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+             <MaterialIcons name={iconName || (variant === 'danger' ? 'error-outline' : variant === 'success' ? 'check-circle-outline' : 'info')} size={32} color={variant === 'danger' ? COLORS.danger : variant === 'success' ? '#10b981' : COLORS.primary} />
+          </View>
+          <Text style={{ fontSize: 18, ...FONT.bold, color: COLORS.text, marginBottom: 8 }}>{title}</Text>
+          <Text style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 20, marginBottom: 24 }}>{message}</Text>
+          <Button title={buttonText} variant={variant === 'success' ? 'primary' : variant} style={{ width: '100%' }} onPress={onClose} />
+       </View>
+    </View>
+  </Modal>
+);
+
 // ─── Toast ─────────────────────────────────────────────────────────────
 export const Toast = ({ visible, message, onHide, type = 'success' }) => {
   useEffect(() => {

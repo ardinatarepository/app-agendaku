@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useCategories } from '../../hooks';
 import { MdClose, MdAdd, MdDelete, MdLocalOffer } from 'react-icons/md';
 
-const STATUSES  = ['BELUM_MULAI', 'SEDANG_DIKERJAKAN', 'SELESAI'];
-const STATUS_LBL = { BELUM_MULAI: 'Belum Mulai', SEDANG_DIKERJAKAN: 'Sedang Dikerjakan', SELESAI: 'Selesai' };
+const STATUSES  = ['SEDANG_DIKERJAKAN', 'SELESAI'];
+const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai' };
 const PRIO_CFG  = {
   RENDAH: { label: 'Rendah', active: 'border-slate-400 bg-slate-100 text-slate-700' },
   NORMAL: { label: 'Normal', active: 'border-amber-400 bg-amber-100 text-amber-700' },
@@ -15,7 +15,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
   const { data: categories = [] } = useCategories();
 
   const [form, setForm] = useState({
-    title: '', description: '', status: 'BELUM_MULAI',
+    title: '', description: '', status: 'SEDANG_DIKERJAKAN',
     priority: 'NORMAL', deadline: '', time: '12:00', categoryId: '',
     reminder: 'Tidak Ada', isRepeating: false, recurrence: 'HARIAN',
     subtasks: []
@@ -35,7 +35,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
       setForm({
         title:       task.title       || '',
         description: task.description || '',
-        status:      task.status      || 'BELUM_MULAI',
+        status:      task.status      || 'SEDANG_DIKERJAKAN',
         priority:    task.priority    || 'NORMAL',
         deadline:    task.deadline    ? task.deadline.split('T')[0] : '',
         time:        task.deadline && task.deadline.includes('T') ? task.deadline.split('T')[1].substring(0,5) : '12:00',

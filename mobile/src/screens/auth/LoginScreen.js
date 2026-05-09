@@ -6,19 +6,20 @@ import {
   KeyboardAvoidingView, Platform, Alert, StyleSheet, Image,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, AlertModal } from '../../components/ui';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
 
 export default function LoginScreen({ navigation }) {
   const [form, setForm]       = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger' });
   const { login }             = useAuth();
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
   const handleLogin = async () => {
     if (!form.email || !form.password) {
-      Alert.alert('Peringatan', 'Email dan password wajib diisi.');
+      setAlertInfo({ visible: true, title: 'Peringatan', message: 'Email dan password wajib diisi.', variant: 'danger' });
       return;
     }
     setLoading(true);
@@ -26,7 +27,7 @@ export default function LoginScreen({ navigation }) {
       await login(form.email.trim().toLowerCase(), form.password);
       // Navigation otomatis via AuthContext
     } catch (err) {
-      Alert.alert('Login Gagal', err.response?.data?.message || 'Periksa email dan password kamu.');
+      setAlertInfo({ visible: true, title: 'Login Gagal', message: err.response?.data?.message || 'Periksa email dan password kamu.', variant: 'danger' });
     } finally {
       setLoading(false);
     }
@@ -83,6 +84,14 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <AlertModal
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        variant={alertInfo.variant}
+        onClose={() => setAlertInfo({ ...alertInfo, visible: false })}
+      />
     </KeyboardAvoidingView>
   );
 }

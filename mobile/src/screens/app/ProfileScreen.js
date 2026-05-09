@@ -333,7 +333,7 @@ export default function ProfileScreen({ navigation }) {
 
       {/* ── Pengaturan Akun & App ── */}
       <Card style={[s.card, { marginTop: 24 }]}>
-        <TouchableOpacity style={s.menuItem} onPress={() => setToast({ visible: true, message: 'Fitur ubah password akan segera tersedia.', type: 'info' })}>
+        <TouchableOpacity style={s.menuItem} onPress={() => navigation.navigate('ChangePassword')}>
           <Text style={s.menuLabel}>Ubah Password</Text>
           <Text style={s.menuArrow}>›</Text>
         </TouchableOpacity>

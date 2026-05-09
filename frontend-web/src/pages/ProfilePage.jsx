@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks';
 import { 
@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' });
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   // Notification settings state
   const [notifEnabled, setNotifEnabled] = useState(() => localStorage.getItem('notif_enabled') !== 'false');
@@ -49,11 +51,29 @@ export default function ProfilePage() {
   const [catColor, setCatColor] = useState('#15152b');
   const [editingCat, setEditingCat] = useState(null);
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        return toast.error('Ukuran maksimal foto adalah 2MB');
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await authAPI.updateProfile(form);
+      const payload = { ...form };
+      if (selectedImage) {
+        payload.avatar = selectedImage;
+      }
+      const res = await authAPI.updateProfile(payload);
       if (res.data.success) {
         toast.success('Profil diperbarui!');
         window.location.reload(); 
@@ -126,11 +146,24 @@ export default function ProfilePage() {
           <div className="card p-8 text-center shadow-premium bg-white sticky top-10">
             <div className="relative inline-block mx-auto mb-6">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl sm:text-4xl font-black border-4 border-white shadow-xl overflow-hidden">
-                {user?.avatar ? (
-                  <img src={`${import.meta.env.VITE_API_URL}/avatars/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+                {selectedImage ? (
+                  <img src={selectedImage} alt="Avatar Baru" className="w-full h-full object-cover" />
+                ) : user?.avatar ? (
+                  <img src={`${import.meta.env.VITE_API_URL || 'https://app-agendaku-production.up.railway.app/api'}/avatars/${user.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
                 ) : user?.name?.[0]?.toUpperCase()}
               </div>
-              <button className="absolute bottom-1 right-1 w-8 h-8 sm:w-10 sm:h-10 bg-primary text-white rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageChange} 
+                accept="image/*" 
+                className="hidden" 
+              />
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-1 right-1 w-8 h-8 sm:w-10 sm:h-10 bg-primary text-white rounded-full border-4 border-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg"
+              >
                 <MdCameraAlt size={18} />
               </button>
             </div>

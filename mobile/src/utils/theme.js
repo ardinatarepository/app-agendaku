@@ -50,8 +50,7 @@ export const SHADOW = {
 };
 
 export const STATUS_CONFIG = {
-  BELUM_MULAI:       { label: 'Belum Mulai',       bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' },
-  SEDANG_DIKERJAKAN: { label: 'Sedang Dikerjakan', bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
+  SEDANG_DIKERJAKAN: { label: 'Sedang Berjalan', bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
   SELESAI:           { label: 'Selesai',            bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
   TERLEWAT:          { label: 'Terlewat',          bg: '#FEF2F2', text: '#DC2626', dot: '#F87171' },
 };

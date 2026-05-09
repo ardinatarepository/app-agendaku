@@ -2,7 +2,7 @@
 
 const router = require('express').Router();
 const { body } = require('express-validator');
-const { register, login, getMe, updateProfile, deleteAvatar, deleteMe } = require('../controllers/auth.controller');
+const { register, login, getMe, updateProfile, deleteAvatar, deleteMe, changePassword } = require('../controllers/auth.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { validate } = require('../middleware/error.middleware');
 const { uploadAvatar } = require('../middleware/upload.middleware');
@@ -29,6 +29,14 @@ router.post('/profile', [
   body('email').isEmail().normalizeEmail().withMessage('Format email tidak valid'),
   validate,
 ], updateProfile);
+
+// PUT /api/auth/password (protected)
+router.put('/password', [
+  authenticate,
+  body('currentPassword').notEmpty().withMessage('Password saat ini wajib diisi'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password baru minimal 6 karakter'),
+  validate,
+], changePassword);
 
 // GET /api/auth/me (protected)
 router.get('/me', authenticate, getMe);

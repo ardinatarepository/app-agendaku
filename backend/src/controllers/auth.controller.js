@@ -243,4 +243,40 @@ const deleteMe = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, updateProfile, deleteAvatar, deleteMe };
+// PUT /api/auth/password (protected)
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    // 1. Cari user secara lengkap (termasuk field password)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    // 2. Verifikasi password saat ini
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Password saat ini salah.',
+      });
+    }
+
+    // 3. Hash password baru
+    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+    // 4. Update di database
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    res.json({
+      success: true,
+      message: 'Password berhasil diperbarui.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, getMe, updateProfile, deleteAvatar, deleteMe, changePassword };

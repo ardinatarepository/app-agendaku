@@ -24,10 +24,9 @@ export const isNearDeadline = (date) => {
 };
 
 export const STATUS_CONFIG = {
-  BELUM_MULAI:       { label: 'Belum Mulai',       cls: 'badge-belum',   dot: 'bg-slate-400' },
-  SEDANG_DIKERJAKAN: { label: 'Sedang Dikerjakan',  cls: 'badge-sedang',  dot: 'bg-blue-500'  },
-  SELESAI:           { label: 'Selesai',             cls: 'badge-selesai', dot: 'bg-emerald-500' },
-  TERLEWAT:          { label: 'Terlewat',            cls: 'badge-tinggi',  dot: 'bg-red-500' },
+  SEDANG_DIKERJAKAN: { label: 'Sedang Berjalan', cls: 'badge-dikerjakan', dot: 'bg-blue-500' },
+  SELESAI:           { label: 'Selesai',          cls: 'badge-selesai',    dot: 'bg-emerald-500' },
+  TERLEWAT:          { label: 'Terlewat',         cls: 'badge-terlewat',   dot: 'bg-red-500' },
 };
 
 export const PRIORITY_CONFIG = {

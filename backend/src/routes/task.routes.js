@@ -19,7 +19,7 @@ router.get('/:id',       getTaskById);
 
 router.post('/', [
   body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Judul tugas wajib diisi (maks 200 karakter)'),
-  body('status').optional().isIn(['BELUM_MULAI', 'SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT']).withMessage('Status tidak valid'),
+  body('status').optional().isIn(['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT']).withMessage('Status tidak valid'),
   body('priority').optional().isIn(['RENDAH', 'NORMAL', 'TINGGI']).withMessage('Prioritas tidak valid'),
   body('deadline').optional({ nullable: true }).isISO8601().withMessage('Format tanggal deadline tidak valid'),
   validate,
@@ -27,7 +27,7 @@ router.post('/', [
 
 router.put('/:id', [
   body('title').optional().trim().isLength({ min: 1, max: 200 }).withMessage('Judul tidak boleh kosong'),
-  body('status').optional().isIn(['BELUM_MULAI', 'SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT']).withMessage('Status tidak valid'),
+  body('status').optional().isIn(['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT']).withMessage('Status tidak valid'),
   body('priority').optional().isIn(['RENDAH', 'NORMAL', 'TINGGI']).withMessage('Prioritas tidak valid'),
   body('deadline').optional({ nullable: true }).isISO8601().withMessage('Format tanggal deadline tidak valid'),
   validate,

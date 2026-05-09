@@ -39,7 +39,7 @@ model Task {
   id            Int        @id @default(autoincrement())
   title         String     @db.VarChar(200)
   description   String?    @db.Text
-  status        TaskStatus @default(BELUM_MULAI)
+  status        TaskStatus @default(SEDANG_DIKERJAKAN)
   priority      Priority   @default(NORMAL)
   deadline      DateTime?
   userId        Int        @map("user_id")
@@ -71,7 +71,6 @@ model SubTask {
 }
 
 enum TaskStatus {
-  BELUM_MULAI
   SEDANG_DIKERJAKAN
   SELESAI
   TERLEWAT

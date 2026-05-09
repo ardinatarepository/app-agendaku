@@ -222,7 +222,7 @@ export default function DashboardScreen({ navigation }) {
               <Card style={styles.taskCard}>
                 <View style={styles.taskRow}>
                   <View style={[styles.taskDot, {
-                    backgroundColor: { BELUM_MULAI: COLORS.textLight, SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
+                    backgroundColor: { SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
                   }]} />
                   <View style={styles.taskInfo}>
                     <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>

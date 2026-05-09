@@ -162,7 +162,7 @@ const createTask = async (req, res, next) => {
       data: {
         title,
         description: description || null,
-        status:      status   || 'BELUM_MULAI',
+        status:      status   || 'SEDANG_DIKERJAKAN',
         priority:    priority || 'NORMAL',
         deadline:    deadline ? new Date(deadline) : null,
         userId:      req.user.id,
@@ -259,7 +259,7 @@ const updateTask = async (req, res, next) => {
         data: {
           title:       task.title,
           description: task.description,
-          status:      'BELUM_MULAI',
+          status:      'SEDANG_DIKERJAKAN',
           priority:    task.priority,
           deadline:    nextDeadline,
           isRecurring: true,

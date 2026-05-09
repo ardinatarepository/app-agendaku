@@ -25,7 +25,7 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
   const dlColor     = overdue ? 'text-red-500' : nearDl ? 'text-amber-500' : 'text-slate-400';
   const dlIcon      = overdue ? <MdError size={14} /> : nearDl ? <MdAccessTime size={14} /> : <MdEvent size={14} />;
 
-  const nextStatus  = task.status === 'SELESAI' ? 'BELUM_MULAI' : 'SELESAI';
+  const nextStatus  = task.status === 'SELESAI' ? 'SEDANG_DIKERJAKAN' : 'SELESAI';
   const nextLabel   = task.status === 'SELESAI' ? 'Batal' : 'Selesai';
 
   return (

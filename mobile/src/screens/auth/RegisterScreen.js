@@ -6,39 +6,47 @@ import {
   KeyboardAvoidingView, Platform, Alert, StyleSheet, Image,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { Button, Input } from '../../components/ui';
+import { Button, Input, AlertModal } from '../../components/ui';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
 
 export default function RegisterScreen({ navigation }) {
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger', action: null });
+
+  const closeAlert = () => {
+    if (alertInfo.action) alertInfo.action();
+    setAlertInfo(prev => ({ ...prev, visible: false }));
+  };
   const { register }          = useAuth();
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
   const handleRegister = async () => {
     if (!form.name || !form.email || !form.password) {
-      Alert.alert('Peringatan', 'Semua field wajib diisi.');
+      setAlertInfo({ visible: true, title: 'Peringatan', message: 'Semua field wajib diisi.', variant: 'danger', action: null });
       return;
     }
     if (form.password.length < 6) {
-      Alert.alert('Peringatan', 'Password minimal 6 karakter.');
+      setAlertInfo({ visible: true, title: 'Peringatan', message: 'Password minimal 6 karakter.', variant: 'danger', action: null });
       return;
     }
     if (form.password !== form.confirm) {
-      Alert.alert('Peringatan', 'Konfirmasi password tidak cocok.');
+      setAlertInfo({ visible: true, title: 'Peringatan', message: 'Konfirmasi password tidak cocok.', variant: 'danger', action: null });
       return;
     }
     setLoading(true);
     try {
       await register(form.name.trim(), form.email.trim().toLowerCase(), form.password);
-      Alert.alert(
-        'Registrasi Berhasil',
-        'Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan.',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
+      setAlertInfo({ 
+        visible: true, 
+        title: 'Registrasi Berhasil', 
+        message: 'Akun Anda telah berhasil dibuat. Silakan masuk untuk melanjutkan.', 
+        variant: 'success', 
+        action: () => navigation.navigate('Login') 
+      });
     } catch (err) {
-      Alert.alert('Registrasi Gagal', err.response?.data?.message || 'Terjadi kesalahan. Coba lagi.');
+      setAlertInfo({ visible: true, title: 'Registrasi Gagal', message: err.response?.data?.message || 'Terjadi kesalahan. Coba lagi.', variant: 'danger', action: null });
     } finally {
       setLoading(false);
     }
@@ -74,6 +82,14 @@ export default function RegisterScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <AlertModal
+        visible={alertInfo.visible}
+        title={alertInfo.title}
+        message={alertInfo.message}
+        variant={alertInfo.variant}
+        onClose={closeAlert}
+      />
     </KeyboardAvoidingView>
   );
 }
