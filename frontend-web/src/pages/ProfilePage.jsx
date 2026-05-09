@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../hooks';
 import { 
@@ -27,6 +28,7 @@ const JAM_OPTIONS = [
 ];
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' });
   const [loading, setLoading] = useState(false);
@@ -213,7 +215,14 @@ export default function ProfilePage() {
                 </div>
               </div>
               
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-between items-center pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => navigate('/profile/password')}
+                  className="text-sm font-bold text-slate-400 hover:text-primary transition-colors flex items-center gap-1"
+                >
+                  <MdSecurity size={18} /> Ubah Password
+                </button>
                 <button type="submit" disabled={loading} className="btn-primary px-8 font-black tracking-tight">
                   {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
                 </button>

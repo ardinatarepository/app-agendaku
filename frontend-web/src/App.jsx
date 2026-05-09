@@ -11,6 +11,7 @@ import TasksPage      from './pages/TasksPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CalendarPage   from './pages/CalendarPage';
 import ProfilePage    from './pages/ProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 
 // Guard: redirect ke /login jika belum login
 const PrivateRoute = ({ children }) => {
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="calendar"   element={<CalendarPage />} />
         <Route path="profile"    element={<ProfilePage />} />
+        <Route path="profile/password" element={<ChangePasswordPage />} />
       </Route>
 
       {/* Fallback */}
