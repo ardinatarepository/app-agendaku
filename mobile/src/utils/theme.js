@@ -1,6 +1,6 @@
 // Design tokens AgendaKu Mobile - RESTORED ORIGINAL DEEP BLUE
 export const COLORS = {
-  primary:      '#0F172A', // Deep Navy / Slate (ASLI)
+  primary:      '#1E1E1E', // Charcoal Dark
   primaryLight: '#E2E8F0',
   primaryDark:  '#020617',
   success:      '#059669', // Emerald
@@ -17,7 +17,7 @@ export const COLORS = {
   border:       '#E2E8F0',
   borderLight:  '#F1F5F9',
 
-  text:         '#0F172A',
+  text:         '#1E1E1E',
   textMuted:    '#475569', 
   textLight:    '#94A3B8',
   textDisabled: '#CBD5E1',
@@ -48,7 +48,7 @@ export const SHADOW = {
     elevation: 2,
   },
   md: {
-    shadowColor: '#0F172A',
+    shadowColor: '#1E1E1E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 10,
