@@ -112,7 +112,7 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: 40 },
   brand:     { alignItems: 'center', marginBottom: 32 },
   logo:      { width: 80, height: 80, marginBottom: 14, ...SHADOW.md },
   appName:   { fontSize: 26, ...FONT.black, color: COLORS.text },
