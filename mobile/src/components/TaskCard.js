@@ -193,7 +193,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
 };
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#0F172A', borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', ...SHADOW.md },
+  card: { backgroundColor: '#1E1E1E', borderRadius: 20, padding: 18, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)', ...SHADOW.md, position: 'relative', overflow: 'hidden' },
   cardFinished: { opacity: 0.7 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dateContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },

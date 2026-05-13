@@ -1020,7 +1020,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
   sectionBadge: { backgroundColor: COLORS.borderLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginLeft: 4 },
   sectionBadgeText: { fontSize: 10, ...FONT.bold, color: COLORS.textMuted },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, backgroundColor: COLORS.primary, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...SHADOW.md },
+  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, backgroundColor: '#3b82f6', borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...SHADOW.md },
   fabIcon: { fontSize: 26, color: '#fff', lineHeight: 30 },
 });
 
