@@ -1,16 +1,15 @@
 import { useState, useRef, useEffect, memo } from 'react';
-import { View, Text, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, Dimensions, StatusBar, TouchableOpacity, Pressable } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 import { formatDateTime, isOverdue } from '../utils/helpers';
 
-// Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Sub-component for Countdown to prevent full card re-renders
+// Countdown Component - Isolated for performance
 const CountdownTimer = ({ deadline }) => {
   const [timeLeft, setTimeLeft] = useState('');
 
@@ -25,7 +24,7 @@ const CountdownTimer = ({ deadline }) => {
       const diff = target - now;
 
       if (diff <= 0) {
-        setTimeLeft('Terlewat');
+        setTimeLeft('Waktu Habis');
         return;
       }
 
@@ -48,7 +47,7 @@ const CountdownTimer = ({ deadline }) => {
     return () => clearInterval(interval);
   }, [deadline]);
 
-  return <Text style={styles.footerTextBold}>{timeLeft}</Text>;
+  return <Text style={styles.countdownText}>{timeLeft}</Text>;
 };
 
 const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly = false }) => {
@@ -61,23 +60,14 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 500,
+      duration: 400,
       useNativeDriver: true,
     }).start();
   }, []);
 
-  const statusCfg   = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
-  const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG['NORMAL'];
-  const isFinished  = task.status === 'SELESAI';
-  const overdue     = task.deadline && !isFinished && isOverdue(task.deadline);
-
-  const subtasks  = task.subtasks || [];
-  const totalSub  = subtasks.length;
-
-  const toggleExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpanded(prev => !prev);
-  };
+  const isFinished = task.status === 'SELESAI';
+  const overdue    = task.deadline && !isFinished && isOverdue(task.deadline);
+  const totalSub   = task.subtasks?.length || 0;
 
   const openMenu = () => {
     if (!moreBtnRef.current) return;
@@ -85,7 +75,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
       if (pageY === undefined) return;
       const statusBarH = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
       setMenuPos({
-        top: pageY + height + 4 - statusBarH,
+        top: pageY + height + 5 - statusBarH,
         right: Dimensions.get('window').width - (pageX + width),
       });
       setShowActions(true);
@@ -93,151 +83,165 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
   };
 
   return (
-    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }}>
-      <View style={[styles.card, isFinished && styles.cardFinished]}>
-        {/* Header */}
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+      <Pressable 
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.card, 
+          isFinished && styles.cardFinished,
+          pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }
+        ]}
+      >
+        {/* Header: Date & More Button */}
         <View style={styles.headerRow}>
-          <Text style={[styles.dateLabel, overdue && { color: '#f87171' }]}>
-            {overdue ? '⚠ ' : ''}{formatDateTime(task.deadline) || 'Tanpa Tenggat'}
-          </Text>
+          <View style={styles.dateContainer}>
+            <Feather name="calendar" size={12} color="#94a3b8" />
+            <Text style={[styles.dateLabel, overdue && { color: '#f87171' }]}>
+              {formatDateTime(task.deadline) || 'Tanpa Tenggat'}
+            </Text>
+          </View>
+          
           {!readonly && (
             <View ref={moreBtnRef} collapsable={false}>
-              <TouchableOpacity onPress={openMenu} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                <MaterialIcons name="more-horiz" size={26} color="#94a3b8" />
+              <TouchableOpacity onPress={openMenu} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
+                <MaterialIcons name="more-horiz" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
           )}
         </View>
 
-        {/* Title Row */}
-        <View style={styles.titleRow}>
+        {/* Title Section */}
+        <View style={styles.titleContainer}>
           {!readonly && (
             <TouchableOpacity
               onPress={() => onStatusChange(task.id, isFinished ? 'SEDANG_DIKERJAKAN' : 'SELESAI')}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.checkbox}
             >
               <Ionicons
                 name={isFinished ? 'checkmark-circle' : 'ellipse-outline'}
-                size={28}
-                color={isFinished ? COLORS.success : '#f8fafc'}
+                size={30}
+                color={isFinished ? '#10b981' : '#f8fafc'}
               />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={onPress} style={{ flex: 1 }} activeOpacity={0.7}>
-            <Text style={[styles.title, isFinished && styles.titleDone]} numberOfLines={2}>
-              {task.title}
-            </Text>
-          </TouchableOpacity>
+          <Text style={[styles.title, isFinished && styles.titleDone]} numberOfLines={2}>
+            {task.title}
+          </Text>
         </View>
 
-        {/* Badges */}
+        {/* Badges Section */}
         <View style={styles.badgesRow}>
           <View style={styles.categoryPill}>
-            <View style={[styles.categoryDot, { backgroundColor: task.category?.color || COLORS.primary }]}>
-              <Text style={styles.categoryInitial}>{task.category?.name?.[0]?.toUpperCase() || 'U'}</Text>
-            </View>
+            <View style={[styles.categoryDot, { backgroundColor: task.category?.color || '#3b82f6' }]} />
             <Text style={styles.categoryName}>{task.category?.name || 'Umum'}</Text>
           </View>
-          <View style={[styles.pill, { backgroundColor: 'rgba(59, 130, 246, 0.2)' }]}>
-            <Text style={[styles.pillText, { color: '#60a5fa' }]}>{statusCfg.label}</Text>
-          </View>
-          <View style={[styles.pill, { backgroundColor: priorityCfg.text + '33' }]}>
-            <Text style={[styles.pillText, { color: priorityCfg.text }]}>{priorityCfg.label}</Text>
+          <View style={[styles.statusPill, { backgroundColor: isFinished ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)' }]}>
+            <Text style={[styles.statusText, { color: isFinished ? '#10b981' : '#60a5fa' }]}>
+              {isFinished ? 'Selesai' : 'Berjalan'}
+            </Text>
           </View>
         </View>
 
-        {/* Footer */}
+        {/* Footer: Countdown & Subtask Trigger */}
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
-            <TouchableOpacity
-              onPress={totalSub > 0 ? toggleExpand : undefined}
-              style={styles.footerItem}
-              activeOpacity={0.6}
-            >
-              <Feather name="layers" size={14} color={expanded ? '#60a5fa' : '#94a3b8'} />
-              <Text style={[styles.footerText, expanded && { color: '#60a5fa' }]}>{totalSub} Sub-tugas</Text>
-              {totalSub > 0 && (
-                <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color={expanded ? '#60a5fa' : '#94a3b8'} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.footerItem}>
             <Feather name="clock" size={14} color={overdue ? '#f87171' : '#94a3b8'} />
             <CountdownTimer deadline={task.deadline} />
           </View>
+
+          {totalSub > 0 && (
+            <TouchableOpacity 
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                setExpanded(!expanded);
+              }}
+              style={styles.subtaskTrigger}
+            >
+              <Text style={styles.subtaskCount}>{totalSub} Sub-tugas</Text>
+              <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color="#94a3b8" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Subtasks */}
+        {/* Expanded Subtasks */}
         {expanded && totalSub > 0 && (
           <View style={styles.subtaskList}>
-            {subtasks.map(st => (
+            {task.subtasks.map(st => (
               <TouchableOpacity
                 key={st.id}
-                style={styles.subtaskRow}
+                style={styles.subtaskItem}
                 onPress={() => !readonly && onSubtaskToggle(task.id, st.id)}
               >
                 <Ionicons
                   name={st.isDone ? 'checkmark-circle' : 'ellipse-outline'}
                   size={18}
-                  color={st.isDone ? COLORS.success : '#94a3b8'}
+                  color={st.isDone ? '#10b981' : '#94a3b8'}
                 />
                 <Text style={[styles.subtaskText, st.isDone && styles.subtaskTextDone]}>{st.title}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
-      </View>
+      </Pressable>
 
-      {/* Action Menu */}
+      {/* Action Menu Modal */}
       <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowActions(false)}>
-          <View style={[styles.menuCard, { top: menuPos.top, right: menuPos.right }]}>
-            <TouchableOpacity style={styles.menuRow} onPress={() => { setShowActions(false); onEdit(task); }}>
-              <Ionicons name="pencil-outline" size={18} color="#f8fafc" />
-              <Text style={styles.menuLabel}>Edit Tugas</Text>
+        <Pressable style={styles.overlay} onPress={() => setShowActions(false)}>
+          <View style={[styles.menuContainer, { top: menuPos.top, right: menuPos.right }]}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onEdit(task); }}>
+              <Feather name="edit-3" size={18} color="#f8fafc" />
+              <Text style={styles.menuText}>Edit Tugas</Text>
             </TouchableOpacity>
-            <View style={styles.menuSep} />
-            <TouchableOpacity style={styles.menuRow} onPress={() => { setShowActions(false); onDelete(task.id); }}>
-              <Ionicons name="trash-outline" size={18} color="#f87171" />
-              <Text style={[styles.menuLabel, { color: '#f87171' }]}>Hapus Tugas</Text>
+            <View style={styles.menuDivider} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onDelete(task.id); }}>
+              <Feather name="trash-2" size={18} color="#f87171" />
+              <Text style={[styles.menuText, { color: '#f87171' }]}>Hapus Tugas</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#0F172A', borderRadius: 22, padding: 22, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', ...SHADOW.md },
-  cardFinished: { opacity: 0.6 },
+  card: {
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    ...SHADOW.md,
+  },
+  cardFinished: { opacity: 0.7 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  dateLabel: { fontSize: 11, color: '#94a3b8', ...FONT.semibold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18 },
-  title: { flex: 1, fontSize: 18, ...FONT.bold, color: '#f8fafc', lineHeight: 24 },
+  dateContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dateLabel: { fontSize: 11, color: '#94a3b8', ...FONT.semibold, textTransform: 'uppercase' },
+  titleContainer: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  checkbox: { padding: 2 },
+  title: { flex: 1, fontSize: 17, ...FONT.bold, color: '#f8fafc', lineHeight: 24 },
   titleDone: { textDecorationLine: 'line-through', color: '#475569' },
-  badgesRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  categoryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.full, gap: 7 },
-  categoryDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  categoryInitial: { fontSize: 11, color: '#fff', ...FONT.bold },
-  categoryName: { fontSize: 13, color: '#e2e8f0', ...FONT.medium },
-  pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
-  pillText: { fontSize: 11, ...FONT.bold },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  footerLeft: { flexDirection: 'row', gap: 14, alignItems: 'center' },
-  footerItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  footerText: { fontSize: 12, color: '#94a3b8', ...FONT.medium },
-  footerTextBold: { fontSize: 12, color: '#94a3b8', fontWeight: 'bold' },
-  subtaskList: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)' },
-  subtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  subtaskText: { fontSize: 13, color: '#94a3b8', ...FONT.medium },
+  badgesRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  categoryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 6 },
+  categoryDot: { width: 8, height: 8, borderRadius: 4 },
+  categoryName: { fontSize: 12, color: '#e2e8f0', ...FONT.medium },
+  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  statusText: { fontSize: 11, ...FONT.bold },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  countdownText: { fontSize: 12, color: '#f8fafc', ...FONT.bold },
+  subtaskTrigger: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  subtaskCount: { fontSize: 12, color: '#94a3b8', ...FONT.medium },
+  subtaskList: { marginTop: 12, paddingLeft: 10 },
+  subtaskItem: { flexDirection: 'row', alignItems: 'center', gap: 10, py: 8 },
+  subtaskText: { fontSize: 13, color: '#cbd5e1', ...FONT.medium },
   subtaskTextDone: { textDecorationLine: 'line-through', color: '#475569' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  menuCard: { position: 'absolute', backgroundColor: '#1E293B', borderRadius: 16, padding: 6, minWidth: 170, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', ...SHADOW.lg },
-  menuRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
-  menuLabel: { fontSize: 14, ...FONT.semibold, color: '#f8fafc' },
-  menuSep: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 8 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  menuContainer: { position: 'absolute', backgroundColor: '#1E293B', borderRadius: 16, padding: 4, minWidth: 160, ...SHADOW.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  menuText: { fontSize: 14, color: '#f8fafc', ...FONT.semibold },
+  menuDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', mx: 8 },
 });
 
 export default memo(TaskCard);
