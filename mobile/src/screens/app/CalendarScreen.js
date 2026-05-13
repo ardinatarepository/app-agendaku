@@ -162,7 +162,10 @@ export default function CalendarScreen({ navigation }) {
   };
 
   const handleAddAtDate = () => {
-    navigation.navigate('Tugas');
+    navigation.navigate('Tugas', { 
+      openAddModal: true, 
+      initialDate: selectedDate 
+    });
   };
 
   return (
@@ -277,7 +280,7 @@ export default function CalendarScreen({ navigation }) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
+  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
   headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
   monthNav: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, marginTop: 10 },
   navBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },

@@ -38,3 +38,6 @@ mobile/*.mobileprovision
 # Database
 backend/prisma/migrations/
 backend/src/generated/
+
+# Uploads
+backend/uploads/

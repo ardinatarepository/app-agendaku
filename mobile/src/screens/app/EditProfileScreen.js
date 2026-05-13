@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, Image,
-  StyleSheet, Alert, SafeAreaView, KeyboardAvoidingView, Platform, StatusBar, ScrollView, Modal, ActivityIndicator
+  StyleSheet, Alert, KeyboardAvoidingView, Platform, StatusBar, ScrollView, Modal, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { authAPI } from '../../api';
 import { COLORS, FONT, RADIUS, SHADOW } from '../../utils/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -86,25 +87,37 @@ export default function EditProfileScreen({ navigation }) {
   });
 
   const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      return setToast({ visible: true, message: 'Aplikasi butuh izin galeri untuk mengganti foto.', type: 'info' });
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-      base64: true, // Ambil format base64
-    });
-
-    if (!result.canceled) {
-      const asset = result.assets[0];
-      setSelectedImage(asset.uri);
-      // Format: data:image/jpeg;base64,...
-      const base64 = `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`;
-      setBase64Data(base64);
+    console.log('handlePickImage called');
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      console.log('Permission status:', status);
+      
+      if (status !== 'granted') {
+        return setToast({ visible: true, message: 'Aplikasi butuh izin galeri untuk mengganti foto.', type: 'info' });
+      }
+  
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.4,
+        width: 500,
+        height: 500,
+        base64: true,
+      });
+  
+      console.log('Picker result canceled:', result.canceled);
+  
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        setSelectedImage(asset.uri);
+        const base64 = `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`;
+        setBase64Data(base64);
+        console.log('Image selected successfully');
+      }
+    } catch (error) {
+      console.error('Pick Image Error:', error);
+      Alert.alert('Error', 'Gagal membuka galeri: ' + error.message);
     }
   };
 
@@ -132,7 +145,7 @@ export default function EditProfileScreen({ navigation }) {
     <View style={s.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={s.headerWrapper}>
-        <SafeAreaView>
+        <SafeAreaView edges={['top']}>
           <View style={s.header}>
             <TouchableOpacity 
               onPress={() => navigation.goBack()} 
@@ -158,7 +171,12 @@ export default function EditProfileScreen({ navigation }) {
         >
           {/* Avatar Section */}
           <View style={s.avatarContainer}>
-            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
+            <TouchableOpacity 
+              onPress={handlePickImage} 
+              activeOpacity={0.8}
+              hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              style={{ zIndex: 100, alignItems: 'center' }}
+            >
               <View>
                 <View style={s.avatarLarge}>
                   {getAvatarUrl() ? (
@@ -171,8 +189,8 @@ export default function EditProfileScreen({ navigation }) {
                   <MaterialIcons name="photo-camera" size={20} color="#fff" />
                 </View>
               </View>
+              <Text style={s.avatarNote}>Ketuk untuk ganti foto</Text>
             </TouchableOpacity>
-            <Text style={s.avatarNote}>Ketuk ikon kamera untuk ganti foto</Text>
             
             {(user?.avatar || selectedImage) && (
               <TouchableOpacity 
@@ -306,7 +324,6 @@ const s = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: { 
     flexDirection: 'row', 

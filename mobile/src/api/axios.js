@@ -7,7 +7,7 @@ import { BASE_URL } from '../config';
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
 });
 
 // Request interceptor: sisipkan token

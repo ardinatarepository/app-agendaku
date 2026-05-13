@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Animated, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, TouchableWithoutFeedback, Dimensions, StatusBar } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card, Badge } from './ui';
-import { COLORS, RADIUS, FONT } from '../utils/theme';
+import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 import { formatDate, formatDateTime, isOverdue, isNearDeadline, getDeadlineColor } from '../utils/helpers';
 
@@ -13,9 +13,12 @@ import { formatDate, formatDateTime, isOverdue, isNearDeadline, getDeadlineColor
 
 export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly = false }) {
   const [expanded, setExpanded] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const swipeRef = useRef(null);
+  const moreBtnRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -51,6 +54,23 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
       delete: { type: 'easeInEaseOut', property: 'opacity' },
     });
     setExpanded(!expanded);
+  };
+  
+  const toggleActions = () => {
+    if (!showActions) {
+      moreBtnRef.current.measure((x, y, width, height, pageX, pageY) => {
+        // Penyesuaian untuk Android StatusBar
+        const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+        
+        setMenuPos({ 
+          top: pageY + 12 - statusBarHeight, // Naikkan agar lebih dekat ke icon titik 3
+          right: Dimensions.get('window').width - (pageX + width) // Sejajarkan dengan pinggir kanan icon
+        });
+        setShowActions(true);
+      });
+    } else {
+      setShowActions(false);
+    }
   };
 
   const renderLeftActions = (progress, dragX) => {
@@ -98,78 +118,101 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
       friction={2}
     >
     <Card style={[styles.card, isFinished && styles.done]} onPress={onPress}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <View style={[styles.dot, { backgroundColor: statusCfg.dot }]} />
-          <Text
-            numberOfLines={2}
-            style={[styles.title, task.status === 'SELESAI' && styles.titleDone]}
-          >
-            {task.title}
+      {/* Top Header: Deadline & More */}
+      <View style={styles.topRow}>
+        <View style={[styles.deadlinePill, { backgroundColor: COLORS.primary + '10' }]}>
+          <MaterialIcons 
+            name="schedule" 
+            size={14} 
+            color={COLORS.primary} 
+          />
+          <Text style={[styles.deadlineText, { color: COLORS.primary }]}>
+            {overdue ? 'Terlewat: ' : ''}{formatDateTime(task.deadline)}
           </Text>
         </View>
 
-        {/* Action buttons (Top Right) */}
         {!readonly && (
-          <View style={styles.actions}>
-            {task.status !== 'SELESAI' && (
-              <TouchableOpacity onPress={() => onEdit(task)} style={styles.actionBtn} hitSlop={8}>
-                <MaterialIcons name="edit" size={16} color={COLORS.primary} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity onPress={() => onDelete(task.id)} style={styles.actionBtn} hitSlop={8}>
-              <MaterialIcons name="delete" size={18} color={COLORS.danger} />
+          <View style={styles.topActions}>
+            <Modal
+              visible={showActions}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setShowActions(false)}
+            >
+              <TouchableWithoutFeedback onPress={() => setShowActions(false)}>
+                <View style={styles.modalOverlay}>
+                  <View style={[styles.menuPopup, { top: menuPos.top, right: menuPos.right }]}>
+                    <TouchableOpacity onPress={() => { setShowActions(false); onEdit(task); }} style={styles.menuItem}>
+                      <MaterialIcons name="edit" size={16} color={COLORS.primary} />
+                      <Text style={styles.menuText}>Edit</Text>
+                    </TouchableOpacity>
+                    <View style={styles.menuDivider} />
+                    <TouchableOpacity onPress={() => { setShowActions(false); onDelete(task.id); }} style={styles.menuItem}>
+                      <MaterialIcons name="delete" size={16} color={COLORS.danger} />
+                      <Text style={[styles.menuText, { color: COLORS.danger }]}>Hapus</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </Modal>
+
+            <TouchableOpacity 
+              ref={moreBtnRef}
+              onPress={toggleActions} 
+              style={styles.moreBtn}
+            >
+              <MaterialIcons name="more-vert" size={20} color={COLORS.textLight} />
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {/* Description */}
-      {task.description ? (
-        <Text numberOfLines={2} style={styles.desc}>{task.description}</Text>
-      ) : null}
+      {/* Content: Title & Description */}
+      <View style={styles.content}>
+        <Text
+          numberOfLines={2}
+          style={[styles.title, isFinished && styles.titleDone]}
+        >
+          {task.title}
+        </Text>
+        {task.description ? (
+          <Text numberOfLines={1} style={styles.desc}>{task.description}</Text>
+        ) : null}
+      </View>
 
-      {/* Badges Row - Wrap enabled */}
-      <View style={styles.badgeRow}>
-        <Badge label={statusCfg.label}   bg={statusCfg.bg}   color={statusCfg.text} />
-        <Badge label={priorityCfg.label} bg={priorityCfg.bg} color={priorityCfg.text} />
-        {task.category && (
-          <Badge
-            label={task.category.name}
-            bg={task.category.color + '15'}
-            color={task.category.color}
-          />
+      <View style={styles.divider} />
+
+      {/* Stats/Badges Row */}
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <View style={[styles.statDot, { backgroundColor: statusCfg.dot }]} />
+          <Text style={styles.statText}>{statusCfg.label}</Text>
+        </View>
+        
+        <View style={styles.statItem}>
+          <View style={[styles.statDot, { backgroundColor: priorityCfg.text }]} />
+          <Text style={styles.statText}>{priorityCfg.label}</Text>
+        </View>
+
+        {totalSub > 0 && (
+          <TouchableOpacity 
+            style={styles.statItem} 
+            onPress={toggleExpand}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statDot, { backgroundColor: COLORS.primary }]} />
+            <Text style={styles.statText}>Sub: {doneCount}/{totalSub}</Text>
+            <MaterialIcons 
+              name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
+              size={14} 
+              color={COLORS.textMuted} 
+            />
+          </TouchableOpacity>
         )}
       </View>
 
-      {/* Subtasks Info & Progress */}
-      {totalSub > 0 && (
-        <View style={styles.subtaskSection}>
-          <TouchableOpacity 
-            onPress={toggleExpand} 
-            style={[styles.subtaskPill, { borderColor: progressColor + '30', backgroundColor: progressColor + '08' }]} 
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="format-list-bulleted" size={14} color={progressColor} />
-            <Text style={[styles.subtaskPillText, { color: progressColor }]}>
-              Sub-tugas: {doneCount}/{totalSub}
-            </Text>
-            <MaterialIcons 
-              name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-              size={16} 
-              color={progressColor} 
-            />
-          </TouchableOpacity>
-          
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress * 100}%`, backgroundColor: progressColor }]} />
-          </View>
-        </View>
-      )}
-
-      {/* Expandable Subtasks List */}
-      {expanded && (
+      {/* Subtasks Expandable List */}
+      {expanded && totalSub > 0 && (
         <View style={styles.subtaskList}>
           {subtasks.map((st) => (
             <TouchableOpacity 
@@ -180,8 +223,8 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
             >
               <MaterialIcons 
                 name={st.isDone ? "check-box" : "check-box-outline-blank"} 
-                size={20} 
-                color={st.isDone ? COLORS.primary : COLORS.textMuted} 
+                size={18} 
+                color={st.isDone ? COLORS.primary : COLORS.textLight} 
               />
               <Text style={[styles.subtaskTitle, st.isDone && styles.subtaskDone]}>
                 {st.title}
@@ -211,7 +254,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
                     setNewSubtask('');
                   }}
                 >
-                  <MaterialIcons name="add-circle" size={24} color={COLORS.primary} />
+                  <MaterialIcons name="add-circle" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -219,35 +262,20 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
         </View>
       )}
 
-      <View style={styles.divider} />
-
-      {/* Footer: deadline + quick action */}
-      <View style={styles.footer}>
-        <View style={styles.deadlineWrap}>
+      {/* Quick Action Toggle */}
+      {!readonly && (
+        <TouchableOpacity
+          onPress={() => onStatusChange(task.id, nextStatus)}
+          activeOpacity={0.7}
+          style={styles.checkBtn}
+        >
           <MaterialIcons 
-            name={overdue ? "error-outline" : nearDl ? "access-time" : "event"} 
-            size={16} 
-            color={dlColor} 
+            name={isFinished ? "check-circle" : "radio-button-unchecked"} 
+            size={24} 
+            color={isFinished ? COLORS.success : COLORS.textLight} 
           />
-          <Text style={[styles.deadline, { color: dlColor }]}>
-            {formatDateTime(task.deadline)}
-          </Text>
-        </View>
-
-        {!readonly && (
-          <TouchableOpacity
-            onPress={() => onStatusChange(task.id, nextStatus)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.quickActionBadge}>
-              <Text style={styles.quickActionText}>
-                {nextLabel}
-              </Text>
-              <MaterialIcons name={nextIcon} size={16} color={COLORS.primary} />
-            </View>
-          </TouchableOpacity>
-        )}
-      </View>
+        </TouchableOpacity>
+      )}
     </Card>
     </Swipeable>
     </Animated.View>
@@ -255,52 +283,47 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
 }
 
 const styles = StyleSheet.create({
-  card:        { marginBottom: 12, paddingVertical: 18 },
-  done:        { opacity: 0.65 },
-  header:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 16, marginBottom: 10 },
-  titleContainer: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  dot:         { width: 8, height: 8, borderRadius: 4, marginTop: 7, flexShrink: 0 },
-  title:       { flex: 1, fontSize: 16, lineHeight: 22, ...FONT.bold, color: COLORS.text },
-  titleDone:   { textDecorationLine: 'line-through', color: COLORS.textLight, fontWeight: '400' },
-  actions:     { flexDirection: 'row', gap: 8 },
-  actionBtn:   { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.bg },
-  desc:        { fontSize: 13, color: COLORS.textMuted, lineHeight: 18, marginBottom: 14, paddingHorizontal: 34 },
-  badgeRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 34, marginBottom: 16 },
-  subtaskSection: { paddingHorizontal: 34, marginBottom: 16 },
-  subtaskPill: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    alignSelf: 'flex-start',
-    gap: 6, 
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
+  card:        { marginBottom: 12, padding: 16, borderRadius: RADIUS.xl, backgroundColor: COLORS.surface, ...SHADOW.sm, position: 'relative' },
+  done:        { opacity: 0.5 },
+  topRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  deadlinePill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.borderLight },
+  deadlineText: { fontSize: 10, ...FONT.semibold },
+  topActions:  { flexDirection: 'row' },
+  moreBtn:     { padding: 4 },
+  content:     { marginBottom: 14 },
+  title:       { fontSize: 18, ...FONT.bold, color: COLORS.text, marginBottom: 4 },
+  titleDone:   { textDecorationLine: 'line-through', color: COLORS.textLight },
+  desc:        { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
+  statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  statItem:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statDot:     { width: 6, height: 6, borderRadius: 3 },
+  statText:    { fontSize: 11, color: COLORS.textMuted, ...FONT.semibold },
+  divider:     { height: 1, backgroundColor: COLORS.border, marginBottom: 12, opacity: 0.8 },
+  subtaskList: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  subtaskItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  subtaskTitle: { fontSize: 13, color: COLORS.text, ...FONT.medium, flex: 1 },
+  subtaskDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
+  quickInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  quickInput:  { flex: 1, fontSize: 12, color: COLORS.text, paddingVertical: 4 },
+  checkBtn:    { position: 'absolute', right: 16, bottom: 10, padding: 4 },
+  menuPopup:   { 
+    position: 'absolute', 
+    backgroundColor: '#fff', 
     borderRadius: RADIUS.md, 
+    padding: 4, 
+    minWidth: 120,
+    zIndex: 999,
     borderWidth: 1,
-    marginBottom: 8
+    borderColor: COLORS.borderLight,
+    ...SHADOW.lg
   },
-  subtaskPillText: { fontSize: 12, ...FONT.semibold },
-  progressBarBg:   { width: '100%', height: 4, backgroundColor: '#f1f5f9', borderRadius: 2, overflow: 'hidden' },
-  progressBarFill: { height: 4, borderRadius: 2 },
-  subtaskList:     { marginLeft: 34, marginRight: 16, marginBottom: 16, paddingLeft: 16, borderLeftWidth: 1, borderLeftColor: COLORS.border },
-  subtaskItem:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-  subtaskTitle:    { fontSize: 14, color: COLORS.text, ...FONT.medium, flex: 1 },
-  subtaskDone:     { textDecorationLine: 'line-through', color: COLORS.textLight },
-  quickInputRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  quickInput:      { flex: 1, fontSize: 13, color: COLORS.text, paddingVertical: 6 },
-  divider:         { height: 1, backgroundColor: COLORS.border + '40', marginHorizontal: 16, marginBottom: 12 },
-  footer:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
-  deadlineWrap:    { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  deadline:        { fontSize: 12, ...FONT.semibold },
-  quickActionBadge: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: COLORS.primary + '10',
-    paddingHorizontal: 14, 
-    paddingVertical: 6, 
-    borderRadius: RADIUS.full,
-    gap: 2
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
-  quickActionText: { fontSize: 12, color: COLORS.primary, ...FONT.bold },
+  menuItem:    { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: RADIUS.sm },
+  menuText:    { fontSize: 12, ...FONT.medium, color: COLORS.text },
+  menuDivider: { height: 1, backgroundColor: COLORS.borderLight, marginHorizontal: 4 },
   swipeLeft:   { backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: RADIUS.lg, marginBottom: 12, marginRight: 4 },
   swipeRight:  { backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: RADIUS.lg, marginBottom: 12, marginLeft: 4 },
   swipeText:   { color: '#fff', fontSize: 11, ...FONT.semibold, marginTop: 2 },

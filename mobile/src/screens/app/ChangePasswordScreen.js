@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, 
-  StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, StatusBar, ScrollView, Modal, ActivityIndicator
+  StyleSheet, KeyboardAvoidingView, Platform, StatusBar, ScrollView, Modal, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation } from '@tanstack/react-query';
 import { MaterialIcons } from '@expo/vector-icons';
 import { authAPI } from '../../api';

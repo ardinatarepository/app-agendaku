@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Text, TouchableOpacity, TextInput, View, ActivityIndicator, StyleSheet, Modal, Animated } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, RADIUS, SHADOW, FONT } from '../utils/theme';
 
 // ─── Button ──────────────────────────────────────────────────────────────────
@@ -43,26 +43,35 @@ export const Button = ({ title, onPress, variant = 'primary', loading = false, d
 };
 
 // ─── Input ───────────────────────────────────────────────────────────────────
-export const Input = ({ label, error, multiline = false, style, ...props }) => (
-  <View style={{ marginBottom: 4 }}>
+export const Input = ({ label, error, multiline = false, style, containerStyle, rightElement, ...props }) => (
+  <View style={[{ marginBottom: 4 }, containerStyle]}>
     {label && <Text style={{ fontSize: 13, ...FONT.medium, color: COLORS.textMuted, marginBottom: 6 }}>{label}</Text>}
-    <TextInput
-      placeholderTextColor={COLORS.textLight}
-      multiline={multiline}
-      style={[{
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: error ? COLORS.danger : COLORS.border,
-        borderRadius: RADIUS.md,
-        paddingHorizontal: 14,
-        paddingVertical: multiline ? 12 : 0,
-        height: multiline ? 96 : 48,
-        fontSize: 15,
-        color: COLORS.text,
-        textAlignVertical: multiline ? 'top' : 'center',
-      }, style]}
-      {...props}
-    />
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: COLORS.surface,
+      borderWidth: 1,
+      borderColor: error ? COLORS.danger : COLORS.border,
+      borderRadius: RADIUS.md,
+      height: multiline ? 96 : 48,
+      paddingHorizontal: 14,
+      ...style
+    }}>
+      <TextInput
+        placeholderTextColor={COLORS.textLight}
+        multiline={multiline}
+        style={{
+          flex: 1,
+          height: '100%',
+          fontSize: 15,
+          color: COLORS.text,
+          textAlignVertical: multiline ? 'top' : 'center',
+          paddingVertical: multiline ? 12 : 0,
+        }}
+        {...props}
+      />
+      {rightElement}
+    </View>
     {error && <Text style={{ color: COLORS.danger, fontSize: 12, marginTop: 4 }}>{error}</Text>}
   </View>
 );

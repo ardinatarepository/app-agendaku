@@ -34,7 +34,7 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
       {/* Header */}
       <div className="flex items-start gap-3 mb-2.5">
         <div className="flex-1 min-w-0">
-          <h3 className={`font-bold text-[#1e293b] text-sm leading-snug ${done ? 'line-through text-slate-400 font-normal' : ''}`}>
+          <h3 className={`font-normal text-[#1e293b] text-sm leading-snug ${done ? 'line-through text-slate-400 font-normal' : ''}`}>
             {task.title}
           </h3>
           {task.description && (
@@ -45,13 +45,21 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
         {/* Actions — always show delete, edit only when not done */}
         <div className="flex items-center gap-1 shrink-0">
           {!done && onEdit && (
-            <button onClick={() => onEdit(task)} className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-[#1e293b] rounded-lg hover:bg-slate-50 transition-all">
-              <MdEdit size={14} />
+            <button 
+              onClick={(e) => { e.stopPropagation(); onEdit(task); }} 
+              className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-[#1e293b] rounded-xl hover:bg-slate-50 transition-all"
+              title="Edit Tugas"
+            >
+              <MdEdit size={18} />
             </button>
           )}
           {onDelete && (
-            <button onClick={() => onDelete(task.id)} className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all">
-              <MdDelete size={14} />
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} 
+              className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-red-500 rounded-xl hover:bg-red-50 transition-all"
+              title="Hapus Tugas"
+            >
+              <MdDelete size={18} />
             </button>
           )}
         </div>
@@ -64,13 +72,13 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
         )}
         <span className={`${pc.cls} text-[9px] uppercase tracking-wider`}>{pc.label}</span>
         {task.category && (
-          <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider"
+          <span className="text-[9px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider"
             style={{ backgroundColor: task.category.color + '15', color: task.category.color }}>
             {task.category.name}
           </span>
         )}
         {task.isRecurring && (
-          <span className="text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider bg-blue-50 text-blue-600">
+          <span className="text-[9px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-blue-50 text-blue-600">
             🔁 {task.recurrence === 'HARIAN' ? 'Harian' : task.recurrence === 'MINGGUAN' ? 'Mingguan' : 'Bulanan'}
           </span>
         )}
@@ -80,10 +88,10 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
       {task.subtasks && task.subtasks.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1 cursor-pointer" onClick={() => setShowSubtasks(!showSubtasks)}>
+            <span className="text-[10px] font-normal text-slate-500 flex items-center gap-1 cursor-pointer" onClick={() => setShowSubtasks(!showSubtasks)}>
               <MdPlaylistAddCheck size={14} /> Sub-Tugas ({task.subtasks.filter(st => st.isDone).length}/{task.subtasks.length})
             </span>
-            <span className="text-[10px] font-bold text-[#15152b]">
+            <span className="text-[10px] font-normal text-[#15152b]">
               {Math.round((task.subtasks.filter(st => st.isDone).length / task.subtasks.length) * 100)}%
             </span>
           </div>
@@ -149,17 +157,24 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
       {/* Footer */}
       <div className="flex items-center justify-between mt-auto pt-2">
         {task.deadline ? (
-          <span className={`text-[10px] font-bold flex items-center gap-1 ${dlColor}`}>
-            {dlIcon}
-            {overdue ? 'Terlambat · ' : ''}{formatDate(task.deadline)}
-          </span>
+          <div className="flex flex-col">
+            <span className={`text-[10px] font-normal flex items-center gap-1 ${dlColor}`}>
+              {dlIcon}
+              {overdue ? 'Terlambat · ' : ''}{formatDate(task.deadline)}
+            </span>
+            {task.reminderHours > 0 && (
+              <span className="text-[9px] text-primary font-normal flex items-center gap-1 mt-0.5">
+                <MdAlarm size={12} /> Diingatkan {task.reminderHours}j sebelum
+              </span>
+            )}
+          </div>
         ) : (
           <span className="text-[10px] text-slate-300 font-medium italic">Tanpa deadline</span>
         )}
 
         {!done && (
           <button onClick={() => onStatusChange(task.id, nextStatus)}
-            className="flex items-center gap-1 px-3 py-1 bg-[#1e293b]/5 text-[#1e293b] text-[10px] font-black rounded-full hover:bg-[#1e293b]/10 transition-all">
+            className="flex items-center gap-1 px-3 py-1 bg-[#1e293b]/5 text-[#1e293b] text-[10px] font-bold rounded-full hover:bg-[#1e293b]/10 transition-all">
             {nextLabel} 
             <MdChevronRight size={14} />
           </button>

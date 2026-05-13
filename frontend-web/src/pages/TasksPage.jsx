@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useCategories, useToggleSubtask, useCreateSubtask } from '../hooks';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskForm from '../components/tasks/TaskForm';
@@ -10,8 +10,9 @@ import {
   MdEvent,
   MdPriorityHigh,
   MdSortByAlpha,
-  MdAccessTime,
-  MdHistory
+  MdHistory,
+  MdError,
+  MdCheck
 } from 'react-icons/md';
 
 const STATUS_OPTS   = [{ v: '', l: 'Semua' }, { v: 'SEDANG_DIKERJAKAN', l: 'Sedang Berjalan' }, { v: 'SELESAI', l: 'Selesai' }, { v: 'TERLEWAT', l: 'Terlewat' }];
@@ -44,7 +45,19 @@ export default function TasksPage() {
   };
 
   const handleEdit   = (task) => { setEditTask(task); setShowForm(true); };
-  const handleDelete = async (id) => { if (window.confirm('Hapus tugas ini?')) await deleteTask.mutateAsync(id); };
+  const handleDelete = async (id) => {
+    console.log('Attempting to delete task with ID:', id);
+    if (window.confirm('Hapus tugas ini?')) {
+      try {
+        await deleteTask.mutateAsync(id);
+        console.log('Task deleted successfully:', id);
+      } catch (err) {
+        console.error('Delete mutation failed:', err);
+      }
+    } else {
+      console.log('Delete cancelled by user');
+    }
+  };
   const handleStatus = async (id, status) => {
     await updateTask.mutateAsync({ id, data: { status } });
     setFilter('status')(status); // Auto pindah ke tab status yang baru
@@ -68,39 +81,44 @@ export default function TasksPage() {
       </div>
 
       {/* Search + filter row */}
-      <div className="flex gap-2 mb-3">
-        <div className="relative flex-1">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-            <MdSearch size={20} />
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative flex-1 group">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+            <MdSearch size={22} />
           </span>
           <input
-            className="input pl-10 text-sm"
-            placeholder="Cari tugas..."
+            className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 shadow-premium transition-all placeholder:text-slate-300"
+            placeholder="Cari tugas Anda hari ini..."
             value={filters.search}
             onChange={(e) => setFilter('search')(e.target.value)}
           />
         </div>
-        <button
-          onClick={() => setShowFilterPanel(s => !s)}
-          className={`relative px-4 py-2.5 rounded-xl border text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
-            showFilterPanel || filterCount > 0
-              ? 'border-primary/30 bg-primary text-white shadow-lg shadow-primary/20'
-              : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
-          }`}
-        >
-          <MdFilterList size={20} />
-          <span className="hidden sm:inline">Filter</span>
-          {filterCount > 0 && (
-            <span className="w-5 h-5 bg-white text-primary text-[10px] font-black rounded-full flex items-center justify-center">
-              {filterCount}
-            </span>
-          )}
-        </button>
-        {filterCount > 0 && (
-          <button onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} className="btn-ghost text-xs px-3 font-bold flex items-center gap-1.5">
-            <MdHistory size={16} /> Reset
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowFilterPanel(s => !s)}
+            className={`px-6 py-4 rounded-[1.25rem] border text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 shadow-premium ${
+              showFilterPanel || filterCount > 0
+                ? 'border-primary bg-primary text-white'
+                : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
+            }`}
+          >
+            <MdFilterList size={20} />
+            Filter
+            {filterCount > 0 && (
+              <span className="w-5 h-5 bg-white text-primary text-[10px] font-black rounded-full flex items-center justify-center">
+                {filterCount}
+              </span>
+            )}
           </button>
-        )}
+          {filterCount > 0 && (
+            <button 
+              onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} 
+              className="px-6 py-4 rounded-[1.25rem] bg-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-200 hover:text-slate-600 transition-all flex items-center gap-2"
+            >
+              <MdHistory size={18} /> Reset
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Status chip bar (always visible) */}
@@ -117,7 +135,7 @@ export default function TasksPage() {
       {showFilterPanel && (
         <div className="card p-6 mb-6 shadow-premium border-primary/5 animate-slide-in">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-black text-slate-800">Filter & Urutkan</h3>
+            <h3 className="font-medium text-slate-800">Filter & Urutkan</h3>
             <button onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} className="text-xs font-bold text-slate-400 hover:text-primary transition-colors">
               Reset Semua
             </button>
@@ -126,7 +144,7 @@ export default function TasksPage() {
           <div className="space-y-6">
             {/* Urutkan Berdasarkan */}
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Urutkan Berdasarkan</p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Urutkan Berdasarkan</p>
               <div className="flex flex-wrap gap-2">
                 {[
                   { id: 'terbaru', l: 'Terbaru', i: <MdSchedule size={16} /> },
@@ -146,7 +164,7 @@ export default function TasksPage() {
 
             {/* Prioritas */}
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Prioritas</p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Prioritas</p>
               <div className="flex flex-wrap gap-2">
                 {PRIORITY_OPTS.map(o => (
                   <button key={o.v} onClick={() => setFilter('priority')(o.v)}
@@ -161,7 +179,7 @@ export default function TasksPage() {
 
             {/* Kategori */}
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Kategori</p>
+              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Kategori</p>
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => setFilter('categoryId')('')}
                   className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
@@ -190,7 +208,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Task list — 1 col mobile, 2 col md, 3 col lg */}
+      {/* Task list with Mobile-inspired Grouping */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
           {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-36" />)}
@@ -207,18 +225,59 @@ export default function TasksPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-          {tasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onStatusChange={handleStatus}
-              onToggleSubtask={handleToggleSubtask}
-              onAddSubtask={handleAddSubtask}
-            />
-          ))}
+        <div className="space-y-12">
+          {useMemo(() => {
+            const groups = [
+              { id: 'overdue', l: 'Terlewat', i: <MdError className="text-red-500" />, items: [] },
+              { id: 'today', l: 'Hari Ini', i: <MdSchedule className="text-primary" />, items: [] },
+              { id: 'tomorrow', l: 'Besok', i: <MdEvent className="text-amber-500" />, items: [] },
+              { id: 'upcoming', l: 'Mendatang', i: <MdEvent className="text-blue-500" />, items: [] },
+              { id: 'nodl', l: 'Tanpa Deadline', i: <MdHistory className="text-slate-400" />, items: [] },
+              { id: 'done', l: 'Selesai', i: <MdCheck className="text-emerald-500" />, items: [] }
+            ];
+
+            tasks.forEach(t => {
+              if (t.status === 'SELESAI') return groups[5].items.push(t);
+              if (!t.deadline) return groups[4].items.push(t);
+              
+              const d = new Date(t.deadline);
+              const now = new Date(); now.setHours(0,0,0,0);
+              const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(0,0,0,0);
+              const taskDate = new Date(t.deadline); taskDate.setHours(0,0,0,0);
+
+              if (taskDate < now) groups[0].items.push(t);
+              else if (taskDate.getTime() === now.getTime()) groups[1].items.push(t);
+              else if (taskDate.getTime() === tmr.getTime()) groups[2].items.push(t);
+              else groups[3].items.push(t);
+            });
+
+            return groups.filter(g => g.items.length > 0).map(group => (
+              <div key={group.id} className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    {group.i}
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-medium text-slate-800 uppercase tracking-widest">{group.l}</h2>
+                    <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">{group.items.length} Tugas</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+                  {group.items.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      onStatusChange={handleStatus}
+                      onToggleSubtask={handleToggleSubtask}
+                      onAddSubtask={handleAddSubtask}
+                    />
+                  ))}
+                </div>
+              </div>
+            ));
+          }, [tasks, handleDelete, handleEdit, handleStatus, handleToggleSubtask, handleAddSubtask])}
         </div>
       )}
 

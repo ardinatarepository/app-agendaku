@@ -5,6 +5,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform, Alert, StyleSheet, Image,
 } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, AlertModal } from '../../components/ui';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
@@ -13,6 +14,7 @@ export default function RegisterScreen({ navigation }) {
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading] = useState(false);
   const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger', action: null });
+  const [showPassword, setShowPassword] = useState(false);
 
   const closeAlert = () => {
     if (alertInfo.action) alertInfo.action();
@@ -46,7 +48,14 @@ export default function RegisterScreen({ navigation }) {
         action: () => navigation.navigate('Login') 
       });
     } catch (err) {
-      setAlertInfo({ visible: true, title: 'Registrasi Gagal', message: err.response?.data?.message || 'Terjadi kesalahan. Coba lagi.', variant: 'danger', action: null });
+      console.error('Register error:', err);
+      let msg = 'Terjadi kesalahan. Coba lagi.';
+      if (!err.response) {
+        msg = 'Server tidak dapat dijangkau. Pastikan IP di config.js sudah benar dan HP berada di jaringan yang sama.';
+      } else if (err.response.data?.message) {
+        msg = err.response.data.message;
+      }
+      setAlertInfo({ visible: true, title: 'Registrasi Gagal', message: msg, variant: 'danger', action: null });
     } finally {
       setLoading(false);
     }
@@ -69,8 +78,26 @@ export default function RegisterScreen({ navigation }) {
           <View style={styles.fields}>
             <Input label="Nama Lengkap"         placeholder="Nama kamu"        value={form.name}     onChangeText={set('name')}    autoCapitalize="words" />
             <Input label="Email"                placeholder="email@contoh.com" value={form.email}    onChangeText={set('email')}   keyboardType="email-address" autoCapitalize="none" />
-            <Input label="Password"             placeholder="Min. 6 karakter"  value={form.password} onChangeText={set('password')} secureTextEntry />
-            <Input label="Konfirmasi Password"  placeholder="Ulangi password"  value={form.confirm}  onChangeText={set('confirm')}  secureTextEntry />
+            <Input 
+              label="Password"             
+              placeholder="Min. 6 karakter"  
+              value={form.password} 
+              onChangeText={set('password')} 
+              secureTextEntry={!showPassword} 
+              rightElement={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 8 }}>
+                  <MaterialIcons name={showPassword ? "visibility-off" : "visibility"} size={22} color={COLORS.textLight} />
+                </TouchableOpacity>
+              }
+            />
+
+            <Input 
+              label="Konfirmasi Password"  
+              placeholder="Ulangi password"  
+              value={form.confirm}  
+              onChangeText={set('confirm')}  
+              secureTextEntry={!showPassword} 
+            />
           </View>
           <Button title="Buat Akun" onPress={handleRegister} loading={loading} />
         </View>
@@ -96,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 50 },
   brand:     { alignItems: 'center', marginBottom: 28 },
   logo:      { width: 72, height: 72, marginBottom: 12, ...SHADOW.md },
   appName:   { fontSize: 24, ...FONT.black, color: COLORS.text },

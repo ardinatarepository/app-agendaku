@@ -5,10 +5,11 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, FlatList, SectionList, TouchableOpacity, TextInput,
   ScrollView, RefreshControl, Alert, Modal, StyleSheet, Platform, StatusBar, LayoutAnimation,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Animated } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { taskAPI, categoryAPI, subtaskAPI } from '../../api';
 import { scheduleTaskNotification, cancelTaskNotification } from '../../utils/notifications';
 import TaskCard from '../../components/TaskCard';
@@ -383,7 +384,7 @@ const tpStyle = StyleSheet.create({
   separatorText: { fontSize: 24, ...FONT.bold, color: COLORS.text, marginTop: -4 },
 });
 
-function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories }) {
+function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories, initialDate }) {
   const [form, setForm] = useState({
     title: '', description: '', status: 'SEDANG_DIKERJAKAN',
     priority: 'NORMAL', deadline: '', time: '12:00', reminderHours: '0', categoryId: '',
@@ -411,10 +412,15 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           recurrence: task.recurrence || 'HARIAN',
         });
       } else {
-        setForm({ title: '', description: '', status: 'SEDANG_DIKERJAKAN', priority: 'NORMAL', deadline: '', time: '12:00', reminderHours: '0', categoryId: '', subtasks: [], isRecurring: false, recurrence: 'HARIAN' });
+        setForm({ 
+          title: '', description: '', status: 'SEDANG_DIKERJAKAN', 
+          priority: 'NORMAL', deadline: initialDate || '', 
+          time: '12:00', reminderHours: '0', categoryId: '', 
+          subtasks: [], isRecurring: false, recurrence: 'HARIAN' 
+        });
       }
     }
-  }, [task, visible]);
+  }, [task, visible, initialDate]);
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -462,7 +468,16 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={mStyle.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} 
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
+        >
+          <ScrollView 
+            contentContainerStyle={mStyle.body} 
+            keyboardShouldPersistTaps="handled" 
+            showsVerticalScrollIndicator={false}
+          >
           <Input label="Nama Tugas *" placeholder="Masukan Nama Tugas" value={form.title} onChangeText={set('title')} />
           <View style={{ height: 12 }} />
           <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
@@ -637,6 +652,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
             })}
           </ScrollView>
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -651,11 +667,29 @@ export default function TaskListScreen({ route }) {
   const [sortKey, setSortKey] = useState('createdAt-desc');
   const [showFilter, setShowFilter] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [editTask, setEditTask] = useState(null);
+  const [initialDate, setInitialDate] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [successData, setSuccessData] = useState(null);
   const statusRef = useRef(null);
+
+  useEffect(() => {
+    if (route?.params?.openAddModal) {
+      setEditTask(null);
+      setInitialDate(route.params.initialDate || '');
+      setShowForm(true);
+    }
+    
+    // Handle initialFilter from navigation (Dashboard Stat Cards)
+    if (route?.params?.initialFilter) {
+      setFilters(prev => ({ 
+        ...prev, 
+        status: route.params.initialFilter.status || '' 
+      }));
+    }
+  }, [route?.params]);
 
   const CHIP_DATA = [{ id: '', label: 'Semua' }, ...STATUSES.map(s => ({ id: s, label: (STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN']).label }))];
 
@@ -673,10 +707,16 @@ export default function TaskListScreen({ route }) {
   );
   const filterCount = Object.values(filters).filter(Boolean).length;
 
-  const { data: tasks = [], isLoading, refetch, isRefetching } = useQuery({
+  const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['tasks', activeFilters],
     queryFn: () => taskAPI.getAll(activeFilters).then(r => r.data.data),
   });
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoryAPI.getAll().then(r => r.data.data),
@@ -758,7 +798,7 @@ export default function TaskListScreen({ route }) {
       createMut.mutate(data);
     }
   };
-  const handleEdit = (task) => { setEditTask(task); setShowForm(true); };
+  const handleEdit = (task) => { setEditTask(task); setInitialDate(''); setShowForm(true); };
   const handleDelete = (id) => setConfirmDelete(id);
   const handleStatus = (id, status) => {
     // Animasi instan & pindah tab tanpa menunggu server (Optimistic Feel)
@@ -801,7 +841,7 @@ export default function TaskListScreen({ route }) {
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <MaterialIcons name="search" size={20} color={COLORS.textMuted} />
+          <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
           <TextInput
             placeholder="Cari Tugas..."
             placeholderTextColor={COLORS.textLight}
@@ -816,8 +856,8 @@ export default function TaskListScreen({ route }) {
           )}
         </View>
         <TouchableOpacity style={[styles.filterBtn, filterCount > 0 && styles.filterBtnActive]} onPress={() => setShowFilter(true)}>
-          <MaterialIcons
-            name="filter-list"
+          <Ionicons
+            name="filter-outline"
             size={22}
             color={filterCount > 0 ? COLORS.primary : COLORS.textMuted}
           />
@@ -860,7 +900,7 @@ export default function TaskListScreen({ route }) {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <MaterialIcons name={section.icon} size={18} color={COLORS.textMuted} />
@@ -914,10 +954,11 @@ export default function TaskListScreen({ route }) {
       <TaskFormModal
         visible={showForm}
         task={editTask}
+        initialDate={initialDate}
         categories={categories}
-        onClose={() => { setShowForm(false); setEditTask(null); }}
-        onSubmit={handleSubmit}
         isLoading={createMut.isPending || updateMut.isPending}
+        onClose={() => { setShowForm(false); setEditTask(null); setInitialDate(''); }}
+        onSubmit={handleSubmit}
       />
 
       <SuccessModal
@@ -954,13 +995,13 @@ export default function TaskListScreen({ route }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
+  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
   headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
   searchRow: { flexDirection: 'row', gap: 10, padding: 16, marginTop: 10, zIndex: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.surface, borderRadius: RADIUS.md, paddingHorizontal: 12, borderWidth: 1, borderColor: COLORS.border, height: 48, ...SHADOW.sm },
-  searchInput: { flex: 1, fontSize: 15, color: COLORS.text, paddingVertical: 8 },
-  filterBtn: { width: 44, height: 44, backgroundColor: COLORS.surface, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border },
-  filterBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.surface, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', height: 52, ...SHADOW.sm },
+  searchInput: { flex: 1, fontSize: 16, color: COLORS.text, ...FONT.medium },
+  filterBtn: { width: 52, height: 52, backgroundColor: COLORS.surface, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0', ...SHADOW.sm },
+  filterBtnActive: { borderColor: COLORS.primary, backgroundColor: '#F1F5F9' },
   filterBtnText: { fontSize: 18, color: COLORS.textMuted },
   filterBadge: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   filterBadgeText: { fontSize: 9, color: '#fff', ...FONT.bold },
@@ -989,7 +1030,7 @@ const mStyle = StyleSheet.create({
   title: { fontSize: 16, ...FONT.bold, color: COLORS.text },
   cancel: { fontSize: 14, color: COLORS.textMuted },
   save: { fontSize: 14, color: COLORS.primary, ...FONT.semibold, textAlign: 'center' },
-  body: { padding: 20, paddingBottom: 48 },
+  body: { padding: 20, paddingBottom: 250 },
   label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, marginBottom: 8 },
   datePickerBtn: {
     flexDirection: 'row',

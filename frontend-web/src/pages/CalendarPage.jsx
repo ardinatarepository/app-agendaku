@@ -7,7 +7,9 @@ import {
   MdEvent, 
   MdAccessTime, 
   MdError,
-  MdMarkunreadMailbox
+  MdMarkunreadMailbox,
+  MdAdd,
+  MdCalendarMonth
 } from 'react-icons/md';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskForm from '../components/tasks/TaskForm';
@@ -24,7 +26,6 @@ export default function CalendarPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState(null);
 
-  // Ambil semua tugas (param all=true agar backend tidak memfilter hanya yang aktif)
   const { data: tasks = [], isLoading } = useTasks({ all: true });
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
@@ -93,105 +94,128 @@ export default function CalendarPage() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="w-full pb-20">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-8">
+    <div className="w-full min-h-screen bg-slate-50 pb-20 pt-10">
+      
+      <div className="max-w-[1500px] mx-auto px-6 sm:px-8 lg:px-10 relative z-10">
         
-        {/* ── Month Navigation ── */}
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={prevMonth} className="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-all">
-            <MdChevronLeft size={32} />
-          </button>
-          <button onClick={goToday} className="flex flex-col items-center group">
-            <span className="font-black text-2xl text-slate-800">{MONTHS[month]} {year}</span>
-            <span className="text-xs font-bold text-slate-400 mt-1 group-hover:text-primary transition-colors">Ketuk untuk hari ini</span>
-          </button>
-          <button onClick={nextMonth} className="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-all">
-            <MdChevronRight size={32} />
-          </button>
-        </div>
-
-        {/* ── Calendar Card ── */}
-        <div className="card p-6 shadow-premium bg-white mb-8">
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {DAYS.map(d => (
-              <div key={d} className="text-[10px] font-black text-slate-400 uppercase text-center tracking-widest py-2">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {cells.map((day, i) => {
-              if (!day) return <div key={`e-${i}`} />;
+        {/* ── Main Grid Layout (Calendar Left, Tasks Right) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          
+          {/* Left Column: Calendar Widget */}
+          <div className="lg:col-span-6">
+            <div className="bg-white rounded-3xl p-10 shadow-premium border border-slate-100 min-h-[600px]">
               
-              const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const isToday = dStr === todayStr;
-              const isSelected = dStr === selectedDate;
-              const info = taskDates[dStr];
-
-              return (
-                <button
-                  key={dStr}
-                  onClick={() => setSelectedDate(dStr)}
-                  className={`relative aspect-square rounded-full flex flex-col items-center justify-center transition-all duration-200 group mx-auto w-10 h-10 sm:w-12 sm:h-12
-                    ${isSelected ? 'bg-[#15152b] text-white shadow-lg scale-110 z-10' : 
-                      isToday ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-slate-50 text-slate-600'}
-                  `}
-                >
-                  <span className="text-sm z-10 font-medium">{day}</span>
-                  {info && !isSelected && (
-                    <div className={`absolute bottom-1.5 w-1 h-1 rounded-full ${info.hasTinggi ? 'bg-red-500' : 'bg-amber-500'}`} />
-                  )}
-                  {isSelected && info && (
-                    <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-white/50" />
-                  )}
+              {/* Month Navigation */}
+              <div className="flex items-center justify-between mb-12">
+                <button onClick={prevMonth} className="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-primary transition-all">
+                  <MdChevronLeft size={32} />
                 </button>
-              );
-            })}
+                <button onClick={goToday} className="flex flex-col items-center group">
+                  <span className="font-bold text-2xl text-slate-800">{MONTHS[month]} {year}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 group-hover:text-primary transition-colors">Hari Ini</span>
+                </button>
+                <button onClick={nextMonth} className="w-12 h-12 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-50 hover:text-primary transition-all">
+                  <MdChevronRight size={32} />
+                </button>
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="grid grid-cols-7 gap-4 mb-6">
+                {DAYS.map(d => (
+                  <div key={d} className="text-[12px] font-bold text-slate-300 uppercase text-center tracking-[0.2em] py-4">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-4">
+                {cells.map((day, i) => {
+                  if (!day) return <div key={`e-${i}`} />;
+                  
+                  const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const isToday = dStr === todayStr;
+                  const isSelected = dStr === selectedDate;
+                  const info = taskDates[dStr];
+
+                  return (
+                    <button
+                      key={dStr}
+                      onClick={() => setSelectedDate(dStr)}
+                      className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-300 group w-full max-w-[64px] mx-auto
+                        ${isSelected ? 'bg-[#15152b] text-white shadow-xl scale-110 z-10' : 
+                          isToday ? 'bg-primary/10 text-primary font-bold' : 'hover:bg-slate-50 text-slate-600'}
+                      `}
+                    >
+                      <span className="text-base font-bold z-10">{day}</span>
+                      {info && !isSelected && (
+                        <div className={`absolute bottom-3 w-2 h-2 rounded-full ${info.hasTinggi ? 'bg-red-500' : 'bg-primary'}`} />
+                      )}
+                      {isSelected && info && (
+                        <div className="absolute bottom-3 w-2 h-2 rounded-full bg-white/50" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* ── Task List Section ── */}
-        <div className="mb-4 px-2 flex justify-between items-center">
-          <h2 className="text-lg font-black text-slate-800">Tugas: {formatDate(selectedDate)}</h2>
-          {selectedTasks.length > 0 && (
-            <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">
-              {selectedTasks.length} Tugas
-            </span>
-          )}
-        </div>
+          {/* Right Column: Task List */}
+          <div className="lg:col-span-6">
+            <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-premium border border-slate-100 min-h-[600px]">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-12">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{formatDate(selectedDate)}</h2>
+                  <div className="h-1.5 w-16 bg-primary rounded-full mt-3" />
+                </div>
+                {selectedTasks.length > 0 && (
+                  <span className="text-sm font-bold bg-[#15152b] text-white px-6 py-2 rounded-full shadow-lg">
+                    {selectedTasks.length} Agenda
+                  </span>
+                )}
+              </div>
 
-        <div className="space-y-4">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => <div key={i} className="skeleton h-24" />)}
+              <div className="space-y-6">
+                {isLoading ? (
+                  <div className="space-y-6">
+                    {[...Array(3)].map((_, i) => <div key={i} className="h-32 bg-slate-50 rounded-[2rem] animate-pulse" />)}
+                  </div>
+                ) : selectedTasks.length === 0 ? (
+                  <div className="py-24 text-center border-2 border-dashed border-slate-50 rounded-[3rem]">
+                    <MdCalendarMonth size={64} className="text-slate-100 mx-auto mb-6" />
+                    <p className="text-lg font-bold text-slate-300 uppercase tracking-widest">Tidak ada agenda untuk tanggal ini</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {selectedTasks.map(task => (
+                      <TaskCard 
+                        key={task.id} 
+                        task={task} 
+                        onEdit={handleEdit}
+                        onDelete={handleDelete} 
+                        onStatusChange={handleStatusChange}
+                        onToggleSubtask={handleToggleSubtask}
+                        onAddSubtask={handleAddSubtask}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => { setEditTask({ deadline: selectedDate }); setShowForm(true); }}
+                  className="w-full py-8 mt-6 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-3 group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-all">
+                    <MdAdd size={24} />
+                  </div>
+                  TAMBAH AGENDA BARU
+                </button>
+              </div>
             </div>
-          ) : selectedTasks.length === 0 ? (
-            <div className="card p-10 text-center bg-white/50 border-dashed mb-4">
-              <p className="font-bold text-slate-500">Tidak ada tugas di tanggal ini.</p>
-            </div>
-          ) : (
-            selectedTasks.map(task => (
-              <TaskCard 
-                key={task.id} 
-                task={task} 
-                onEdit={handleEdit}
-                onDelete={handleDelete} 
-                onStatusChange={handleStatusChange}
-                onToggleSubtask={handleToggleSubtask}
-                onAddSubtask={handleAddSubtask}
-              />
-            ))
-          )}
+          </div>
 
-          <button 
-            onClick={() => { setEditTask({ deadline: selectedDate }); setShowForm(true); }}
-            className="w-full py-4 mt-2 rounded-2xl border-2 border-dashed border-slate-300 text-slate-500 font-bold text-sm hover:border-primary hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-          >
-            <span className="text-lg">+</span> Tambah Tugas
-          </button>
         </div>
-
       </div>
 
       {showForm && (

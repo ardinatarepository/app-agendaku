@@ -5,6 +5,7 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform, Alert, StyleSheet, Image,
 } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, AlertModal } from '../../components/ui';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
@@ -13,6 +14,7 @@ export default function LoginScreen({ navigation }) {
   const [form, setForm]       = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger' });
+  const [showPassword, setShowPassword] = useState(false);
   const { login }             = useAuth();
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
@@ -27,7 +29,14 @@ export default function LoginScreen({ navigation }) {
       await login(form.email.trim().toLowerCase(), form.password);
       // Navigation otomatis via AuthContext
     } catch (err) {
-      setAlertInfo({ visible: true, title: 'Login Gagal', message: err.response?.data?.message || 'Periksa email dan password kamu.', variant: 'danger' });
+      console.error('Login error:', err);
+      let msg = 'Periksa email dan password kamu.';
+      if (!err.response) {
+        msg = 'Server tidak dapat dijangkau. Pastikan IP di config.js sudah benar dan HP berada di jaringan yang sama.';
+      } else if (err.response.data?.message) {
+        msg = err.response.data.message;
+      }
+      setAlertInfo({ visible: true, title: 'Login Gagal', message: msg, variant: 'danger' });
     } finally {
       setLoading(false);
     }
@@ -69,7 +78,12 @@ export default function LoginScreen({ navigation }) {
               placeholder="Password kamu"
               value={form.password}
               onChangeText={set('password')}
-              secureTextEntry
+              secureTextEntry={!showPassword}
+              rightElement={
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 8 }}>
+                  <MaterialIcons name={showPassword ? "visibility-off" : "visibility"} size={22} color={COLORS.textLight} />
+                </TouchableOpacity>
+              }
             />
           </View>
 
@@ -98,7 +112,7 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 60 },
   brand:     { alignItems: 'center', marginBottom: 32 },
   logo:      { width: 80, height: 80, marginBottom: 14, ...SHADOW.md },
   appName:   { fontSize: 26, ...FONT.black, color: COLORS.text },

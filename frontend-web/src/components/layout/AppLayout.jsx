@@ -35,29 +35,26 @@ export default function AppLayout() {
     <div className="flex h-screen bg-slate-50 overflow-hidden">
 
       {/* ══ SIDEBAR (Desktop) ══ */}
-      <aside className="hidden md:flex flex-col w-72 bg-white text-[#1e293b] border-r border-slate-100 shadow-sm relative z-20">
-        <div className="p-8 flex items-center gap-3">
-          <img src="/logo.png" alt="AgendaKu Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
-          <div>
-            <span className="block text-xl font-black text-[#1e293b] tracking-tighter leading-none">AgendaKu</span>
-          </div>
+      <aside className="hidden md:flex flex-col w-64 bg-white text-[#1e293b] border-r border-slate-100 shadow-sm relative z-20">
+        <div className="px-6 py-8 flex items-center gap-3">
+          <img src="/logo.png" alt="AgendaKu Logo" className="w-9 h-9 object-contain drop-shadow-sm" />
+          <span className="text-xl font-black text-[#1e293b] tracking-tighter">AgendaKu</span>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 overflow-y-auto pt-4">
-          <p className="px-4 text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-4">Main Menu</p>
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto pt-2">
           {NAV.map(({ to, icon, label }) => (
             <NavLink
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300 group ${
-                  isActive ? 'text-[#1e293b]' : 'text-[#94a3b8] hover:text-[#1e293b]'
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 group ${
+                  isActive ? 'text-[#1e293b] bg-slate-50' : 'text-[#94a3b8] hover:text-[#1e293b] hover:bg-slate-50/50'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isActive ? 'bg-[#e2e8f0]' : 'group-hover:bg-[#f1f5f9]'
                   }`}>
                     {icon}
@@ -70,18 +67,18 @@ export default function AppLayout() {
         </nav>
 
         {/* User Card */}
-        <div className="p-6 mt-auto">
-          <div className="bg-slate-50 rounded-[2rem] p-4 border border-slate-100">
-            <div className="flex items-center gap-3 mb-4 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#1e293b] text-white flex items-center justify-center text-sm font-black shrink-0 shadow-lg shadow-black/10">
+        <div className="p-4 mt-auto">
+          <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+            <div className="flex items-center gap-3 mb-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-[#1e293b] text-white flex items-center justify-center text-xs font-black shrink-0 shadow-lg shadow-black/10">
                 {user?.name?.[0]?.toUpperCase()}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-black text-[#1e293b] truncate leading-none mb-1">{user?.name}</p>
+                <p className="text-xs font-black text-[#1e293b] truncate leading-none mb-1">{user?.name}</p>
                 <p className="text-[10px] text-slate-400 truncate font-bold">{user?.email}</p>
               </div>
             </div>
-            <button onClick={handleLogout} className="w-full py-2.5 text-xs font-black text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-all duration-300">
+            <button onClick={handleLogout} className="w-full py-2 text-[10px] font-black text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-all duration-300">
               Keluar Akun
             </button>
           </div>

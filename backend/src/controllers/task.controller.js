@@ -12,15 +12,19 @@ const getAllTasks = async (req, res, next) => {
 
     const now = new Date();
 
-    // Auto-update tugas terlewat
-    await prisma.task.updateMany({
-      where: {
-        userId: req.user.id,
-        status: { notIn: ['SELESAI', 'TERLEWAT'] },
-        deadline: { lt: now }
-      },
-      data: { status: 'TERLEWAT' }
-    });
+    // Auto-update tugas terlewat - dibungkus agar tidak crash jika DB sibuk
+    try {
+      await prisma.task.updateMany({
+        where: {
+          userId: req.user.id,
+          status: { notIn: ['SELESAI', 'TERLEWAT'] },
+          deadline: { lt: now }
+        },
+        data: { status: 'TERLEWAT' }
+      });
+    } catch (err) {
+      console.error('Prisma Auto-Update Error (getAllTasks):', err);
+    }
 
     const where = { userId: req.user.id };
 
@@ -77,15 +81,19 @@ const getDashboard = async (req, res, next) => {
     const userId = req.user.id;
     const now    = new Date();
 
-    // Auto-update tugas terlewat
-    await prisma.task.updateMany({
-      where: {
-        userId,
-        status: { notIn: ['SELESAI', 'TERLEWAT'] },
-        deadline: { lt: now }
-      },
-      data: { status: 'TERLEWAT' }
-    });
+    // Auto-update tugas terlewat - dibungkus agar tidak crash jika DB sibuk
+    try {
+      await prisma.task.updateMany({
+        where: {
+          userId,
+          status: { notIn: ['SELESAI', 'TERLEWAT'] },
+          deadline: { lt: now }
+        },
+        data: { status: 'TERLEWAT' }
+      });
+    } catch (err) {
+      console.error('Prisma Auto-Update Error (getDashboard):', err);
+    }
 
     const in3days = new Date(now);
     in3days.setDate(in3days.getDate() + 3);

@@ -25,12 +25,13 @@ LogBox.ignoreLogs([
 ]);
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { 
@@ -73,34 +74,42 @@ const TAB_ICONS = {
 };
 
 function AppTabs() {
+  const insets = useSafeAreaInsets();
+  
+  // Hitung padding bawah yang responsif
+  // Jika insets.bottom > 0 (biasanya navigasi gestur/swipe), gunakan insets tersebut + sedikit tambahan
+  // Jika insets.bottom === 0 (biasanya navigasi 3 tombol), gunakan padding default yang nyaman
+  const dynamicPaddingBottom = insets.bottom > 0 ? insets.bottom + 6 : 14;
+  const dynamicHeight = Platform.OS === 'ios' ? 88 + insets.bottom : 70 + dynamicPaddingBottom;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
         tabBarStyle: {
           backgroundColor: COLORS.surface,
           borderTopColor:  COLORS.border,
-          height:          Platform.OS === 'ios' ? 84 : 70,
-          paddingBottom:   Platform.OS === 'ios' ? 24 : 16,
-          paddingTop:      10,
+          height:          dynamicHeight,
+          paddingBottom:   dynamicPaddingBottom,
+          paddingTop:      12,
           ...SHADOW.md,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          ...FONT.medium,
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
         },
         tabBarActiveTintColor:   COLORS.primary,
         tabBarInactiveTintColor: COLORS.textLight,
         tabBarIcon: ({ focused, color, size }) => {
-          const icons = TAB_ICONS[route.name];
-          const name  = focused ? icons?.active : icons?.inactive;
-          return (
-            <View style={focused ? { 
-              backgroundColor: COLORS.primaryLight, 
-              paddingHorizontal: 20, 
-              paddingVertical: 10, 
-              borderRadius: 24 
-            } : null}>
-              <MaterialIcons name={name} size={size ?? 28} color={color} />
-            </View>
-          );
+          let iconName = 'help-outline';
+          if (route.name === 'Dashboard') iconName = 'home';
+          else if (route.name === 'Tugas') iconName = 'assignment';
+          else if (route.name === 'Kalender') iconName = 'event';
+          else if (route.name === 'Profil') iconName = 'person';
+          
+          return <MaterialIcons name={iconName} size={size ?? 24} color={color} />;
         },
       })}
     >
@@ -172,14 +181,16 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationContainer>
-            <StatusBar style="dark" backgroundColor={COLORS.bg} />
-            <RootNavigator />
-          </NavigationContainer>
-        </AuthProvider>
-      </QueryClientProvider>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <NavigationContainer>
+              <StatusBar style="dark" backgroundColor={COLORS.bg} />
+              <RootNavigator />
+            </NavigationContainer>
+          </AuthProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

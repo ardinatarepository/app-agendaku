@@ -137,7 +137,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={[s.avatar, { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' }]}>
             {user?.avatar ? (
               <Image 
-                source={{ uri: `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
+                source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
                 style={{ width: '100%', height: '100%' }} 
               />
             ) : (
@@ -402,7 +402,7 @@ export default function ProfileScreen({ navigation }) {
 
 const s = StyleSheet.create({
   container:      { flex: 1, backgroundColor: COLORS.bg },
-  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
+  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
   headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
   searchRow: { flexDirection: 'row', gap: 10, padding: 16, marginTop: 10, zIndex: 10 },
   content:        { padding: 20, paddingBottom: 48 },

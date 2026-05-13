@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from '../../hooks';
-import { MdClose, MdAdd, MdDelete, MdLocalOffer } from 'react-icons/md';
+import { MdClose, MdAdd, MdDelete, MdCalendarToday, MdAccessTime } from 'react-icons/md';
+import DatePicker from '../ui/DatePicker';
+import TimePicker from '../ui/TimePicker';
 
 const STATUSES  = ['SEDANG_DIKERJAKAN', 'SELESAI'];
 const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai' };
@@ -22,6 +24,8 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
   });
 
   const [newSubtask, setNewSubtask] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     if (task) {
@@ -157,14 +161,47 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
             </div>
           </div>
 
-          {/* Deadline & Waktu */}
+          {/* Deadline & Waktu — Custom Mobile Style */}
           <div className="mb-6">
             <label className="text-xs font-bold text-slate-500 mb-2 block">Deadline & Waktu</label>
             <div className="flex gap-3">
-              <input type="date" className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-500 focus:border-[#15152b] focus:ring-1 focus:ring-[#15152b] outline-none" value={form.deadline} onChange={set('deadline')} />
-              <input type="time" className="w-28 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-500 focus:border-[#15152b] focus:ring-1 focus:ring-[#15152b] outline-none" value={form.time} onChange={set('time')} />
+              {/* Date Trigger */}
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(true)}
+                className="flex-1 flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 hover:border-[#15152b] transition-all bg-white"
+              >
+                <span>{form.deadline || 'Pilih Tanggal'}</span>
+                <MdCalendarToday className="text-slate-400" size={18} />
+              </button>
+
+              {/* Time Trigger */}
+              <button
+                type="button"
+                onClick={() => setShowTimePicker(true)}
+                className="w-32 flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 hover:border-[#15152b] transition-all bg-white"
+              >
+                <span>{form.time}</span>
+                <MdAccessTime className="text-slate-400" size={18} />
+              </button>
             </div>
           </div>
+
+          {showDatePicker && (
+            <DatePicker
+              value={form.deadline}
+              onSelect={(d) => { setForm(f => ({ ...f, deadline: d })); setShowDatePicker(false); }}
+              onClose={() => setShowDatePicker(false)}
+            />
+          )}
+
+          {showTimePicker && (
+            <TimePicker
+              value={form.time}
+              onSelect={(t) => setForm(f => ({ ...f, time: t }))}
+              onClose={() => setShowTimePicker(false)}
+            />
+          )}
 
           {/* Ingatkan saya */}
           <div className="mb-6 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">

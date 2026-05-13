@@ -1,7 +1,7 @@
 // DashboardScreen - Fixed
 // Perbaikan: ikon menggunakan @expo/vector-icons (Ionicons)
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Image,
   RefreshControl, StyleSheet, StatusBar,
@@ -9,21 +9,31 @@ import {
 import { format } from 'date-fns';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useAuth } from '../../context/AuthContext';
 import { taskAPI } from '../../api';
 import TaskCard from '../../components/TaskCard';
-import { Card, EmptyState, Skeleton, TaskSkeleton } from '../../components/ui';
+import { Card, Skeleton, TaskSkeleton, Divider } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW } from '../../utils/theme';
 import { formatDate, formatDateTime, isOverdue } from '../../utils/helpers';
 import { rescheduleAllNotifications } from '../../utils/notifications';
 import { AVATAR_URL } from '../../config';
 
 const StatCard = ({ label, value, color, iconName, onPress }) => (
-  <TouchableOpacity style={[styles.statCard, { borderTopColor: color }]} onPress={onPress} activeOpacity={0.75}>
-    <MaterialIcons name={iconName} size={24} color={color} style={{ marginBottom: 6 }} />
-    <Text style={[styles.statValue, { color }]}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
+  <TouchableOpacity 
+    style={styles.statCard} 
+    onPress={onPress} 
+    activeOpacity={0.75}
+  >
+    <View style={styles.statHeader}>
+      <Text style={[styles.statValue, { color: COLORS.text }]}>{value}</Text>
+      <MaterialIcons name={iconName} size={24} color={color} style={styles.statWave} />
+    </View>
+    <View style={styles.statFooter}>
+      <Text style={styles.statLabel}>{label}</Text>
+      <MaterialIcons name="chevron-right" size={18} color={COLORS.textLight} />
+    </View>
   </TouchableOpacity>
 );
 
@@ -44,17 +54,27 @@ export default function DashboardScreen({ navigation }) {
   const qc = useQueryClient();
   const { user } = useAuth();
 
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['dashboard'],
     queryFn:  () => taskAPI.getDashboard().then(r => r.data.data),
   });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetch(),
+      qc.invalidateQueries({ queryKey: ['tasks'] })
+    ]);
+    setRefreshing(false);
+  }, [refetch, qc]);
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['tasks', {}],
     queryFn:  () => taskAPI.getAll({}).then(r => r.data.data),
   });
 
-  // Refresh data saat layar difokuskan
+  // Refresh data saat layar difokuskan (tanpa memunculkan animasi loading/kedut)
   useFocusEffect(
     useCallback(() => {
       refetch();
@@ -85,14 +105,7 @@ export default function DashboardScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       
-      <ScrollView 
-        style={styles.container} 
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-
-      {/* Header (Top Bar) */}
+      {/* Header (Top Bar) - FIXED */}
       <View style={styles.topBar}>
         <View>
           <Text style={styles.greeting}>Halo, {user?.name?.split(' ')[0]}</Text>
@@ -101,7 +114,7 @@ export default function DashboardScreen({ navigation }) {
         <View style={[styles.avatar, { overflow: 'hidden' }]}>
           {user?.avatar ? (
             <Image 
-              source={{ uri: `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
+              source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
               style={{ width: '100%', height: '100%' }} 
             />
           ) : (
@@ -109,6 +122,13 @@ export default function DashboardScreen({ navigation }) {
           )}
         </View>
       </View>
+
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
+        showsVerticalScrollIndicator={false}
+      >
 
       {/* Stats Grid */}
       <View style={styles.statsGrid}>
@@ -121,10 +141,10 @@ export default function DashboardScreen({ navigation }) {
           </>
         ) : (
           <>
-            <StatCard label="Total"      value={stats.total            ?? 0} color={COLORS.text}    iconName="assignment"        onPress={() => goToTasks({})} />
-            <StatCard label="Dikerjakan" value={stats.sedangDikerjakan ?? 0} color="#2563eb"        iconName="bolt"              onPress={() => goToTasks({ status: 'SEDANG_DIKERJAKAN' })} />
-            <StatCard label="Selesai"    value={stats.selesai          ?? 0} color={COLORS.success} iconName="check-circle"      onPress={() => goToTasks({ status: 'SELESAI' })} />
-            <StatCard label="Terlewat"   value={stats.terlewat         ?? 0} color={COLORS.danger}  iconName="error"             onPress={() => goToTasks({ status: 'TERLEWAT' })} />
+            <StatCard label="Total"      value={stats.total            ?? 0} color={COLORS.text}    iconName="assignment"   onPress={() => goToTasks({})} />
+            <StatCard label="Dikerjakan" value={stats.sedangDikerjakan ?? 0} color="#2563eb"        iconName="bolt"         onPress={() => goToTasks({ status: 'SEDANG_DIKERJAKAN' })} />
+            <StatCard label="Selesai"    value={stats.selesai          ?? 0} color={COLORS.success} iconName="check-circle" onPress={() => goToTasks({ status: 'SELESAI' })} />
+            <StatCard label="Terlewat"   value={stats.terlewat         ?? 0} color={COLORS.danger}  iconName="error"        onPress={() => goToTasks({ status: 'TERLEWAT' })} />
           </>
         )}
       </View>
@@ -144,34 +164,11 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {/* Peringatan Mendekati Deadline */}
-      {tugasDeadline.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.alertBox}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <Ionicons name="time" size={18} color={COLORS.warning} />
-              <Text style={[styles.alertTitle, { marginBottom: 0 }]}>Mendekati Deadline</Text>
-            </View>
-            {tugasDeadline.slice(0, 3).map(task => {
-              const over = isOverdue(task.deadline);
-              const daysLeft = Math.ceil((new Date(task.deadline) - new Date()) / 86400000);
-              return (
-                <View key={task.id} style={styles.alertItem}>
-                  <View style={[styles.alertDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
-                  <Text style={[styles.alertText, { color: over ? COLORS.danger : '#92400e' }]} numberOfLines={1}>
-                    {task.title} — {over ? 'Terlambat' : `${daysLeft} hari lagi`} ({format(new Date(task.deadline), 'HH:mm')})
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      )}
-
       {/* Progress Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Progress Tugas</Text>
         <Card style={{ padding: 16 }}>
+          <Text style={[styles.sectionTitle, { marginTop: 0, marginBottom: 8 }]}>Progress Tugas</Text>
+          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
           {isLoading ? (
             <View style={{ gap: 8 }}>
               <Skeleton width="100%" height={12} borderRadius={6} />
@@ -182,7 +179,6 @@ export default function DashboardScreen({ navigation }) {
               <ProgressBar selesai={stats.selesai ?? 0} total={stats.total ?? 0} />
               
               <View style={styles.insightBox}>
-                <Ionicons name="analytics" size={20} color={COLORS.primary} />
                 <Text style={styles.insightText}>
                   {stats.total > 0 
                     ? `Kamu sudah menyelesaikan ${Math.round((stats.selesai/stats.total)*100)}% tugas. Semangat!` 
@@ -196,87 +192,76 @@ export default function DashboardScreen({ navigation }) {
 
       {/* Tugas Hari Ini */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Tugas Hari Ini</Text>
-          <TouchableOpacity onPress={() => goToTasks({})}>
-            <View style={styles.seeAllBadge}>
-              <Text style={styles.seeAll}>Lihat Semua</Text>
-              <MaterialIcons name="chevron-right" size={16} color={COLORS.primary} />
+        <Card style={{ padding: 16 }}>
+          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Tugas Hari Ini</Text>
+          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
+          
+          {isLoading ? (
+            <View>
+              <TaskSkeleton />
+              <TaskSkeleton />
             </View>
-          </TouchableOpacity>
-        </View>
-
-        {isLoading ? (
-          <View>
-            <TaskSkeleton />
-            <TaskSkeleton />
-          </View>
-        ) : tugasHariIni.length === 0 ? (
-          <Card style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Tidak ada tugas hari ini</Text>
-            <Text style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' }}>Tambah tugas baru atau cek daftar lengkap</Text>
-          </Card>
-        ) : (
-          tugasHariIni.map(task => (
-            <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-              <Card style={styles.taskCard}>
-                <View style={styles.taskRow}>
-                  <View style={[styles.taskDot, {
-                    backgroundColor: { SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
-                  }]} />
-                  <View style={styles.taskInfo}>
-                    <Text style={styles.taskTitle} numberOfLines={1}>{task.title}</Text>
-                    <View style={styles.taskMeta}>
-                      {task.category && <Text style={[styles.taskCat, { color: task.category.color }]}>{task.category.name}</Text>}
-                      <View style={styles.taskBadge}><Text style={styles.taskBadgeText}>Hari ini</Text></View>
+          ) : tugasHariIni.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Tidak ada tugas hari ini</Text>
+              <Text style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' }}>Tambah tugas baru atau cek daftar lengkap</Text>
+            </View>
+          ) : (
+            <View style={{ gap: 12 }}>
+              {tugasHariIni.map(task => (
+                <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
+                  <View style={[styles.taskRow, { paddingVertical: 4 }]}>
+                    <View style={[styles.taskDot, {
+                      backgroundColor: { SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
+                    }]} />
+                    <View style={styles.taskInfo}>
+                      <Text style={[styles.taskTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
+                      <View style={[styles.taskMeta, { marginTop: 2 }]}>
+                        {task.category && <Text style={[styles.taskCat, { fontSize: 10, color: task.category.color }]}>{task.category.name}</Text>}
+                      </View>
                     </View>
+                    <View style={styles.taskBadge}><Text style={styles.taskBadgeText}>Hari ini</Text></View>
                   </View>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))
-        )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </Card>
       </View>
 
       {/* Mendekati Deadline */}
       <View style={[styles.section, { marginBottom: 32 }]}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Mendekati Deadline</Text>
-          <TouchableOpacity onPress={() => goToTasks({})}>
-            <View style={styles.seeAllBadge}>
-              <Text style={styles.seeAll}>Lihat Semua</Text>
-              <MaterialIcons name="chevron-right" size={16} color={COLORS.primary} />
-            </View>
-          </TouchableOpacity>
-        </View>
+        <Card style={{ padding: 16 }}>
+          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Mendekati Deadline</Text>
+          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
 
-        {tugasDeadline.length === 0 ? (
-          <Card style={{ padding: 20, alignItems: 'center' }}>
-            <Ionicons name="happy" size={28} color={COLORS.success} style={{ marginBottom: 6 }} />
-            <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
-          </Card>
-        ) : (
-          tugasDeadline.map(task => {
-            const over = isOverdue(task.deadline);
-            return (
-              <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                <Card style={[styles.deadlineCard, over && styles.overdueCard]}>
-                  <View style={styles.deadlineRow}>
-                    <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
-                    <View style={styles.deadlineInfo}>
-                      <Text style={styles.deadlineTitle} numberOfLines={1}>{task.title}</Text>
-                      {task.category && <Text style={[styles.deadlineCat, { color: task.category.color }]}>{task.category.name}</Text>}
+          {tugasDeadline.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <Ionicons name="happy" size={28} color={COLORS.success} style={{ marginBottom: 6 }} />
+              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
+            </View>
+          ) : (
+            <View style={{ gap: 12 }}>
+              {tugasDeadline.map(task => {
+                const over = isOverdue(task.deadline);
+                return (
+                  <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
+                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 4 }]}>
+                      <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
+                      <View style={styles.deadlineInfo}>
+                        <Text style={[styles.deadlineTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
+                      </View>
+                      <View style={[styles.deadlineDateWrap, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
+                        <Text style={[styles.deadlineUrgency, { fontSize: 10, color: over ? COLORS.danger : COLORS.warning }]}>{over ? 'Terlambat' : 'Segera'}</Text>
+                        <Text style={[styles.deadlineDate, { fontSize: 10 }]}>{format(new Date(task.deadline), 'HH:mm')}</Text>
+                      </View>
                     </View>
-                    <View style={styles.deadlineDateWrap}>
-                      <Text style={[styles.deadlineUrgency, { color: over ? COLORS.danger : COLORS.warning }]}>{over ? 'Terlambat' : 'Segera'}</Text>
-                      <Text style={styles.deadlineDate}>{formatDateTime(task.deadline)}</Text>
-                    </View>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            );
-          })
-        )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </Card>
       </View>
     </ScrollView>
     </View>
@@ -286,16 +271,19 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.bg },
   content:         { padding: 20 },
-  topBar:          { backgroundColor: COLORS.primary, padding: 24, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: -20, marginTop: -20, marginBottom: 24, ...SHADOW.md },
+  topBar:          { backgroundColor: COLORS.primary, padding: 24, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', ...SHADOW.md, zIndex: 10 },
   greeting:        { fontSize: 24, ...FONT.bold, color: '#FFFFFF' },
   subtitle:        { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   avatar:          { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   headerTitle:     { fontSize: 20, ...FONT.bold, color: '#FFF' },
   avatarText:      { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
-  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border, ...SHADOW.sm },
-  statValue:       { fontSize: 20, ...FONT.bold, marginTop: 4 },
-  statLabel:       { fontSize: 12, color: COLORS.textMuted, marginTop: 2, ...FONT.medium },
+  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderHeight: 100, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
+  statHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  statValue:       { fontSize: 28, ...FONT.bold },
+  statWave:        { marginTop: -4, marginRight: -4 },
+  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
+  statLabel:       { fontSize: 13, color: COLORS.textMuted, ...FONT.bold },
   progressWrap:    { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: COLORS.borderLight },
   progressBarBg:   { height: 10, borderRadius: 5, backgroundColor: COLORS.borderLight, overflow: 'hidden', marginBottom: 8 },
   progressBarFill: { height: 10, backgroundColor: COLORS.success, borderRadius: 5 },
@@ -303,7 +291,8 @@ const styles = StyleSheet.create({
   insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
   insightText:     { fontSize: 13, color: COLORS.textMuted, flex: 1 },
   section:         { marginTop: 24 },
-  sectionTitle:    { fontSize: 16, ...FONT.bold, color: COLORS.text, marginBottom: 12 },
+  sectionTitle:    { fontSize: 16, ...FONT.bold, color: COLORS.text },
+  divider:         { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
   alertBox:        { backgroundColor: COLORS.warningLight, borderWidth: 1, borderColor: '#FDE68A', borderRadius: RADIUS.lg, padding: 16 },
   alertTitle:      { fontSize: 14, ...FONT.bold, color: COLORS.warning, marginBottom: 12 },
   alertItem:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },

@@ -82,10 +82,10 @@ export const isNearDeadline = (date) => {
   return isWithinInterval(d, { start: new Date(), end: addDays(new Date(), 3) });
 };
 
-// Warna deadline dinamis
+// Warna deadline dinamis - Brighter palette
 export const getDeadlineColor = (date, status) => {
   if (!date || status === 'SELESAI') return '#94a3b8';
-  if (isOverdue(date)) return '#ef4444';
-  if (isNearDeadline(date)) return '#f59e0b';
-  return '#94a3b8';
+  if (isOverdue(date)) return '#FF4444'; // Brighter Red
+  if (isNearDeadline(date)) return '#FBBF24'; // Brighter Yellow/Amber
+  return '#6366F1'; // Bright Indigo for normal
 };
