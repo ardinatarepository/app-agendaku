@@ -7,10 +7,14 @@ import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 import { formatDateTime, isOverdue } from '../utils/helpers';
 
+// Penting untuk animasi di Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly = false }) {
   const [expanded, setExpanded] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const [newSubtask, setNewSubtask] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const swipeRef = useRef(null);
   const moreBtnRef = useRef(null);
@@ -29,13 +33,11 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   const isFinished  = task.status === 'SELESAI';
   const overdue     = task.deadline && !isFinished && isOverdue(task.deadline);
   
-  // Sub-tugas progress
   const subtasks = task.subtasks || [];
   const doneCount = subtasks.filter(st => st.isDone).length;
   const totalSub  = subtasks.length;
   const progress  = totalSub > 0 ? Math.round((doneCount / totalSub) * 100) : 0;
 
-  // Calculate time remaining (simplified)
   const getTimeRemaining = () => {
     if (!task.deadline) return null;
     const diff = new Date(task.deadline) - new Date();
@@ -94,26 +96,39 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
       <Swipeable ref={swipeRef} renderLeftActions={renderLeftActions} renderRightActions={renderRightActions} friction={2}>
         <Card style={[styles.card, isFinished && styles.cardFinished]} onPress={onPress}>
           
-          {/* Top Label: Date & Time Replacement for "Client: Stellar" */}
+          {/* Header Row */}
           <View style={styles.topLabelRow}>
             <Text style={[styles.topLabelText, overdue && { color: '#f87171' }]}>
               {formatDateTime(task.deadline) || 'Tanpa Tenggat'}
             </Text>
             {!readonly && (
-              <TouchableOpacity ref={moreBtnRef} onPress={toggleActions} hitSlop={15}>
-                <MaterialIcons name="more-horiz" size={20} color="#64748b" />
+              <TouchableOpacity ref={moreBtnRef} onPress={toggleActions} hitSlop={15} style={styles.moreIconBtn}>
+                <MaterialIcons name="more-horiz" size={24} color="#64748b" />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* Main Title */}
-          <Text style={[styles.title, isFinished && styles.titleFinished]} numberOfLines={2}>
-            {task.title}
-          </Text>
+          {/* Title Row with Checkbox */}
+          <View style={styles.titleRow}>
+            {!readonly && (
+              <TouchableOpacity 
+                onPress={() => onStatusChange(task.id, isFinished ? 'SEDANG_DIKERJAKAN' : 'SELESAI')}
+                style={styles.mainCheckbox}
+              >
+                <Ionicons 
+                  name={isFinished ? "checkmark-circle" : "ellipse-outline"} 
+                  size={26} 
+                  color={isFinished ? '#10b981' : '#475569'} 
+                />
+              </TouchableOpacity>
+            )}
+            <Text style={[styles.title, isFinished && styles.titleFinished]} numberOfLines={2}>
+              {task.title}
+            </Text>
+          </View>
 
           {/* Badges Row */}
           <View style={styles.badgesRow}>
-            {/* User Avatar Placeholder style like Phoenix Baker */}
             <View style={styles.userBadge}>
               <View style={[styles.miniAvatar, { backgroundColor: task.category?.color || '#3b82f6' }]}>
                 <Text style={styles.miniAvatarText}>{task.category?.name?.[0] || 'A'}</Text>
@@ -121,12 +136,10 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
               <Text style={styles.userName}>{task.category?.name || 'Umum'}</Text>
             </View>
 
-            {/* Status Badge */}
             <View style={[styles.statusBadge, { backgroundColor: statusCfg.dot + '20' }]}>
               <Text style={[styles.statusText, { color: statusCfg.dot }]}>{statusCfg.label}</Text>
             </View>
 
-            {/* Priority Badge */}
             <View style={[styles.priorityBadge, { backgroundColor: priorityCfg.text + '20' }]}>
               <Text style={[styles.priorityText, { color: priorityCfg.text }]}>{priorityCfg.label}</Text>
             </View>
@@ -171,7 +184,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
             </View>
           </View>
 
-          {/* Subtasks List (Optional Expand) */}
+          {/* Subtasks List */}
           {expanded && totalSub > 0 && (
             <View style={styles.subtaskList}>
               {subtasks.map((st) => (
@@ -209,7 +222,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#111827', // Deep Slate / Dark Gray
+    backgroundColor: '#111827',
     borderRadius: 20,
     padding: 20,
     marginBottom: 16,
@@ -224,19 +237,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   topLabelText: {
     fontSize: 13,
-    color: '#94a3b8', // Slate 400
+    color: '#94a3b8',
     ...FONT.medium,
   },
-  title: {
-    fontSize: 22,
-    ...FONT.bold,
-    color: '#f8fafc', // Slate 50
-    lineHeight: 30,
+  moreIconBtn: {
+    padding: 4,
+    marginRight: -4,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     marginBottom: 18,
+  },
+  mainCheckbox: {
+    marginTop: 2,
+  },
+  title: {
+    flex: 1,
+    fontSize: 20,
+    ...FONT.bold,
+    color: '#f8fafc',
+    lineHeight: 28,
   },
   titleFinished: {
     textDecorationLine: 'line-through',
@@ -262,7 +288,6 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -301,7 +326,7 @@ const styles = StyleSheet.create({
   },
   footerLeft: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 14,
     alignItems: 'center',
   },
   statIconItem: {
@@ -335,6 +360,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingVertical: 2,
   },
   subtaskTitle: {
     fontSize: 13,
