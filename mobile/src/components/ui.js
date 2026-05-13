@@ -259,7 +259,7 @@ export const PremiumLoader = ({ size = 40, color = COLORS.primary, style }) => {
   return (
     <View style={[{ alignItems: 'center', justifyContent: 'center' }, style]}>
       <Animated.View style={{ transform: [{ rotate: spin }], opacity }}>
-        <MaterialIcons name="cached" size={size} color={color} />
+        <MaterialIcons name="loop" size={size} color={color} />
       </Animated.View>
     </View>
   );
