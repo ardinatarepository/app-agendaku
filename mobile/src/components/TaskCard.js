@@ -254,13 +254,14 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#111827',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: '#e2e8f0',
     overflow: 'hidden',
+    ...SHADOW.sm,
   },
   cardFinished: { opacity: 0.55 },
   headerRow: {
@@ -276,8 +277,8 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  title: { flex: 1, fontSize: 19, ...FONT.bold, color: '#f1f5f9', lineHeight: 26 },
-  titleDone: { textDecorationLine: 'line-through', color: '#64748b' },
+  title: { flex: 1, fontSize: 18, ...FONT.bold, color: '#1e293b', lineHeight: 24 },
+  titleDone: { textDecorationLine: 'line-through', color: '#94a3b8' },
   badgesRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e293b',
+    backgroundColor: '#f1f5f9',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 99,
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryInitial: { fontSize: 10, color: '#fff', ...FONT.bold },
-  categoryName: { fontSize: 13, color: '#e2e8f0', ...FONT.medium },
+  categoryName: { fontSize: 13, color: '#475569', ...FONT.medium },
   pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
   pillText: { fontSize: 11, ...FONT.bold },
   footer: {
@@ -334,15 +335,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 12,
   },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   menuCard: {
     position: 'absolute',
-    backgroundColor: '#1e293b',
+    backgroundColor: '#ffffff',
     borderRadius: 14,
     padding: 6,
     minWidth: 180,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#e2e8f0',
     ...SHADOW.md,
   },
   menuRow: {
@@ -353,6 +354,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
   },
-  menuLabel: { fontSize: 14, ...FONT.semibold, color: '#e2e8f0' },
-  menuSep: { height: 1, backgroundColor: '#334155', marginHorizontal: 8 },
+  menuLabel: { fontSize: 14, ...FONT.semibold, color: '#1e293b' },
+  menuSep: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 8 },
 });

@@ -105,27 +105,22 @@ export default function DashboardScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       
-      {/* Header (Top Bar) */}
+      {/* Header (Top Bar) - FIXED */}
       <View style={styles.topBar}>
-        <View style={styles.topBarLeft}>
+        <View>
           <Text style={styles.greeting}>Halo, {user?.name?.split(' ')[0]}</Text>
-          <Text style={styles.subtitle}>Bagaimana rencanamu hari ini?</Text>
+          <Text style={styles.subtitle}>Selamat datang kembali di AgendaKu</Text>
         </View>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('Profil')}
-          style={styles.avatarContainer}
-        >
-          <View style={styles.avatar}>
-            {user?.avatar ? (
-              <Image 
-                source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
-                style={styles.avatarImage} 
-              />
-            ) : (
-              <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
-            )}
-          </View>
-        </TouchableOpacity>
+        <View style={[styles.avatar, { overflow: 'hidden' }]}>
+          {user?.avatar ? (
+            <Image 
+              source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
+              style={{ width: '100%', height: '100%' }} 
+            />
+          ) : (
+            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
+          )}
+        </View>
       </View>
 
       <ScrollView 
@@ -275,56 +270,55 @@ export default function DashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container:       { flex: 1, backgroundColor: COLORS.bg },
-  content:         { padding: 20, paddingBottom: 100 },
-  topBar: { 
-    backgroundColor: COLORS.surface, 
-    padding: 24, 
-    paddingTop: 60, 
-    paddingBottom: 25, 
-    borderBottomLeftRadius: 30, 
-    borderBottomRightRadius: 30, 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    ...SHADOW.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border
-  },
-  topBarLeft: { flex: 1 },
-  greeting:        { fontSize: 24, ...FONT.bold, color: COLORS.text, letterSpacing: 0.5 },
-  subtitle:        { fontSize: 13, color: COLORS.textMuted, marginTop: 4, ...FONT.medium },
-  avatarContainer: { ...SHADOW.md },
-  avatar:          { width: 52, height: 52, borderRadius: 26, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.primary, overflow: 'hidden' },
-  avatarImage:     { width: '100%', height: '100%' },
-  avatarText:      { fontSize: 22, ...FONT.bold, color: COLORS.primary },
-  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20, marginTop: 10 },
-  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 18, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.border, ...SHADOW.sm },
+  content:         { padding: 20 },
+  topBar:          { backgroundColor: COLORS.primary, padding: 24, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', ...SHADOW.md, zIndex: 10 },
+  greeting:        { fontSize: 24, ...FONT.bold, color: '#FFFFFF' },
+  subtitle:        { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  avatar:          { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  headerTitle:     { fontSize: 20, ...FONT.bold, color: '#FFF' },
+  avatarText:      { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
+  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderHeight: 100, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
   statHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  statValue:       { fontSize: 32, ...FONT.bold, color: COLORS.text },
-  statWave:        { marginTop: -2, marginRight: -2 },
-  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
-  statLabel:       { fontSize: 12, color: COLORS.textMuted, ...FONT.bold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  progressWrap:    { marginBottom: 8 },
-  progressBarBg:   { height: 12, borderRadius: 6, backgroundColor: COLORS.border, overflow: 'hidden', marginBottom: 12 },
-  progressBarFill: { height: 12, backgroundColor: COLORS.success, borderRadius: 6 },
-  progressText:    { fontSize: 13, color: COLORS.text, ...FONT.semibold },
-  insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
-  insightText:     { fontSize: 13, color: COLORS.textMuted, flex: 1, lineHeight: 20 },
-  section:         { marginTop: 28 },
-  sectionTitle:    { fontSize: 16, ...FONT.bold, color: COLORS.text, marginBottom: 12, marginLeft: 4 },
-  taskRow:         { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  taskDot:         { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
+  statValue:       { fontSize: 28, ...FONT.bold },
+  statWave:        { marginTop: -4, marginRight: -4 },
+  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
+  statLabel:       { fontSize: 13, color: COLORS.textMuted, ...FONT.bold },
+  progressWrap:    { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: COLORS.borderLight },
+  progressBarBg:   { height: 10, borderRadius: 5, backgroundColor: COLORS.borderLight, overflow: 'hidden', marginBottom: 8 },
+  progressBarFill: { height: 10, backgroundColor: COLORS.success, borderRadius: 5 },
+  progressText:    { fontSize: 13, color: COLORS.textMuted, marginTop: 4, ...FONT.medium },
+  insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  insightText:     { fontSize: 13, color: COLORS.textMuted, flex: 1 },
+  section:         { marginTop: 24 },
+  sectionTitle:    { fontSize: 16, ...FONT.bold, color: COLORS.text },
+  divider:         { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
+  alertBox:        { backgroundColor: COLORS.warningLight, borderWidth: 1, borderColor: '#FDE68A', borderRadius: RADIUS.lg, padding: 16 },
+  alertTitle:      { fontSize: 14, ...FONT.bold, color: COLORS.warning, marginBottom: 12 },
+  alertItem:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  alertDot:        { width: 7, height: 7, borderRadius: 3.5, flexShrink: 0 },
+  alertText:       { fontSize: 12, flex: 1, ...FONT.medium },
+  sectionHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  seeAllBadge:     { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
+  seeAll:          { fontSize: 12, color: COLORS.primary, ...FONT.bold },
+  skeleton:        { height: 72, backgroundColor: COLORS.borderLight, borderRadius: RADIUS.lg, marginBottom: 10 },
+  taskCard:        { marginBottom: 10, padding: 14 },
+  taskRow:         { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  taskDot:         { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   taskInfo:        { flex: 1 },
-  taskTitle:       { fontSize: 14, ...FONT.bold, color: COLORS.text },
-  taskMeta:        { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  taskCat:         { fontSize: 11, ...FONT.semibold },
-  taskBadge:       { paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full, backgroundColor: '#fee2e220', borderWidth: 1, borderColor: '#ef444440' },
-  taskBadgeText:   { fontSize: 10, ...FONT.bold, color: '#f87171' },
-  deadlineRow:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  urgentDot:       { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
+  taskTitle:       { fontSize: 14, ...FONT.semibold, color: COLORS.text },
+  taskMeta:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  taskCat:         { fontSize: 11, ...FONT.medium },
+  taskBadge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.full, backgroundColor: '#fee2e2' },
+  taskBadgeText:   { fontSize: 10, ...FONT.bold, color: '#dc2626' },
+  deadlineCard:    { marginBottom: 10, padding: 14 },
+  overdueCard:     { borderColor: '#fca5a5', backgroundColor: '#fff9f9' },
+  deadlineRow:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  urgentDot:       { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   deadlineInfo:    { flex: 1 },
-  deadlineTitle:   { fontSize: 14, ...FONT.bold, color: COLORS.text },
-  deadlineDateWrap:{ alignItems: 'flex-end', gap: 4 },
+  deadlineTitle:   { fontSize: 14, ...FONT.semibold, color: COLORS.text },
+  deadlineCat:     { fontSize: 12, ...FONT.medium, marginTop: 2 },
+  deadlineDateWrap:{ alignItems: 'flex-end' },
   deadlineUrgency: { fontSize: 11, ...FONT.bold },
-  deadlineDate:    { fontSize: 11, color: COLORS.textMuted, ...FONT.medium },
+  deadlineDate:    { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
 });

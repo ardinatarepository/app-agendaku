@@ -1,34 +1,28 @@
-// Design tokens AgendaKu Mobile - Premium Dark Mode
+// Design tokens AgendaKu Mobile - RESTORED LIGHT THEME
 export const COLORS = {
-  primary:      '#3b82f6', // Vibrant Blue
-  primaryLight: '#2563eb20',
-  secondary:    '#8b5cf6', // Purple Accent
-  
-  // Dark Neutrals
-  bg:           '#0f172a', // Obsidian / Navy Dark
-  surface:      '#1e293b', // Deep Slate
-  border:       '#334155', // Slate 700
-  borderLight:  '#1e293b',
-  
-  // Status Colors (Vibrant)
+  primary:      '#3b82f6',
+  primaryLight: '#eff6ff',
+  secondary:    '#64748b',
+  bg:           '#f8fafc',
+  surface:      '#ffffff',
+  border:       '#e2e8f0',
+  borderLight:  '#f1f5f9',
   success:      '#10b981',
   warning:      '#f59e0b',
   danger:       '#ef4444',
   info:         '#0ea5e9',
-
-  // Text Colors
-  text:         '#f8fafc', // Slate 50
-  textMuted:    '#94a3b8', // Slate 400
-  textLight:    '#64748b', // Slate 500
-  textDisabled: '#475569', // Slate 600
+  text:         '#1e293b',
+  textMuted:    '#64748b',
+  textLight:    '#94a3b8',
+  textDisabled: '#cbd5e1',
 };
 
 export const RADIUS = {
-  xs: 6,
-  sm: 10,
-  md: 14,
-  lg: 20,
-  xl: 28,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
   full: 9999,
 };
 
@@ -43,35 +37,35 @@ export const FONT = {
 export const SHADOW = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     elevation: 2,
   },
   md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowColor: '#64748b',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   lg: {
-    shadowColor: '#000',
+    shadowColor: '#64748b',
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 10,
   },
 };
 
 export const STATUS_CONFIG = {
-  'BELUM_MULAI':        { label: 'Pending',    dot: '#94a3b8', bg: '#334155', text: '#94a3b8' },
-  'SEDANG_DIKERJAKAN': { label: 'Berjalan',   dot: '#3b82f6', bg: '#2563eb30', text: '#60a5fa' },
-  'SELESAI':           { label: 'Selesai',    dot: '#10b981', bg: '#05966930', text: '#34d399' },
+  'BELUM_MULAI':        { label: 'Belum Mulai', dot: '#94a3b8', bg: '#f1f5f9', text: '#64748b' },
+  'SEDANG_DIKERJAKAN': { label: 'Sedang Berjalan', dot: '#3b82f6', bg: '#eff6ff', text: '#3b82f6' },
+  'SELESAI':           { label: 'Selesai', dot: '#10b981', bg: '#ecfdf5', text: '#10b981' },
 };
 
 export const PRIORITY_CONFIG = {
-  'RENDAH': { label: 'Rendah', dot: '#94a3b8', text: '#94a3b8', bg: '#334155' },
-  'NORMAL': { label: 'Normal', dot: '#3b82f6', text: '#60a5fa', bg: '#1e293b' },
-  'TINGGI': { label: 'Tinggi', dot: '#ef4444', text: '#f87171', bg: '#450a0a' },
+  'RENDAH': { label: 'Rendah', dot: '#94a3b8', text: '#64748b', bg: '#f1f5f9' },
+  'NORMAL': { label: 'Normal', dot: '#3b82f6', text: '#3b82f6', bg: '#eff6ff' },
+  'TINGGI': { label: 'Tinggi', dot: '#ef4444', text: '#ef4444', bg: '#fef2f2' },
 };

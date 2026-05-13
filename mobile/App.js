@@ -184,8 +184,8 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <NavigationContainer theme={{ colors: { background: COLORS.bg, card: COLORS.surface, text: COLORS.text, border: COLORS.border, primary: COLORS.primary } }}>
-              <StatusBar style="light" backgroundColor={COLORS.bg} />
+            <NavigationContainer>
+              <StatusBar style="dark" backgroundColor={COLORS.bg} />
               <RootNavigator />
             </NavigationContainer>
           </AuthProvider>
