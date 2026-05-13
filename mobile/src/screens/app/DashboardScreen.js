@@ -52,7 +52,11 @@ const ProgressBar = ({ selesai, total }) => {
 
 export default function DashboardScreen({ navigation }) {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, lastAvatar } = useAuth();
+  
+  // Resolve avatar URL with fallback
+  const displayAvatar = user?.avatar || lastAvatar;
+  const avatarUri = displayAvatar ? (displayAvatar.startsWith('http') ? displayAvatar : `${AVATAR_URL}${displayAvatar}?t=${new Date().getTime()}`) : null;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['dashboard'],
@@ -112,9 +116,9 @@ export default function DashboardScreen({ navigation }) {
           <Text style={styles.subtitle}>Selamat datang kembali di AgendaKu</Text>
         </View>
         <View style={[styles.avatar, { overflow: 'hidden' }]}>
-          {user?.avatar ? (
+          {avatarUri ? (
             <Image 
-              source={{ uri: user.avatar.startsWith('http') ? user.avatar : `${AVATAR_URL}${user.avatar}?t=${new Date().getTime()}` }} 
+              source={{ uri: avatarUri }} 
               style={{ width: '100%', height: '100%' }} 
             />
           ) : (

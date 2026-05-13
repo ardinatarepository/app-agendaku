@@ -29,7 +29,7 @@ export default function LoginScreen({ navigation }) {
       await login(form.email.trim().toLowerCase(), form.password);
       // Navigation otomatis via AuthContext
     } catch (err) {
-      console.error('Login error:', err);
+      console.log('Login error:', err);
       let msg = 'Periksa email dan password kamu.';
       if (!err.response) {
         msg = 'Server tidak dapat dijangkau. Pastikan IP di config.js sudah benar dan HP berada di jaringan yang sama.';

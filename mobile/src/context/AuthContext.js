@@ -16,18 +16,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const [storedToken, storedUser, storedAvatar] = await AsyncStorage.multiGet([
-          'agendaku_token', 
-          'agendaku_user',
-          'agendaku_last_avatar'
-        ]);
+        const [storedToken, storedUser] = await AsyncStorage.multiGet(['agendaku_token', 'agendaku_user']);
         
         if (storedToken[1] && storedUser[1]) {
+          const userData = JSON.parse(storedUser[1]);
           setToken(storedToken[1]);
-          setUser(JSON.parse(storedUser[1]));
-        }
-        if (storedAvatar[1]) {
-          setLastAvatar(storedAvatar[1]);
+          setUser(userData);
+          
+          // Ambil avatar spesifik ID ini dari storage
+          const avatarKey = `agendaku_avatar_${userData.id}`;
+          const cachedAvatar = await AsyncStorage.getItem(avatarKey);
+          if (cachedAvatar) setLastAvatar(cachedAvatar);
+        } else {
+          // Jika tidak ada user login, ambil avatar terakhir yang pernah ada (global fallback)
+          const globalAvatar = await AsyncStorage.getItem('agendaku_last_avatar_global');
+          if (globalAvatar) setLastAvatar(globalAvatar);
         }
       } catch (_) {
         // abaikan error parsing
@@ -48,7 +51,8 @@ export const AuthProvider = ({ children }) => {
     ];
 
     if (userData.avatar) {
-      storageItems.push(['agendaku_last_avatar', userData.avatar]);
+      storageItems.push([`agendaku_avatar_${userData.id}`, userData.avatar]);
+      storageItems.push(['agendaku_last_avatar_global', userData.avatar]);
       setLastAvatar(userData.avatar);
     }
 
@@ -64,10 +68,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = useCallback(async () => {
-    // JANGAN hapus agendaku_last_avatar di sini agar tetap tersimpan
     await AsyncStorage.multiRemove(['agendaku_token', 'agendaku_user']);
     setToken(null);
     setUser(null);
+    // lastAvatar tetap ada di state & storage (per ID & global)
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -77,7 +81,8 @@ export const AuthProvider = ({ children }) => {
       
       const storageItems = [['agendaku_user', JSON.stringify(userData)]];
       if (userData.avatar) {
-        storageItems.push(['agendaku_last_avatar', userData.avatar]);
+        storageItems.push([`agendaku_avatar_${userData.id}`, userData.avatar]);
+        storageItems.push(['agendaku_last_avatar_global', userData.avatar]);
         setLastAvatar(userData.avatar);
       }
 
