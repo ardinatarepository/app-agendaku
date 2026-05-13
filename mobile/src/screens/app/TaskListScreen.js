@@ -2,7 +2,7 @@
 // Perbaikan: borderRadius string CSS tidak valid di RN, useState→useEffect untuk form init, remove Theme support
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Dimensions, PanResponder } from 'react-native';
+import { Dimensions, PanResponder, Keyboard } from 'react-native';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 // Batas atas sheet — semakin kecil, semakin tinggi sheet-nya
@@ -400,6 +400,13 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [titleError, setTitleError] = useState('');
+  const [kbHeight, setKbHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', (e) => setKbHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKbHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   // Animated value untuk slide bottom sheet
   const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
@@ -519,7 +526,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
       />
 
       {/* Bottom Sheet */}
-      <Animated.View style={[mStyle.sheet, { transform: [{ translateY }] }]}>
+      <Animated.View style={[mStyle.sheet, { height: SHEET_MAX_HEIGHT - kbHeight, transform: [{ translateY }] }]}>
         
         {/* Drag Handle */}
         <View {...panResponder.panHandlers} style={mStyle.dragArea}>
