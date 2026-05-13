@@ -58,11 +58,15 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
   const openMenu = () => {
     if (!moreBtnRef.current) return;
     moreBtnRef.current.measure((x, y, width, height, pageX, pageY) => {
-      if (pageY === undefined) return;
       const statusBarH = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+      
+      // Failsafe: If measure fails, use a default position instead of doing nothing
+      const finalTop = (pageY !== undefined) ? (pageY + height + 5 - statusBarH) : 150;
+      const finalRight = (pageX !== undefined) ? (Dimensions.get('window').width - (pageX + width)) : 20;
+
       setMenuPos({
-        top: pageY + height + 5 - statusBarH,
-        right: Dimensions.get('window').width - (pageX + width),
+        top: finalTop,
+        right: finalRight,
       });
       setShowActions(true);
     });
