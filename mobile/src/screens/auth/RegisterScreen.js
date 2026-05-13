@@ -123,9 +123,9 @@ export default function RegisterScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 50 },
-  brand:     { alignItems: 'center', marginBottom: 28 },
-  logo:      { width: 72, height: 72, marginBottom: 12, ...SHADOW.md },
+  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 30 },
+  brand:     { alignItems: 'center', marginBottom: 20 },
+  logo:      { width: 72, height: 72, marginBottom: 8, ...SHADOW.md },
   appName:   { fontSize: 24, ...FONT.black, color: COLORS.text },
   tagline:   { fontSize: 13, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
   card:      { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 24, borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.md },
