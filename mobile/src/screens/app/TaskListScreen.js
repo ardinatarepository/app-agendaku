@@ -730,12 +730,11 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
               );
             })}
           </ScrollView>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
 }
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function TaskListScreen({ route }) {
