@@ -65,7 +65,7 @@ export default function EditProfileScreen({ navigation }) {
       setShowSuccessModal(true);
     },
     onError: (error) => {
-      console.error('Update Error Detail:', error);
+      console.log('Update Error Detail:', error);
       const msg = error.response?.data?.message || error.message || 'Koneksi terputus.';
       setToast({ visible: true, message: `Gagal: ${msg}`, type: 'danger' });
     },
@@ -82,6 +82,7 @@ export default function EditProfileScreen({ navigation }) {
       setShowSuccessModal(true);
     },
     onError: (error) => {
+      console.log('Delete Avatar Error:', error);
       setToast({ visible: true, message: error.response?.data?.message || 'Gagal menghapus foto profil.', type: 'danger' });
     }
   });
