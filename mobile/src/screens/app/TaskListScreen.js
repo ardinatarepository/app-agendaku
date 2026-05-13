@@ -737,7 +737,6 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
               );
             })}
           </ScrollView>
-        </ScrollView>
       </Animated.View>
     </Modal>
   );
