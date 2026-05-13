@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, Dimensions, StatusBar } from 'react-native';
-import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
+import { View, Text, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
 import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
@@ -63,55 +62,10 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
     });
   };
 
-  /* ── Swipe Render Functions ── */
-  const renderLeftActions = (progress, dragX) => {
-    if (isFinished || readonly) return null;
-    const trans = dragX.interpolate({
-      inputRange: [0, 50, 100],
-      outputRange: [-20, 0, 0],
-    });
-    return (
-      <TouchableOpacity
-        onPress={() => { swipeRef.current?.close(); onStatusChange(task.id, 'SELESAI'); }}
-        style={[styles.swipeAction, { backgroundColor: '#10b981', marginLeft: 0 }]}
-        activeOpacity={0.8}
-      >
-        <Animated.View style={{ transform: [{ translateX: trans }] }}>
-          <Feather name="check" size={24} color="#fff" />
-        </Animated.View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderRightActions = (progress, dragX) => {
-    if (readonly) return null;
-    const trans = dragX.interpolate({
-      inputRange: [-100, -50, 0],
-      outputRange: [0, 0, 20],
-    });
-    return (
-      <TouchableOpacity
-        onPress={() => { swipeRef.current?.close(); onDelete(task.id); }}
-        style={[styles.swipeAction, { backgroundColor: '#ef4444', marginRight: 0 }]}
-        activeOpacity={0.8}
-      >
-        <Animated.View style={{ transform: [{ translateX: trans }] }}>
-          <Feather name="trash-2" size={24} color="#fff" />
-        </Animated.View>
-      </TouchableOpacity>
-    );
-  };
+  /* Swipe functions removed for cleaner look */
 
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }] }}>
-      <Swipeable
-        ref={swipeRef}
-        renderLeftActions={renderLeftActions}
-        renderRightActions={renderRightActions}
-        friction={2}
-        overshootLeft={false}
-        overshootRight={false}
-      >
         <View style={[styles.card, isFinished && styles.cardFinished]}>
           {/* Header */}
           <View style={styles.headerRow}>
@@ -212,7 +166,6 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
             </View>
           )}
         </View>
-      </Swipeable>
 
       {/* Action Menu */}
       <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
@@ -322,13 +275,6 @@ const styles = StyleSheet.create({
   },
   subtaskText: { fontSize: 13, color: '#94a3b8', ...FONT.medium },
   subtaskTextDone: { textDecorationLine: 'line-through', color: '#475569' },
-  swipeAction: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 70,
-    borderRadius: 20,
-    marginBottom: 12,
-  },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   menuCard: {
     position: 'absolute',
