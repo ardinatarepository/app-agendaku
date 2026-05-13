@@ -399,6 +399,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
   const [newSubTask, setNewSubTask] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [titleError, setTitleError] = useState('');
 
   // Animated value untuk slide bottom sheet
   const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
@@ -470,6 +471,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           subtasks: [], isRecurring: false, recurrence: 'HARIAN' 
         });
       }
+      setTitleError('');
     }
   }, [task, visible, initialDate]);
 
@@ -477,9 +479,10 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
 
   const handleSubmit = () => {
     if (!form.title.trim()) {
-      Alert.alert('Peringatan', 'Judul tugas wajib diisi.'); 
+      setTitleError('Judul tugas tidak boleh kosong.');
       return; 
     }
+    setTitleError('');
 
     let finalDeadline = null;
     if (form.deadline) {
@@ -542,7 +545,19 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
             showsVerticalScrollIndicator={false}
             style={{ flex: 1 }}
           >
-          <Input label="Nama Tugas *" placeholder="Masukan Nama Tugas" value={form.title} onChangeText={set('title')} />
+          <Input
+            label="Nama Tugas *"
+            placeholder="Masukan Nama Tugas"
+            value={form.title}
+            onChangeText={(v) => { set('title')(v); if (v.trim()) setTitleError(''); }}
+            style={titleError ? { borderColor: COLORS.danger, borderWidth: 1.5 } : {}}
+          />
+          {titleError ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -8, marginBottom: 12 }}>
+              <MaterialIcons name="error-outline" size={14} color={COLORS.danger} />
+              <Text style={{ fontSize: 12, color: COLORS.danger }}>{titleError}</Text>
+            </View>
+          ) : null}
           <View style={{ height: 12 }} />
           <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
           <View style={{ height: 12 }} />
