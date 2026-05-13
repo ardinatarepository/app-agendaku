@@ -129,12 +129,19 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
           </Text>
         </View>
 
-        {/* Badges Section */}
+        {/* Badges Section - Initials Only */}
         <View style={styles.badgesRow}>
-          <View style={styles.categoryPill}>
-            <View style={[styles.categoryDot, { backgroundColor: task.category?.color || '#3b82f6' }]} />
-            <Text style={styles.categoryName}>{task.category?.name || 'Umum'}</Text>
+          {/* Category Initial */}
+          <View style={[styles.initialCircle, { backgroundColor: task.category?.color || '#3b82f6' }]}>
+            <Text style={styles.initialText}>{task.category?.name?.[0]?.toUpperCase() || 'U'}</Text>
           </View>
+          
+          {/* Priority Initial */}
+          <View style={[styles.initialCircle, { backgroundColor: task.priority === 'TINGGI' ? '#ef4444' : task.priority === 'NORMAL' ? '#f59e0b' : '#94a3b8' }]}>
+            <Text style={styles.initialText}>{task.priority?.[0]?.toUpperCase() || 'N'}</Text>
+          </View>
+
+          {/* Status Badge (Keep it small) */}
           <View style={[styles.statusPill, { backgroundColor: isFinished ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)' }]}>
             <Text style={[styles.statusText, { color: isFinished ? '#10b981' : '#60a5fa' }]}>
               {isFinished ? 'Selesai' : 'Berjalan'}
@@ -222,12 +229,11 @@ const styles = StyleSheet.create({
   checkbox: { padding: 2 },
   title: { flex: 1, fontSize: 17, ...FONT.bold, color: '#f8fafc', lineHeight: 24 },
   titleDone: { textDecorationLine: 'line-through', color: '#475569' },
-  badgesRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
-  categoryPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 6 },
-  categoryDot: { width: 8, height: 8, borderRadius: 4 },
-  categoryName: { fontSize: 12, color: '#e2e8f0', ...FONT.medium },
+  badgesRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 20 },
+  initialCircle: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  initialText: { fontSize: 11, color: '#fff', ...FONT.bold },
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusText: { fontSize: 11, ...FONT.bold },
+  statusText: { fontSize: 10, ...FONT.bold, textTransform: 'uppercase' },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
   footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   countdownText: { fontSize: 12, color: '#f8fafc', ...FONT.bold },
