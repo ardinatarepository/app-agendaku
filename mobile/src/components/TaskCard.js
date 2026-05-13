@@ -88,7 +88,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
           {!readonly && (
             <View ref={moreBtnRef} collapsable={false}>
               <TouchableOpacity onPress={openMenu} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-                <MaterialCommunityIcons name="dots-horizontal" size={24} color="#94a3b8" />
+                <MaterialCommunityIcons name="dots-horizontal" size={28} color="#94a3b8" />
               </TouchableOpacity>
             </View>
           )}
