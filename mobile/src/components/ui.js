@@ -291,3 +291,30 @@ export const TaskSkeleton = () => (
     </View>
   </Card>
 );
+
+export const CalendarTaskSkeleton = () => (
+  <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.borderLight, height: 72 }}>
+    <Skeleton width={4} height="100%" borderRadius={0} />
+    <View style={{ flex: 1, padding: 12 }}>
+      <Skeleton width={160} height={14} style={{ marginBottom: 8 }} />
+      <View style={{ flexDirection: 'row', gap: 6 }}>
+        <Skeleton width={50} height={18} borderRadius={9} />
+        <Skeleton width={50} height={18} borderRadius={9} />
+      </View>
+    </View>
+  </View>
+);
+
+export const CategorySkeleton = () => (
+  <Card style={{ marginBottom: 8, padding: 12 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Skeleton width={14} height={14} borderRadius={7} style={{ marginRight: 12 }} />
+      <View style={{ flex: 1 }}>
+        <Skeleton width={100} height={14} style={{ marginBottom: 4 }} />
+        <Skeleton width={60} height={10} />
+      </View>
+      <Skeleton width={36} height={36} borderRadius={10} style={{ marginLeft: 8 }} />
+      <Skeleton width={36} height={36} borderRadius={10} style={{ marginLeft: 8 }} />
+    </View>
+  </Card>
+);

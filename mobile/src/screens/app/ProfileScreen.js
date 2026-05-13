@@ -11,7 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryAPI, taskAPI } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Card, Button, EmptyState, ConfirmModal, Toast } from '../../components/ui';
+import { Card, Button, EmptyState, ConfirmModal, Toast, CategorySkeleton } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW } from '../../utils/theme';
 import { rescheduleAllNotifications, cancelTaskNotification, sendTestNotification } from '../../utils/notifications';
 import { AVATAR_URL } from '../../config';
@@ -267,7 +267,11 @@ export default function ProfileScreen({ navigation }) {
 
       {/* List kategori */}
       {isLoading ? (
-        [...Array(3)].map((_, i) => <View key={i} style={s.skeleton} />)
+        <View style={{ gap: 8 }}>
+          <CategorySkeleton />
+          <CategorySkeleton />
+          <CategorySkeleton />
+        </View>
       ) : categories.length === 0 ? (
         <EmptyState emoji="🏷️" title="Belum ada kategori" subtitle="Tambahkan kategori untuk mengorganisir tugasmu." />
       ) : (

@@ -9,7 +9,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { MaterialIcons } from '@expo/vector-icons';
 import { taskAPI } from '../../api';
-import { Card, EmptyState, Badge, Skeleton } from '../../components/ui';
+import { Card, EmptyState, Badge, Skeleton, CalendarTaskSkeleton, CategorySkeleton } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../../utils/theme';
 import { formatDate } from '../../utils/helpers';
 
@@ -227,26 +227,9 @@ export default function CalendarScreen({ navigation }) {
 
           {isLoading ? (
             <View>
-              <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.borderLight, height: 72 }}>
-                <Skeleton width={4} height="100%" borderRadius={0} />
-                <View style={{ flex: 1, padding: 12 }}>
-                  <Skeleton width={180} height={14} style={{ marginBottom: 8 }} />
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <Skeleton width={60} height={20} borderRadius={10} />
-                    <Skeleton width={60} height={20} borderRadius={10} />
-                  </View>
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, marginBottom: 10, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.borderLight, height: 72 }}>
-                <Skeleton width={4} height="100%" borderRadius={0} />
-                <View style={{ flex: 1, padding: 12 }}>
-                  <Skeleton width={120} height={14} style={{ marginBottom: 8 }} />
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <Skeleton width={60} height={20} borderRadius={10} />
-                    <Skeleton width={60} height={20} borderRadius={10} />
-                  </View>
-                </View>
-              </View>
+              <CalendarTaskSkeleton />
+              <CalendarTaskSkeleton />
+              <CalendarTaskSkeleton />
             </View>
           ) : selectedTasks.length === 0 ? (
             <Card style={styles.emptyCard}>
