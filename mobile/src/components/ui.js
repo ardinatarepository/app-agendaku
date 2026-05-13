@@ -35,7 +35,7 @@ export const Button = ({ title, onPress, variant = 'primary', loading = false, d
       }, style]}
     >
       {loading
-        ? <ActivityIndicator size="small" color={styles.text} />
+        ? <PremiumLoader size={20} color={styles.text} />
         : <Text style={{ color: styles.text, fontSize: 15, ...FONT.semibold, textAlign: 'center' }}>{title}</Text>
       }
     </TouchableOpacity>
@@ -211,6 +211,57 @@ export const Skeleton = ({ width, height, borderRadius = RADIUS.md, style }) => 
         opacity,
       }, style]}
     />
+  );
+};
+
+// ─── Premium Loader ─────────────────────────────────────────────────────────
+export const PremiumLoader = ({ size = 40, color = COLORS.primary, style }) => {
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animasi Rotasi
+    const rotate = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      })
+    );
+    
+    // Animasi Pulse
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+      ])
+    );
+
+    rotate.start();
+    pulse.start();
+
+    return () => {
+      rotate.stop();
+      pulse.stop();
+    };
+  }, []);
+
+  const spin = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const opacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 1],
+  });
+
+  return (
+    <View style={[{ alignItems: 'center', justifyContent: 'center' }, style]}>
+      <Animated.View style={{ transform: [{ rotate: spin }], opacity }}>
+        <MaterialIcons name="cached" size={size} color={color} />
+      </Animated.View>
+    </View>
   );
 };
 

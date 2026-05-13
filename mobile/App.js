@@ -48,6 +48,7 @@ import { AuthProvider, useAuth }         from './src/context/AuthContext';
 import { ThemeProvider }                 from './src/context/ThemeContext';
 import { requestNotificationPermission } from './src/utils/notifications';
 import { COLORS, FONT, SHADOW }            from './src/utils/theme';
+import { PremiumLoader }                 from './src/components/ui';
 
 import LoginScreen     from './src/screens/auth/LoginScreen';
 import RegisterScreen  from './src/screens/auth/RegisterScreen';
@@ -131,8 +132,8 @@ function RootNavigator() {
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg }}>
-        <Text style={{ fontSize: 26, ...FONT.black, color: COLORS.primary }}>AgendaKu</Text>
-        <Text style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 8 }}>Memuat...</Text>
+        <Text style={{ fontSize: 32, ...FONT.black, color: COLORS.primary, letterSpacing: -1 }}>AgendaKu</Text>
+        <PremiumLoader size={36} color={COLORS.primary} style={{ marginTop: 24 }} />
       </View>
     );
   }
