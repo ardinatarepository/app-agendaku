@@ -30,10 +30,10 @@ const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai', T
 const PRIORITY_LBL = { RENDAH: 'Rendah', NORMAL: 'Normal', TINGGI: 'Tinggi' };
 
 const SORT_OPTIONS = [
-  { key: 'createdAt-desc', label: 'Terbaru',       icon: 'schedule',      sort: 'createdAt', order: 'desc' },
-  { key: 'deadline-asc',   label: 'Deadline',      icon: 'event',         sort: 'deadline',  order: 'asc' },
-  { key: 'priority-desc',  label: 'Prioritas',     icon: 'priority-high', sort: 'priority',  order: 'desc' },
-  { key: 'title-asc',      label: 'Judul A-Z',     icon: 'sort-by-alpha', sort: 'title',     order: 'asc' },
+  { key: 'createdAt-desc', label: 'Terbaru', icon: 'schedule', sort: 'createdAt', order: 'desc' },
+  { key: 'deadline-asc', label: 'Deadline', icon: 'event', sort: 'deadline', order: 'asc' },
+  { key: 'priority-desc', label: 'Prioritas', icon: 'priority-high', sort: 'priority', order: 'desc' },
+  { key: 'title-asc', label: 'Judul A-Z', icon: 'sort-by-alpha', sort: 'title', order: 'asc' },
 ];
 
 // ─── Tombol Prioritas ──────────────────────────────────────────────────────────
@@ -245,10 +245,10 @@ const dpStyle = StyleSheet.create({
 function CustomTimePicker({ visible, value, onSelect, onClose }) {
   const [tempTime, setTempTime] = useState(value || '12:00');
   const [hh, mm] = tempTime.split(':');
-  
+
   const hourScrollRef = useRef(null);
   const minScrollRef = useRef(null);
-  
+
   const hourScrollY = useRef(new Animated.Value(0)).current;
   const minScrollY = useRef(new Animated.Value(0)).current;
 
@@ -267,7 +267,7 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
       setTimeout(() => {
         if (hourScrollRef.current?.scrollTo) hourScrollRef.current.scrollTo({ y: parseInt(h, 10) * ITEM_HEIGHT, animated: false });
         if (hourScrollRef.current?.getNode) hourScrollRef.current.getNode().scrollTo({ y: parseInt(h, 10) * ITEM_HEIGHT, animated: false });
-        
+
         if (minScrollRef.current?.scrollTo) minScrollRef.current.scrollTo({ y: parseInt(m, 10) * ITEM_HEIGHT, animated: false });
         if (minScrollRef.current?.getNode) minScrollRef.current.getNode().scrollTo({ y: parseInt(m, 10) * ITEM_HEIGHT, animated: false });
       }, 100);
@@ -277,7 +277,7 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
   const handleScroll = (type, e) => {
     const y = e.nativeEvent.contentOffset.y;
     const index = Math.round(y / ITEM_HEIGHT);
-    
+
     if (type === 'hour') {
       const newH = String(Math.max(0, Math.min(23, index))).padStart(2, '0');
       if (newH !== hh) setTempTime(`${newH}:${mm}`);
@@ -304,14 +304,14 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
     });
 
     return (
-      <TouchableOpacity 
-        key={item} 
+      <TouchableOpacity
+        key={item}
         onPress={() => {
           const scrollRef = isHour ? hourScrollRef.current : minScrollRef.current;
           const node = scrollRef?.getNode ? scrollRef.getNode() : scrollRef;
           node?.scrollTo({ y: index * ITEM_HEIGHT, animated: true });
-        }} 
-        style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }} 
+        }}
+        style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}
         activeOpacity={1}
       >
         <Animated.Text style={[tpStyle.itemText, { transform: [{ scale }], opacity }]}>
@@ -331,10 +331,10 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
             {/* Highlight box */}
             <View style={{ position: 'absolute', top: PADDING, left: 10, right: 10, height: ITEM_HEIGHT, backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.lg, zIndex: -1 }} />
 
-            <Animated.ScrollView 
+            <Animated.ScrollView
               ref={hourScrollRef}
-              showsVerticalScrollIndicator={false} 
-              style={{ flex: 1 }} 
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
               contentContainerStyle={{ paddingVertical: PADDING }}
               snapToInterval={ITEM_HEIGHT}
               decelerationRate="fast"
@@ -347,15 +347,15 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
             >
               {hours.map((h, i) => renderItem(h, i, hourScrollY, true))}
             </Animated.ScrollView>
-            
+
             <View style={tpStyle.separatorWrap}>
               <Text style={tpStyle.separatorText}>:</Text>
             </View>
 
-            <Animated.ScrollView 
+            <Animated.ScrollView
               ref={minScrollRef}
-              showsVerticalScrollIndicator={false} 
-              style={{ flex: 1 }} 
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}
               contentContainerStyle={{ paddingVertical: PADDING }}
               snapToInterval={ITEM_HEIGHT}
               decelerationRate="fast"
@@ -471,11 +471,11 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           recurrence: task.recurrence || 'HARIAN',
         });
       } else {
-        setForm({ 
-          title: '', description: '', status: 'SEDANG_DIKERJAKAN', 
-          priority: 'NORMAL', deadline: initialDate || '', 
-          time: '12:00', reminderHours: '0', categoryId: '', 
-          subtasks: [], isRecurring: false, recurrence: 'HARIAN' 
+        setForm({
+          title: '', description: '', status: 'SEDANG_DIKERJAKAN',
+          priority: 'NORMAL', deadline: initialDate || '',
+          time: '12:00', reminderHours: '0', categoryId: '',
+          subtasks: [], isRecurring: false, recurrence: 'HARIAN'
         });
       }
       setTitleError('');
@@ -487,7 +487,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
   const handleSubmit = () => {
     if (!form.title.trim()) {
       setTitleError('Judul tugas tidak boleh kosong.');
-      return; 
+      return;
     }
     setTitleError('');
 
@@ -499,9 +499,9 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
       finalDeadline = dateObj.toISOString();
     }
 
-    onSubmit({ 
-      ...form, 
-      categoryId: form.categoryId ? parseInt(form.categoryId) : null, 
+    onSubmit({
+      ...form,
+      categoryId: form.categoryId ? parseInt(form.categoryId) : null,
       deadline: finalDeadline,
       isRecurring: form.isRecurring,
       recurrence: form.isRecurring ? form.recurrence : null
@@ -527,7 +527,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
 
       {/* Bottom Sheet */}
       <Animated.View style={[mStyle.sheet, { height: SHEET_MAX_HEIGHT - kbHeight, transform: [{ translateY }] }]}>
-        
+
         {/* Drag Handle */}
         <View {...panResponder.panHandlers} style={mStyle.dragArea}>
           <View style={mStyle.handle} />
@@ -546,12 +546,12 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           </TouchableOpacity>
         </View>
 
-          <ScrollView 
-            contentContainerStyle={mStyle.body} 
-            keyboardShouldPersistTaps="handled" 
-            showsVerticalScrollIndicator={false}
-            style={{ flex: 1 }}
-          >
+        <ScrollView
+          contentContainerStyle={mStyle.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+        >
           <Input
             label="Nama Tugas *"
             placeholder="Masukan Nama Tugas"
@@ -665,9 +665,9 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           {form.isRecurring && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
               {[
-                { id: 'HARIAN',   label: 'Harian' },
+                { id: 'HARIAN', label: 'Harian' },
                 { id: 'MINGGUAN', label: 'Mingguan' },
-                { id: 'BULANAN',  label: 'Bulanan' },
+                { id: 'BULANAN', label: 'Bulanan' },
               ].map(r => {
                 const active = form.recurrence === r.id;
                 return (
@@ -737,6 +737,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
               );
             })}
           </ScrollView>
+        </ScrollView>
       </Animated.View>
     </Modal>
   );
@@ -765,12 +766,12 @@ export default function TaskListScreen({ route }) {
       setInitialDate(route.params.initialDate || '');
       setShowForm(true);
     }
-    
+
     // Handle initialFilter from navigation (Dashboard Stat Cards)
     if (route?.params?.initialFilter) {
-      setFilters(prev => ({ 
-        ...prev, 
-        status: route.params.initialFilter.status || '' 
+      setFilters(prev => ({
+        ...prev,
+        status: route.params.initialFilter.status || ''
       }));
     }
   }, [route?.params]);
@@ -819,7 +820,7 @@ export default function TaskListScreen({ route }) {
       setShowForm(false);
       setSearch('');
       setFilters({ status: '', categoryId: '', priority: '' });
-      
+
       if (res.data?.data) {
         // Tampilkan modal interaktif di tengah layar
         setSuccessData({
@@ -827,7 +828,7 @@ export default function TaskListScreen({ route }) {
           subtitle: res.data.data.title,
           deadline: res.data.data.deadline ? formatDateTime(res.data.data.deadline) : null
         });
-        
+
         // Jadwalkan pengingat deadline
         scheduleTaskNotification(res.data.data);
       }
@@ -859,7 +860,7 @@ export default function TaskListScreen({ route }) {
       await invalidate();
       setShowForm(false);
       setEditTask(null);
-      
+
       if (res.data?.data && variables?.skipNotify !== true) {
         scheduleTaskNotification(res.data.data);
       }
@@ -888,7 +889,7 @@ export default function TaskListScreen({ route }) {
     // Animasi instan & pindah tab tanpa menunggu server (Optimistic Feel)
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setFilters(prev => ({ ...prev, status }));
-    
+
     updateMut.mutate({ id, data: { status }, skipNotify: true });
   };
 
@@ -907,7 +908,7 @@ export default function TaskListScreen({ route }) {
       setToast({ visible: true, message: 'Gagal menambah sub-tugas.', type: 'danger' });
     });
   };
-  
+
   const handleReset = () => {
     setSearch('');
     setFilters({ status: '', priority: '', categoryId: '' });
@@ -918,7 +919,7 @@ export default function TaskListScreen({ route }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      
+
       <View style={styles.headerBar}>
         <Text style={styles.headerTitle}>Daftar Tugas</Text>
       </View>
@@ -959,12 +960,12 @@ export default function TaskListScreen({ route }) {
           data={CHIP_DATA}
           keyExtractor={item => item.id || 'ALL'}
           contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}
-          onScrollToIndexFailed={() => {}}
+          onScrollToIndexFailed={() => { }}
           renderItem={({ item }) => {
             const active = filters.status === item.id;
             const cfg = item.id ? (STATUS_CONFIG[item.id] || STATUS_CONFIG['SEDANG_DIKERJAKAN']) : { bg: COLORS.primaryLight, text: COLORS.primary, dot: COLORS.primary };
             return (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                   setFilters(f => ({ ...f, status: item.id }));
@@ -995,10 +996,10 @@ export default function TaskListScreen({ route }) {
           </View>
         )}
         renderItem={({ item }) => (
-          <TaskCard 
-            task={item} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
+          <TaskCard
+            task={item}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
             onStatusChange={handleStatus}
             onSubtaskToggle={handleSubtaskToggle}
             onAddSubtask={handleAddSubtask}
@@ -1067,11 +1068,11 @@ export default function TaskListScreen({ route }) {
         onCancel={() => setConfirmDelete(null)}
       />
 
-      <Toast 
-        visible={toast.visible} 
-        message={toast.message} 
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
         type={toast.type}
-        onHide={() => setToast({ ...toast, visible: false })} 
+        onHide={() => setToast({ ...toast, visible: false })}
       />
     </View>
   );
