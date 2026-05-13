@@ -79,13 +79,17 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   };
 
   const openMenu = () => {
-    moreBtnRef.current?.measure((x, y, width, height, pageX, pageY) => {
-      const statusBarH = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
-      setMenuPos({
-        top: pageY + height + 4 - statusBarH,
-        right: Dimensions.get('window').width - (pageX + width),
+    // Use requestAnimationFrame to ensure measure works during re-renders
+    requestAnimationFrame(() => {
+      moreBtnRef.current?.measure((x, y, width, height, pageX, pageY) => {
+        if (pageY === undefined) return; // Guard against failed measure
+        const statusBarH = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0;
+        setMenuPos({
+          top: pageY + height + 4 - statusBarH,
+          right: Dimensions.get('window').width - (pageX + width),
+        });
+        setShowActions(true);
       });
-      setShowActions(true);
     });
   };
 
