@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   subtaskText: { fontSize: 13, color: '#cbd5e1', ...FONT.medium },
   subtaskTextDone: { textDecorationLine: 'line-through', color: '#475569' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  menuContainer: { position: 'absolute', backgroundColor: '#1E293B', borderRadius: 16, padding: 4, minWidth: 160, ...SHADOW.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  menuContainer: { position: 'absolute', backgroundColor: '#1E1E1E', borderRadius: 16, padding: 4, minWidth: 160, ...SHADOW.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
   menuText: { fontSize: 14, color: '#f8fafc', ...FONT.semibold },
   menuDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginHorizontal: 8 },
