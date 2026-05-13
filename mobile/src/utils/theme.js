@@ -1,70 +1,77 @@
-// Design tokens AgendaKu Mobile
-
+// Design tokens AgendaKu Mobile - Premium Dark Mode
 export const COLORS = {
-  primary:      '#0F172A', // Deep Navy / Slate
-  primaryLight: '#E2E8F0',
-  primaryDark:  '#020617',
-  success:      '#059669', // Emerald
-  successLight: '#ECFDF5',
-  warning:      '#D97706', // Amber
-  warningLight: '#FFFBEB',
-  danger:       '#DC2626', // Red
-  dangerLight:  '#FEF2F2',
+  primary:      '#3b82f6', // Vibrant Blue
+  primaryLight: '#2563eb20',
+  secondary:    '#8b5cf6', // Purple Accent
+  
+  // Dark Neutrals
+  bg:           '#0f172a', // Obsidian / Navy Dark
+  surface:      '#1e293b', // Deep Slate
+  border:       '#334155', // Slate 700
+  borderLight:  '#1e293b',
+  
+  // Status Colors (Vibrant)
+  success:      '#10b981',
+  warning:      '#f59e0b',
+  danger:       '#ef4444',
+  info:         '#0ea5e9',
 
-  // Neutrals
-  white:        '#ffffff',
-  bg:           '#F8FAFC', // Very soft slate
-  surface:      '#FFFFFF',
-  border:       '#E2E8F0',
-  borderLight:  '#F1F5F9',
-
-  text:         '#0F172A',
-  textMuted:    '#475569', // Darker slate
-  textLight:    '#94A3B8',
-  textDisabled: '#CBD5E1',
+  // Text Colors
+  text:         '#f8fafc', // Slate 50
+  textMuted:    '#94a3b8', // Slate 400
+  textLight:    '#64748b', // Slate 500
+  textDisabled: '#475569', // Slate 600
 };
 
 export const RADIUS = {
-  sm:  8,
-  md:  12,
-  lg:  16,
-  xl:  20,
-  full: 999,
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 28,
+  full: 9999,
+};
+
+export const FONT = {
+  regular:  { fontFamily: 'Poppins_400Regular' },
+  medium:   { fontFamily: 'Poppins_500Medium' },
+  semibold: { fontFamily: 'Poppins_600SemiBold' },
+  bold:     { fontFamily: 'Poppins_700Bold' },
+  black:    { fontFamily: 'Poppins_900Black' },
 };
 
 export const SHADOW = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 2,
   },
   md: {
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 6,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 12,
   },
 };
 
 export const STATUS_CONFIG = {
-  SEDANG_DIKERJAKAN: { label: 'Sedang Berjalan', bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
-  SELESAI:           { label: 'Selesai',            bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
-  TERLEWAT:          { label: 'Terlewat',          bg: '#FEF2F2', text: '#DC2626', dot: '#F87171' },
+  'BELUM_MULAI':        { label: 'Pending',    dot: '#94a3b8', bg: '#334155', text: '#94a3b8' },
+  'SEDANG_DIKERJAKAN': { label: 'Berjalan',   dot: '#3b82f6', bg: '#2563eb30', text: '#60a5fa' },
+  'SELESAI':           { label: 'Selesai',    dot: '#10b981', bg: '#05966930', text: '#34d399' },
 };
 
 export const PRIORITY_CONFIG = {
-  RENDAH: { label: 'Rendah', bg: '#F1F5F9', text: '#475569' },
-  NORMAL: { label: 'Normal', bg: '#FFFBEB', text: '#B45309' },
-  TINGGI: { label: 'Tinggi', bg: '#FEF2F2', text: '#DC2626' },
-};
-
-export const FONT = {
-  regular:   { fontFamily: 'Poppins_400Regular' },
-  medium:    { fontFamily: 'Poppins_500Medium', fontWeight: '500' },
-  semibold:  { fontFamily: 'Poppins_600SemiBold', fontWeight: '600' },
-  bold:      { fontFamily: 'Poppins_700Bold', fontWeight: 'bold' },
-  black:     { fontFamily: 'Poppins_900Black', fontWeight: '900' },
+  'RENDAH': { label: 'Rendah', dot: '#94a3b8', text: '#94a3b8', bg: '#334155' },
+  'NORMAL': { label: 'Normal', dot: '#3b82f6', text: '#60a5fa', bg: '#1e293b' },
+  'TINGGI': { label: 'Tinggi', dot: '#ef4444', text: '#f87171', bg: '#450a0a' },
 };
