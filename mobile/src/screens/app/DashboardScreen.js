@@ -168,28 +168,37 @@ export default function DashboardScreen({ navigation }) {
         </View>
       )}
 
-      {/* Progress Section */}
+      {/* Mendekati Deadline */}
       <View style={styles.section}>
         <Card style={{ padding: 16 }}>
-          <Text style={[styles.sectionTitle, { marginTop: 0, marginBottom: 8 }]}>Progress Tugas</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Mendekati Deadline</Text>
           <Divider style={{ marginBottom: 16, marginTop: 4 }} />
-          {isLoading ? (
-            <View style={{ gap: 8 }}>
-              <Skeleton width="100%" height={12} borderRadius={6} />
-              <Skeleton width="70%" height={12} />
+
+          {tugasDeadline.length === 0 ? (
+            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+              <Ionicons name="happy" size={28} color={COLORS.success} style={{ marginBottom: 6 }} />
+              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
             </View>
           ) : (
-            <>
-              <ProgressBar selesai={stats.selesai ?? 0} total={stats.total ?? 0} />
-              
-              <View style={styles.insightBox}>
-                <Text style={styles.insightText}>
-                  {stats.total > 0 
-                    ? `Kamu sudah menyelesaikan ${Math.round((stats.selesai/stats.total)*100)}% tugas. Semangat!` 
-                    : 'Mulai kerjakan tugasmu hari ini!'}
-                </Text>
-              </View>
-            </>
+            <View style={{ gap: 12 }}>
+              {tugasDeadline.map(task => {
+                const over = isOverdue(task.deadline);
+                return (
+                  <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
+                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 4 }]}>
+                      <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
+                      <View style={styles.deadlineInfo}>
+                        <Text style={[styles.deadlineTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
+                      </View>
+                      <View style={[styles.deadlineDateWrap, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
+                        <Text style={[styles.deadlineUrgency, { fontSize: 10, color: over ? COLORS.danger : COLORS.warning }]}>{over ? 'Terlambat' : 'Segera'}</Text>
+                        <Text style={[styles.deadlineDate, { fontSize: 10 }]}>{format(new Date(task.deadline), 'HH:mm')}</Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           )}
         </Card>
       </View>
@@ -233,37 +242,28 @@ export default function DashboardScreen({ navigation }) {
         </Card>
       </View>
 
-      {/* Mendekati Deadline */}
+      {/* Progress Section */}
       <View style={[styles.section, { marginBottom: 32 }]}>
         <Card style={{ padding: 16 }}>
-          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Mendekati Deadline</Text>
+          <Text style={[styles.sectionTitle, { marginTop: 0, marginBottom: 8 }]}>Progress Tugas</Text>
           <Divider style={{ marginBottom: 16, marginTop: 4 }} />
-
-          {tugasDeadline.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-              <Ionicons name="happy" size={28} color={COLORS.success} style={{ marginBottom: 6 }} />
-              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
+          {isLoading ? (
+            <View style={{ gap: 8 }}>
+              <Skeleton width="100%" height={12} borderRadius={6} />
+              <Skeleton width="70%" height={12} />
             </View>
           ) : (
-            <View style={{ gap: 12 }}>
-              {tugasDeadline.map(task => {
-                const over = isOverdue(task.deadline);
-                return (
-                  <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 4 }]}>
-                      <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
-                      <View style={styles.deadlineInfo}>
-                        <Text style={[styles.deadlineTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
-                      </View>
-                      <View style={[styles.deadlineDateWrap, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
-                        <Text style={[styles.deadlineUrgency, { fontSize: 10, color: over ? COLORS.danger : COLORS.warning }]}>{over ? 'Terlambat' : 'Segera'}</Text>
-                        <Text style={[styles.deadlineDate, { fontSize: 10 }]}>{format(new Date(task.deadline), 'HH:mm')}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <>
+              <ProgressBar selesai={stats.selesai ?? 0} total={stats.total ?? 0} />
+              
+              <View style={styles.insightBox}>
+                <Text style={styles.insightText}>
+                  {stats.total > 0 
+                    ? `Kamu sudah menyelesaikan ${Math.round((stats.selesai/stats.total)*100)}% tugas. Semangat!` 
+                    : 'Mulai kerjakan tugasmu hari ini!'}
+                </Text>
+              </View>
+            </>
           )}
         </Card>
       </View>
