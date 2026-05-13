@@ -730,8 +730,6 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
               );
             })}
           </ScrollView>
-        </ScrollView>
-        </KeyboardAvoidingView>
       </Animated.View>
     </Modal>
   );
