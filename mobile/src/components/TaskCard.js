@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, TouchableWithoutFeedback, Dimensions, StatusBar } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Card, Badge } from './ui';
+import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { Card } from './ui';
 import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
-import { formatDate, formatDateTime, isOverdue, isNearDeadline, getDeadlineColor } from '../utils/helpers';
-
-// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-//   UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
+import { formatDateTime, isOverdue } from '../utils/helpers';
 
 export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly = false }) {
   const [expanded, setExpanded] = useState(false);
@@ -23,48 +19,44 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 400,
+      duration: 600,
       useNativeDriver: true,
     }).start();
   }, []);
   
   const statusCfg   = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
-  const priorityCfg = PRIORITY_CONFIG[task.priority];
-  const overdue     = task.deadline && task.status !== 'SELESAI' && isOverdue(task.deadline);
-  const nearDl      = task.deadline && task.status !== 'SELESAI' && isNearDeadline(task.deadline);
-  const dlColor     = getDeadlineColor(task.deadline, task.status);
-
+  const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG['NORMAL'];
+  const isFinished  = task.status === 'SELESAI';
+  const overdue     = task.deadline && !isFinished && isOverdue(task.deadline);
+  
   // Sub-tugas progress
   const subtasks = task.subtasks || [];
   const doneCount = subtasks.filter(st => st.isDone).length;
   const totalSub  = subtasks.length;
-  const progress  = totalSub > 0 ? doneCount / totalSub : 0;
-  const progressColor = progress >= 0.7 ? '#10b981' : progress > 0.3 ? '#f59e0b' : '#94a3b8';
+  const progress  = totalSub > 0 ? Math.round((doneCount / totalSub) * 100) : 0;
 
-  const isFinished = task.status === 'SELESAI';
-  const nextStatus = task.status === 'SELESAI' ? 'BELUM_MULAI' : 'SELESAI';
-  const nextLabel  = task.status === 'SELESAI' ? 'Batal Selesai' : 'Selesai';
-  const nextIcon   = task.status === 'SELESAI' ? 'chevron-left' : 'chevron-right';
+  // Calculate time remaining (simplified)
+  const getTimeRemaining = () => {
+    if (!task.deadline) return null;
+    const diff = new Date(task.deadline) - new Date();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (days < 0) return 'Overdue';
+    if (days === 0) return 'Today';
+    return `${days}d`;
+  };
 
   const toggleExpand = () => {
-    LayoutAnimation.configureNext({
-      duration: 300,
-      create: { type: 'easeInEaseOut', property: 'opacity' },
-      update: { type: 'spring', springDamping: 0.7 },
-      delete: { type: 'easeInEaseOut', property: 'opacity' },
-    });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpanded(!expanded);
   };
   
   const toggleActions = () => {
     if (!showActions) {
       moreBtnRef.current.measure((x, y, width, height, pageX, pageY) => {
-        // Penyesuaian untuk Android StatusBar
         const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
-        
         setMenuPos({ 
-          top: pageY + 12 - statusBarHeight, // Naikkan agar lebih dekat ke icon titik 3
-          right: Dimensions.get('window').width - (pageX + width) // Sejajarkan dengan pinggir kanan icon
+          top: pageY + 12 - statusBarHeight,
+          right: Dimensions.get('window').width - (pageX + width)
         });
         setShowActions(true);
       });
@@ -73,258 +65,322 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
     }
   };
 
-  const renderLeftActions = (progress, dragX) => {
+  const renderLeftActions = () => {
     if (isFinished || readonly) return null;
-    const scale = dragX.interpolate({ inputRange: [0, 80], outputRange: [0.5, 1], extrapolate: 'clamp' });
     return (
       <TouchableOpacity
-        onPress={() => { swipeRef.current?.close(); onStatusChange(task.id, nextStatus); }}
-        activeOpacity={0.8}
-        style={styles.swipeLeft}
+        onPress={() => { swipeRef.current?.close(); onStatusChange(task.id, 'SELESAI'); }}
+        style={[styles.swipeAction, { backgroundColor: '#10b981' }]}
       >
-        <Animated.View style={{ transform: [{ scale }], alignItems: 'center' }}>
-          <MaterialIcons name={nextIcon} size={24} color="#fff" />
-          <Text style={styles.swipeText}>{nextLabel}</Text>
-        </Animated.View>
+        <Feather name="check" size={24} color="#fff" />
       </TouchableOpacity>
     );
   };
 
-  const renderRightActions = (progress, dragX) => {
+  const renderRightActions = () => {
     if (readonly) return null;
-    const scale = dragX.interpolate({ inputRange: [-80, 0], outputRange: [1, 0.5], extrapolate: 'clamp' });
     return (
       <TouchableOpacity
         onPress={() => { swipeRef.current?.close(); onDelete(task.id); }}
-        activeOpacity={0.8}
-        style={styles.swipeRight}
+        style={[styles.swipeAction, { backgroundColor: '#ef4444' }]}
       >
-        <Animated.View style={{ transform: [{ scale }], alignItems: 'center' }}>
-          <MaterialIcons name="delete" size={24} color="#fff" />
-          <Text style={styles.swipeText}>Hapus</Text>
-        </Animated.View>
+        <Feather name="trash-2" size={24} color="#fff" />
       </TouchableOpacity>
     );
   };
 
   return (
-    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-      <Swipeable
-      ref={swipeRef}
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
-      overshootLeft={false}
-      overshootRight={false}
-      friction={2}
-    >
-    <Card style={[styles.card, isFinished && styles.done]} onPress={onPress}>
-      {/* Top Header: Deadline & More */}
-      <View style={styles.topRow}>
-        <View style={[styles.deadlinePill, { backgroundColor: COLORS.primary + '10' }]}>
-          <MaterialIcons 
-            name="schedule" 
-            size={14} 
-            color={COLORS.primary} 
-          />
-          <Text style={[styles.deadlineText, { color: COLORS.primary }]}>
-            {overdue ? 'Terlewat: ' : ''}{formatDateTime(task.deadline)}
-          </Text>
-        </View>
-
-        {!readonly && (
-          <View style={styles.topActions}>
-            <Modal
-              visible={showActions}
-              transparent={true}
-              animationType="fade"
-              onRequestClose={() => setShowActions(false)}
-            >
-              <TouchableWithoutFeedback onPress={() => setShowActions(false)}>
-                <View style={styles.modalOverlay}>
-                  <View style={[styles.menuPopup, { top: menuPos.top, right: menuPos.right }]}>
-                    <TouchableOpacity onPress={() => { setShowActions(false); onEdit(task); }} style={styles.menuItem}>
-                      <MaterialIcons name="edit" size={16} color={COLORS.primary} />
-                      <Text style={styles.menuText}>Edit</Text>
-                    </TouchableOpacity>
-                    <View style={styles.menuDivider} />
-                    <TouchableOpacity onPress={() => { setShowActions(false); onDelete(task.id); }} style={styles.menuItem}>
-                      <MaterialIcons name="delete" size={16} color={COLORS.danger} />
-                      <Text style={[styles.menuText, { color: COLORS.danger }]}>Hapus</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </Modal>
-
-            <TouchableOpacity 
-              ref={moreBtnRef}
-              onPress={toggleActions} 
-              style={styles.moreBtn}
-            >
-              <MaterialIcons name="more-vert" size={20} color={COLORS.textLight} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Content: Title & Description */}
-      <View style={styles.content}>
-        <Text
-          numberOfLines={2}
-          style={[styles.title, isFinished && styles.titleDone]}
-        >
-          {task.title}
-        </Text>
-        {task.description ? (
-          <Text numberOfLines={1} style={styles.desc}>{task.description}</Text>
-        ) : null}
-      </View>
-
-      <View style={styles.divider} />
-
-      {/* Stats/Badges Row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <View style={[styles.statDot, { backgroundColor: statusCfg.dot }]} />
-          <Text style={styles.statText}>{statusCfg.label}</Text>
-        </View>
-        
-        <View style={styles.statItem}>
-          <View style={[styles.statDot, { backgroundColor: priorityCfg.text }]} />
-          <Text style={styles.statText}>{priorityCfg.label}</Text>
-        </View>
-
-        {totalSub > 0 && (
-          <TouchableOpacity 
-            style={styles.statItem} 
-            onPress={toggleExpand}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.statDot, { backgroundColor: COLORS.primary }]} />
-            <Text style={styles.statText}>Sub: {doneCount}/{totalSub}</Text>
-            <MaterialIcons 
-              name={expanded ? "keyboard-arrow-up" : "keyboard-arrow-down"} 
-              size={14} 
-              color={COLORS.textMuted} 
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Subtasks Expandable List */}
-      {expanded && totalSub > 0 && (
-        <View style={styles.subtaskList}>
-          {subtasks.map((st) => (
-            <TouchableOpacity 
-              key={st.id} 
-              style={styles.subtaskItem} 
-              onPress={() => !readonly && onSubtaskToggle(task.id, st.id)}
-              activeOpacity={readonly ? 1 : 0.6}
-            >
-              <MaterialIcons 
-                name={st.isDone ? "check-box" : "check-box-outline-blank"} 
-                size={18} 
-                color={st.isDone ? COLORS.primary : COLORS.textLight} 
-              />
-              <Text style={[styles.subtaskTitle, st.isDone && styles.subtaskDone]}>
-                {st.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }] }}>
+      <Swipeable ref={swipeRef} renderLeftActions={renderLeftActions} renderRightActions={renderRightActions} friction={2}>
+        <Card style={[styles.card, isFinished && styles.cardFinished]} onPress={onPress}>
           
-          {!readonly && (
-            <View style={styles.quickInputRow}>
-              <TextInput
-                style={styles.quickInput}
-                placeholder="Tambah sub-tugas..."
-                placeholderTextColor={COLORS.textLight}
-                value={newSubtask}
-                onChangeText={setNewSubtask}
-                onSubmitEditing={() => {
-                  if (newSubtask.trim()) {
-                    onAddSubtask(task.id, newSubtask.trim());
-                    setNewSubtask('');
-                  }
-                }}
-              />
-              {newSubtask.trim().length > 0 && (
-                <TouchableOpacity 
-                  onPress={() => {
-                    onAddSubtask(task.id, newSubtask.trim());
-                    setNewSubtask('');
-                  }}
-                >
-                  <MaterialIcons name="add-circle" size={20} color={COLORS.primary} />
+          {/* Top Label: Date & Time Replacement for "Client: Stellar" */}
+          <View style={styles.topLabelRow}>
+            <Text style={[styles.topLabelText, overdue && { color: '#f87171' }]}>
+              {formatDateTime(task.deadline) || 'Tanpa Tenggat'}
+            </Text>
+            {!readonly && (
+              <TouchableOpacity ref={moreBtnRef} onPress={toggleActions} hitSlop={15}>
+                <MaterialIcons name="more-horiz" size={20} color="#64748b" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Main Title */}
+          <Text style={[styles.title, isFinished && styles.titleFinished]} numberOfLines={2}>
+            {task.title}
+          </Text>
+
+          {/* Badges Row */}
+          <View style={styles.badgesRow}>
+            {/* User Avatar Placeholder style like Phoenix Baker */}
+            <View style={styles.userBadge}>
+              <View style={[styles.miniAvatar, { backgroundColor: task.category?.color || '#3b82f6' }]}>
+                <Text style={styles.miniAvatarText}>{task.category?.name?.[0] || 'A'}</Text>
+              </View>
+              <Text style={styles.userName}>{task.category?.name || 'Umum'}</Text>
+            </View>
+
+            {/* Status Badge */}
+            <View style={[styles.statusBadge, { backgroundColor: statusCfg.dot + '20' }]}>
+              <Text style={[styles.statusText, { color: statusCfg.dot }]}>{statusCfg.label}</Text>
+            </View>
+
+            {/* Priority Badge */}
+            <View style={[styles.priorityBadge, { backgroundColor: priorityCfg.text + '20' }]}>
+              <Text style={[styles.priorityText, { color: priorityCfg.text }]}>{priorityCfg.label}</Text>
+            </View>
+          </View>
+
+          {/* Footer Stats Row */}
+          <View style={styles.footer}>
+            <View style={styles.footerLeft}>
+              <TouchableOpacity 
+                onPress={totalSub > 0 ? toggleExpand : null} 
+                style={styles.statIconItem}
+                activeOpacity={0.7}
+              >
+                <Feather name="layers" size={14} color={expanded ? '#3b82f6' : '#64748b'} />
+                <Text style={[styles.statIconText, expanded && { color: '#3b82f6' }]}>{totalSub}</Text>
+                {totalSub > 0 && (
+                  <Feather 
+                    name={expanded ? "chevron-up" : "chevron-down"} 
+                    size={12} 
+                    color={expanded ? '#3b82f6' : '#64748b'} 
+                    style={{ marginLeft: -2 }}
+                  />
+                )}
+              </TouchableOpacity>
+              
+              <View style={styles.statIconItem}>
+                <Feather name="pie-chart" size={14} color="#64748b" />
+                <Text style={styles.statIconText}>{progress}%</Text>
+              </View>
+
+              <View style={styles.statIconItem}>
+                <Feather name="check-square" size={14} color="#64748b" />
+                <Text style={styles.statIconText}>{doneCount}</Text>
+              </View>
+            </View>
+
+            <View style={styles.footerRight}>
+              <Feather name="clock" size={14} color={overdue ? '#f87171' : '#64748b'} />
+              <Text style={[styles.timeRemaining, overdue && { color: '#f87171' }]}>
+                {getTimeRemaining() || '--'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Subtasks List (Optional Expand) */}
+          {expanded && totalSub > 0 && (
+            <View style={styles.subtaskList}>
+              {subtasks.map((st) => (
+                <TouchableOpacity key={st.id} style={styles.subtaskItem} onPress={() => !readonly && onSubtaskToggle(task.id, st.id)}>
+                  <Ionicons name={st.isDone ? "checkmark-circle" : "ellipse-outline"} size={16} color={st.isDone ? '#10b981' : '#475569'} />
+                  <Text style={[styles.subtaskTitle, st.isDone && styles.subtaskDone]}>{st.title}</Text>
                 </TouchableOpacity>
-              )}
+              ))}
             </View>
           )}
-        </View>
-      )}
 
-      {/* Quick Action Toggle */}
-      {!readonly && (
-        <TouchableOpacity
-          onPress={() => onStatusChange(task.id, nextStatus)}
-          activeOpacity={0.7}
-          style={styles.checkBtn}
-        >
-          <MaterialIcons 
-            name={isFinished ? "check-circle" : "radio-button-unchecked"} 
-            size={24} 
-            color={isFinished ? COLORS.success : COLORS.textLight} 
-          />
-        </TouchableOpacity>
-      )}
-    </Card>
-    </Swipeable>
+          {/* Modal Actions */}
+          <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}>
+            <TouchableWithoutFeedback onPress={() => setShowActions(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={[styles.menuPopup, { top: menuPos.top, right: menuPos.right }]}>
+                  <TouchableOpacity onPress={() => { setShowActions(false); onEdit(task); }} style={styles.menuItem}>
+                    <Feather name="edit-2" size={16} color="#fff" />
+                    <Text style={styles.menuText}>Edit Tugas</Text>
+                  </TouchableOpacity>
+                  <View style={styles.menuDivider} />
+                  <TouchableOpacity onPress={() => { setShowActions(false); onDelete(task.id); }} style={styles.menuItem}>
+                    <Feather name="trash" size={16} color="#ef4444" />
+                    <Text style={[styles.menuText, { color: '#ef4444' }]}>Hapus Tugas</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        </Card>
+      </Swipeable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  card:        { marginBottom: 12, padding: 16, borderRadius: RADIUS.xl, backgroundColor: COLORS.surface, ...SHADOW.sm, position: 'relative' },
-  done:        { opacity: 0.5 },
-  topRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  deadlinePill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.sm, borderWidth: 1, borderColor: COLORS.borderLight },
-  deadlineText: { fontSize: 10, ...FONT.semibold },
-  topActions:  { flexDirection: 'row' },
-  moreBtn:     { padding: 4 },
-  content:     { marginBottom: 14 },
-  title:       { fontSize: 18, ...FONT.bold, color: COLORS.text, marginBottom: 4 },
-  titleDone:   { textDecorationLine: 'line-through', color: COLORS.textLight },
-  desc:        { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
-  statsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  statItem:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statDot:     { width: 6, height: 6, borderRadius: 3 },
-  statText:    { fontSize: 11, color: COLORS.textMuted, ...FONT.semibold },
-  divider:     { height: 1, backgroundColor: COLORS.border, marginBottom: 12, opacity: 0.8 },
-  subtaskList: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
-  subtaskItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-  subtaskTitle: { fontSize: 13, color: COLORS.text, ...FONT.medium, flex: 1 },
-  subtaskDone: { textDecorationLine: 'line-through', color: COLORS.textLight },
-  quickInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  quickInput:  { flex: 1, fontSize: 12, color: COLORS.text, paddingVertical: 4 },
-  checkBtn:    { position: 'absolute', right: 16, bottom: 10, padding: 4 },
-  menuPopup:   { 
-    position: 'absolute', 
-    backgroundColor: '#fff', 
-    borderRadius: RADIUS.md, 
-    padding: 4, 
-    minWidth: 120,
-    zIndex: 999,
+  card: {
+    backgroundColor: '#111827', // Deep Slate / Dark Gray
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: COLORS.borderLight,
-    ...SHADOW.lg
+    borderColor: '#1f2937',
+    ...SHADOW.md,
+  },
+  cardFinished: {
+    opacity: 0.6,
+  },
+  topLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  topLabelText: {
+    fontSize: 13,
+    color: '#94a3b8', // Slate 400
+    ...FONT.medium,
+  },
+  title: {
+    fontSize: 22,
+    ...FONT.bold,
+    color: '#f8fafc', // Slate 50
+    lineHeight: 30,
+    marginBottom: 18,
+  },
+  titleFinished: {
+    textDecorationLine: 'line-through',
+    color: '#64748b',
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    marginBottom: 24,
+  },
+  userBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 99,
+    gap: 8,
+  },
+  miniAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniAvatarText: {
+    fontSize: 10,
+    color: '#fff',
+    ...FONT.bold,
+  },
+  userName: {
+    fontSize: 13,
+    color: '#e2e8f0',
+    ...FONT.medium,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+  },
+  statusText: {
+    fontSize: 12,
+    ...FONT.bold,
+  },
+  priorityBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 99,
+  },
+  priorityText: {
+    fontSize: 12,
+    ...FONT.bold,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    gap: 16,
+    alignItems: 'center',
+  },
+  statIconItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statIconText: {
+    fontSize: 13,
+    color: '#64748b',
+    ...FONT.medium,
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  timeRemaining: {
+    fontSize: 13,
+    color: '#64748b',
+    ...FONT.bold,
+  },
+  subtaskList: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#1f2937',
+    gap: 8,
+  },
+  subtaskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  subtaskTitle: {
+    fontSize: 13,
+    color: '#94a3b8',
+    ...FONT.medium,
+  },
+  subtaskDone: {
+    textDecorationLine: 'line-through',
+    color: '#475569',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  menuItem:    { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8, borderRadius: RADIUS.sm },
-  menuText:    { fontSize: 12, ...FONT.medium, color: COLORS.text },
-  menuDivider: { height: 1, backgroundColor: COLORS.borderLight, marginHorizontal: 4 },
-  swipeLeft:   { backgroundColor: '#10b981', justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: RADIUS.lg, marginBottom: 12, marginRight: 4 },
-  swipeRight:  { backgroundColor: '#ef4444', justifyContent: 'center', alignItems: 'center', width: 80, borderRadius: RADIUS.lg, marginBottom: 12, marginLeft: 4 },
-  swipeText:   { color: '#fff', fontSize: 11, ...FONT.semibold, marginTop: 2 },
+  menuPopup: {
+    position: 'absolute',
+    backgroundColor: '#1f2937',
+    borderRadius: 16,
+    padding: 8,
+    minWidth: 180,
+    ...SHADOW.lg,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 10,
+  },
+  menuText: {
+    fontSize: 15,
+    ...FONT.bold,
+    color: '#fff',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#374151',
+    marginHorizontal: 8,
+  },
+  swipeAction: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
 });
