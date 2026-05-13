@@ -2,6 +2,12 @@
 // Perbaikan: borderRadius string CSS tidak valid di RN, useState→useEffect untuk form init, remove Theme support
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Dimensions, PanResponder } from 'react-native';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+// Tinggi header TaskList: paddingTop 60 + paddingBottom 25 + title ~20px = ~105px
+const HEADER_HEIGHT = 105;
+const SHEET_MAX_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT;
 import {
   View, Text, FlatList, SectionList, TouchableOpacity, TextInput,
   ScrollView, RefreshControl, Alert, Modal, StyleSheet, Platform, StatusBar, LayoutAnimation,
@@ -394,6 +400,51 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // Animated value untuk slide bottom sheet
+  const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Slide naik
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+        bounciness: 4,
+      }).start();
+    } else {
+      // Slide turun (reset posisi)
+      translateY.setValue(SHEET_MAX_HEIGHT);
+    }
+  }, [visible]);
+
+  // PanResponder untuk swipe ke bawah
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 5,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 100 || g.vy > 0.5) {
+          // Swipe cukup jauh → tutup
+          Animated.timing(translateY, {
+            toValue: SHEET_MAX_HEIGHT,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(onClose);
+        } else {
+          // Kembalikan ke atas
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   useEffect(() => {
     if (visible) {
       if (task) {
@@ -426,18 +477,12 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
 
   const handleSubmit = () => {
     if (!form.title.trim()) {
-      // Kita bisa memicu toast di level screen jika kita meneruskan fungsi setToast
-      // Tapi untuk modal ini, kita bisa menggunakan Alert sementara atau menambah Toast di dalam modal.
-      // Namun agar konsisten, mari kita gunakan Alert yang lebih cantik atau definisikan Toast di level modal.
-      // Di sini saya akan menggunakan Alert bawaan dulu karena ini di dalam modal terpisah, 
-      // KECUALI jika saya menambahkan Toast ke dalam TaskFormModal.
       Alert.alert('Peringatan', 'Judul tugas wajib diisi.'); 
       return; 
     }
 
     let finalDeadline = null;
     if (form.deadline) {
-      // Parsing manual agar aman di semua versi Android (JS Engine)
       const [y, m, d] = form.deadline.split('-').map(Number);
       const [hh, mm] = form.time.split(':').map(Number);
       const dateObj = new Date(y, m - 1, d, hh, mm, 0);
@@ -453,11 +498,34 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
     });
   };
 
+  const handleClose = () => {
+    Animated.timing(translateY, {
+      toValue: SHEET_MAX_HEIGHT,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(onClose);
+  };
+
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={mStyle.container}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+      {/* Backdrop */}
+      <TouchableOpacity
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
+        activeOpacity={1}
+        onPress={handleClose}
+      />
+
+      {/* Bottom Sheet */}
+      <Animated.View style={[mStyle.sheet, { transform: [{ translateY }] }]}>
+        
+        {/* Drag Handle */}
+        <View {...panResponder.panHandlers} style={mStyle.dragArea}>
+          <View style={mStyle.handle} />
+        </View>
+
+        {/* Header */}
         <View style={mStyle.header}>
-          <TouchableOpacity onPress={onClose} hitSlop={12}>
+          <TouchableOpacity onPress={handleClose} hitSlop={12}>
             <Text style={mStyle.cancel}>Batal</Text>
           </TouchableOpacity>
           <Text style={mStyle.title}>{task ? 'Edit Tugas' : 'Tambah Tugas'}</Text>
@@ -469,9 +537,9 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
         </View>
 
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 100}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 80}
         >
           <ScrollView 
             contentContainerStyle={mStyle.body} 
@@ -653,10 +721,12 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           </ScrollView>
         </ScrollView>
         </KeyboardAvoidingView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function TaskListScreen({ route }) {
@@ -1025,8 +1095,10 @@ const styles = StyleSheet.create({
 });
 
 const mStyle = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, backgroundColor: COLORS.surface },
+  sheet: { position: 'absolute', bottom: 0, left: 0, right: 0, height: SHEET_MAX_HEIGHT, backgroundColor: COLORS.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...SHADOW.lg },
+  dragArea: { alignItems: 'center', paddingVertical: 12 },
+  handle: { width: 40, height: 5, backgroundColor: COLORS.borderLight, borderRadius: 3 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   title: { fontSize: 16, ...FONT.bold, color: COLORS.text },
   cancel: { fontSize: 14, color: COLORS.textMuted },
   save: { fontSize: 14, color: COLORS.primary, ...FONT.semibold, textAlign: 'center' },
