@@ -17,6 +17,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   const swipeRef = useRef(null);
   const moreBtnRef = useRef(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -24,7 +25,41 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
       duration: 500,
       useNativeDriver: true,
     }).start();
-  }, []);
+
+    // Countdown Timer Logic
+    const updateTimer = () => {
+      if (!task.deadline) {
+        setTimeLeft('--');
+        return;
+      }
+      
+      const now = new Date().getTime();
+      const target = new Date(task.deadline).getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setTimeLeft('Terlewat');
+        return;
+      }
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+      let parts = [];
+      if (d > 0) parts.push(`${d} Hari`);
+      if (h > 0) parts.push(`${h} Jam`);
+      if (m > 0) parts.push(`${m} Menit`);
+      if (s >= 0) parts.push(`${s} Detik`);
+
+      setTimeLeft(parts.join(' '));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [task.deadline]);
 
   const statusCfg   = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
   const priorityCfg = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG['NORMAL'];
@@ -36,15 +71,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
   const totalSub  = subtasks.length;
   const progress  = totalSub > 0 ? Math.round((doneCount / totalSub) * 100) : 0;
 
-  const getTimeRemaining = () => {
-    if (!task.deadline) return null;
-    const diff = new Date(task.deadline) - new Date();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Terlewat';
-    if (days === 0) return 'Hari ini';
-    if (days === 1) return 'Besok';
-    return `${days}h`;
-  };
+  /* getTimeRemaining moved to useEffect for real-time updates */
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -141,7 +168,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
             <View style={styles.footerItem}>
               <Feather name="clock" size={14} color={overdue ? '#f87171' : '#94a3b8'} />
               <Text style={[styles.footerText, { fontWeight: 'bold' }, overdue && { color: '#f87171' }]}>
-                {getTimeRemaining() || '--'}
+                {timeLeft}
               </Text>
             </View>
           </View>
