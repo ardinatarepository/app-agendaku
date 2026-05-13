@@ -119,9 +119,11 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
               {overdue ? '⚠ ' : ''}{formatDateTime(task.deadline) || 'Tanpa Tenggat'}
             </Text>
             {!readonly && (
-              <TouchableOpacity ref={moreBtnRef} onPress={openMenu} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <MaterialIcons name="more-horiz" size={26} color={COLORS.textMuted} />
-              </TouchableOpacity>
+              <View ref={moreBtnRef} collapsable={false}>
+                <TouchableOpacity onPress={openMenu} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <MaterialIcons name="more-horiz" size={26} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
