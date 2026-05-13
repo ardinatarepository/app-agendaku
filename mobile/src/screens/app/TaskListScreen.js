@@ -5,8 +5,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dimensions, PanResponder } from 'react-native';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-// Tinggi header TaskList: paddingTop 60 + paddingBottom 25 + title ~20px = ~105px
-const HEADER_HEIGHT = 105;
+// Tinggi header TaskList ditingkatkan sedikit agar sheet tidak terlalu ke atas
+const HEADER_HEIGHT = 130;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT;
 import {
   View, Text, FlatList, SectionList, TouchableOpacity, TextInput,
@@ -537,9 +537,9 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
         </View>
 
         <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'padding'} 
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 80}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <ScrollView 
             contentContainerStyle={mStyle.body} 
