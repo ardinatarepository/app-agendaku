@@ -178,12 +178,12 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
           <View style={[styles.menuContainer, { top: menuPos.top, right: menuPos.right }]}>
             <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onEdit(task); }}>
               <MaterialCommunityIcons name="pencil" size={18} color="#f8fafc" />
-              <Text style={styles.menuText}>Edit Tugas</Text>
+              <Text style={styles.menuText}>Edit</Text>
             </TouchableOpacity>
             <View style={styles.menuDivider} />
             <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onDelete(task.id); }}>
               <MaterialCommunityIcons name="trash-can" size={18} color="#f87171" />
-              <Text style={[styles.menuText, { color: '#f87171' }]}>Hapus Tugas</Text>
+              <Text style={[styles.menuText, { color: '#f87171' }]}>Hapus</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
