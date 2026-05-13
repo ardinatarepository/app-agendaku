@@ -5,8 +5,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Dimensions, PanResponder, Keyboard } from 'react-native';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-// Batas atas sheet — semakin kecil, semakin tinggi sheet-nya
-const HEADER_HEIGHT = 60;
+// Batas atas sheet sejajar dengan bawah header (paddingTop 60 + paddingBottom 25 + title ~20)
+const HEADER_HEIGHT = 105;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT;
 import {
   View, Text, FlatList, SectionList, TouchableOpacity, TextInput,
