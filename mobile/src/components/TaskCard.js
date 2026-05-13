@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { View, Text, StyleSheet, Animated, LayoutAnimation, Platform, UIManager, Modal, Dimensions, StatusBar, TouchableOpacity, Pressable } from 'react-native';
-import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { COLORS, RADIUS, FONT, SHADOW } from '../utils/theme';
 import { STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 import { formatDateTime, isOverdue } from '../utils/helpers';
@@ -95,7 +95,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
         {/* Header: Date & More Button */}
         <View style={styles.headerRow}>
           <View style={styles.dateContainer}>
-            <Feather name="calendar" size={12} color="#94a3b8" />
+            <MaterialCommunityIcons name="calendar-blank-outline" size={14} color="#94a3b8" />
             <Text style={[styles.dateLabel, overdue && { color: '#f87171' }]}>
               {formatDateTime(task.deadline) || 'Tanpa Tenggat'}
             </Text>
@@ -104,7 +104,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
           {!readonly && (
             <View ref={moreBtnRef} collapsable={false}>
               <TouchableOpacity onPress={openMenu} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
-                <MaterialIcons name="more-horiz" size={24} color="#94a3b8" />
+                <MaterialCommunityIcons name="dots-horizontal" size={24} color="#94a3b8" />
               </TouchableOpacity>
             </View>
           )}
@@ -152,7 +152,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
         {/* Footer: Countdown & Subtask Trigger */}
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
-            <Feather name="clock" size={14} color={overdue ? '#f87171' : '#94a3b8'} />
+            <MaterialCommunityIcons name="timer-outline" size={14} color={overdue ? '#f87171' : '#94a3b8'} />
             <CountdownTimer deadline={task.deadline} />
           </View>
 
@@ -165,7 +165,7 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
               style={styles.subtaskTrigger}
             >
               <Text style={styles.subtaskCount}>{totalSub} Sub-tugas</Text>
-              <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={14} color="#94a3b8" />
+              <MaterialCommunityIcons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
@@ -196,12 +196,12 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onStatusChange, onSubtaskTo
         <Pressable style={styles.overlay} onPress={() => setShowActions(false)}>
           <View style={[styles.menuContainer, { top: menuPos.top, right: menuPos.right }]}>
             <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onEdit(task); }}>
-              <Feather name="edit-3" size={18} color="#f8fafc" />
+              <MaterialCommunityIcons name="pencil-outline" size={18} color="#f8fafc" />
               <Text style={styles.menuText}>Edit Tugas</Text>
             </TouchableOpacity>
             <View style={styles.menuDivider} />
             <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActions(false); onDelete(task.id); }}>
-              <Feather name="trash-2" size={18} color="#f87171" />
+              <MaterialCommunityIcons name="trash-can-outline" size={18} color="#f87171" />
               <Text style={[styles.menuText, { color: '#f87171' }]}>Hapus Tugas</Text>
             </TouchableOpacity>
           </View>
