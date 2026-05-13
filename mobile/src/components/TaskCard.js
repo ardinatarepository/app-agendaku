@@ -120,7 +120,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
             </Text>
             {!readonly && (
               <TouchableOpacity ref={moreBtnRef} onPress={openMenu} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <MaterialIcons name="more-horiz" size={26} color="#64748b" />
+                <MaterialIcons name="more-horiz" size={26} color={COLORS.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -135,7 +135,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
                 <Ionicons
                   name={isFinished ? 'checkmark-circle' : 'ellipse-outline'}
                   size={28}
-                  color={isFinished ? '#10b981' : '#475569'}
+                  color={isFinished ? COLORS.success : COLORS.text}
                 />
               </TouchableOpacity>
             )}
@@ -153,7 +153,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
           {/* Badges */}
           <View style={styles.badgesRow}>
             <View style={styles.categoryPill}>
-              <View style={[styles.categoryDot, { backgroundColor: task.category?.color || '#3b82f6' }]}>
+              <View style={[styles.categoryDot, { backgroundColor: task.category?.color || COLORS.primary }]}>
                 <Text style={styles.categoryInitial}>{task.category?.name?.[0]?.toUpperCase() || 'U'}</Text>
               </View>
               <Text style={styles.categoryName}>{task.category?.name || 'Umum'}</Text>
@@ -174,10 +174,10 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
                 style={styles.footerItem}
                 activeOpacity={0.6}
               >
-                <Feather name="layers" size={14} color={expanded ? '#3b82f6' : '#64748b'} />
-                <Text style={[styles.footerText, expanded && { color: '#3b82f6' }]}>{totalSub}</Text>
+                <Feather name="layers" size={14} color={expanded ? COLORS.primary : COLORS.textMuted} />
+                <Text style={[styles.footerText, expanded && { color: COLORS.primary }]}>{totalSub}</Text>
                 {totalSub > 0 && (
-                  <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color={expanded ? '#3b82f6' : '#64748b'} />
+                  <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color={expanded ? COLORS.primary : COLORS.textMuted} />
                 )}
               </TouchableOpacity>
 
@@ -212,7 +212,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
                   <Ionicons
                     name={st.isDone ? 'checkmark-circle' : 'ellipse-outline'}
                     size={18}
-                    color={st.isDone ? '#10b981' : '#475569'}
+                    color={st.isDone ? COLORS.success : COLORS.textMuted}
                   />
                   <Text style={[styles.subtaskText, st.isDone && styles.subtaskTextDone]}>{st.title}</Text>
                 </TouchableOpacity>
@@ -234,7 +234,7 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
               style={styles.menuRow} 
               onPress={() => { setShowActions(false); onEdit(task); }}
             >
-              <Feather name="edit-2" size={16} color="#e2e8f0" />
+              <Feather name="edit-2" size={16} color={COLORS.text} />
               <Text style={styles.menuLabel}>Edit Tugas</Text>
             </TouchableOpacity>
             <View style={styles.menuSep} />
@@ -254,12 +254,12 @@ export default function TaskCard({ task, onPress, onEdit, onDelete, onStatusChan
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
     padding: 20,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: COLORS.border,
     overflow: 'hidden',
     ...SHADOW.sm,
   },
@@ -270,15 +270,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  dateLabel: { fontSize: 12, color: '#94a3b8', ...FONT.medium },
+  dateLabel: { fontSize: 12, color: COLORS.textLight, ...FONT.medium },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     marginBottom: 16,
   },
-  title: { flex: 1, fontSize: 18, ...FONT.bold, color: '#1e293b', lineHeight: 24 },
-  titleDone: { textDecorationLine: 'line-through', color: '#94a3b8' },
+  title: { flex: 1, fontSize: 18, ...FONT.bold, color: COLORS.text, lineHeight: 24 },
+  titleDone: { textDecorationLine: 'line-through', color: COLORS.textDisabled },
   badgesRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -289,10 +289,10 @@ const styles = StyleSheet.create({
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    backgroundColor: COLORS.borderLight,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 99,
+    borderRadius: RADIUS.full,
     gap: 7,
   },
   categoryDot: {
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryInitial: { fontSize: 10, color: '#fff', ...FONT.bold },
-  categoryName: { fontSize: 13, color: '#475569', ...FONT.medium },
+  categoryName: { fontSize: 13, color: COLORS.textMuted, ...FONT.medium },
   pill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 99 },
   pillText: { fontSize: 11, ...FONT.bold },
   footer: {
@@ -313,12 +313,12 @@ const styles = StyleSheet.create({
   },
   footerLeft: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   footerItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  footerText: { fontSize: 12, color: '#64748b', ...FONT.medium },
+  footerText: { fontSize: 12, color: COLORS.textMuted, ...FONT.medium },
   subtaskList: {
     marginTop: 16,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: '#1e293b',
+    borderTopColor: COLORS.borderLight,
   },
   subtaskRow: {
     flexDirection: 'row',
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 8,
   },
-  subtaskText: { fontSize: 13, color: '#94a3b8', ...FONT.medium },
-  subtaskTextDone: { textDecorationLine: 'line-through', color: '#475569' },
+  subtaskText: { fontSize: 13, color: COLORS.textMuted, ...FONT.medium },
+  subtaskTextDone: { textDecorationLine: 'line-through', color: COLORS.textDisabled },
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -338,12 +338,12 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   menuCard: {
     position: 'absolute',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
     padding: 6,
     minWidth: 180,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: COLORS.border,
     ...SHADOW.md,
   },
   menuRow: {
@@ -352,8 +352,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
   },
-  menuLabel: { fontSize: 14, ...FONT.semibold, color: '#1e293b' },
-  menuSep: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 8 },
+  menuLabel: { fontSize: 14, ...FONT.semibold, color: COLORS.text },
+  menuSep: { height: 1, backgroundColor: COLORS.borderLight, marginHorizontal: 8 },
 });
