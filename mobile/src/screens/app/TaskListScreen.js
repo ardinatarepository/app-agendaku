@@ -6,7 +6,7 @@ import { Dimensions, PanResponder } from 'react-native';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 // Batas atas sheet — semakin kecil, semakin tinggi sheet-nya
-const HEADER_HEIGHT = 80;
+const HEADER_HEIGHT = 60;
 const SHEET_MAX_HEIGHT = SCREEN_HEIGHT - HEADER_HEIGHT;
 import {
   View, Text, FlatList, SectionList, TouchableOpacity, TextInput,
@@ -536,15 +536,11 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
           </TouchableOpacity>
         </View>
 
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
-        >
           <ScrollView 
             contentContainerStyle={mStyle.body} 
             keyboardShouldPersistTaps="handled" 
             showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
           >
           <Input label="Nama Tugas *" placeholder="Masukan Nama Tugas" value={form.title} onChangeText={set('title')} />
           <View style={{ height: 12 }} />
