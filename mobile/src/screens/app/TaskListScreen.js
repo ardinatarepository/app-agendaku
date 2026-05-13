@@ -369,7 +369,6 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
               {mins.map((m, i) => renderItem(m, i, minScrollY, false))}
             </Animated.ScrollView>
           </View>
-
           <View style={dpStyle.footer}>
             <TouchableOpacity style={dpStyle.btn} onPress={onClose}>
               <Text style={[dpStyle.btnText, { color: COLORS.textMuted }]}>Batal</Text>
@@ -408,46 +407,26 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  // Animated value untuk slide bottom sheet
   const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
 
   useEffect(() => {
     if (visible) {
-      // Slide naik
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        bounciness: 4,
-      }).start();
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
     } else {
-      // Slide turun (reset posisi)
       translateY.setValue(SHEET_MAX_HEIGHT);
     }
   }, [visible]);
 
-  // PanResponder untuk swipe ke bawah
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, g) => g.dy > 5,
-      onPanResponderMove: (_, g) => {
-        if (g.dy > 0) translateY.setValue(g.dy);
-      },
+      onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
       onPanResponderRelease: (_, g) => {
         if (g.dy > 100 || g.vy > 0.5) {
-          // Swipe cukup jauh → tutup
-          Animated.timing(translateY, {
-            toValue: SHEET_MAX_HEIGHT,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(onClose);
+          Animated.timing(translateY, { toValue: SHEET_MAX_HEIGHT, duration: 250, useNativeDriver: true }).start(onClose);
         } else {
-          // Kembalikan ke atas
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: true,
-            bounciness: 4,
-          }).start();
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true, bounciness: 4 }).start();
         }
       },
     })
@@ -485,12 +464,8 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
   const handleSubmit = () => {
-    if (!form.title.trim()) {
-      setTitleError('Judul tugas tidak boleh kosong.');
-      return;
-    }
+    if (!form.title.trim()) { setTitleError('Judul tugas tidak boleh kosong.'); return; }
     setTitleError('');
-
     let finalDeadline = null;
     if (form.deadline) {
       const [y, m, d] = form.deadline.split('-').map(Number);
@@ -498,73 +473,27 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
       const dateObj = new Date(y, m - 1, d, hh, mm, 0);
       finalDeadline = dateObj.toISOString();
     }
-
-    onSubmit({
-      ...form,
-      categoryId: form.categoryId ? parseInt(form.categoryId) : null,
-      deadline: finalDeadline,
-      isRecurring: form.isRecurring,
-      recurrence: form.isRecurring ? form.recurrence : null
-    });
+    onSubmit({ ...form, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
   };
 
   const handleClose = () => {
-    Animated.timing(translateY, {
-      toValue: SHEET_MAX_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(onClose);
+    Animated.timing(translateY, { toValue: SHEET_MAX_HEIGHT, duration: 250, useNativeDriver: true }).start(onClose);
   };
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      {/* Backdrop */}
-      <TouchableOpacity
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
-        activeOpacity={1}
-        onPress={handleClose}
-      />
-
-      {/* Bottom Sheet */}
+      <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }} activeOpacity={1} onPress={handleClose} />
       <Animated.View style={[mStyle.sheet, { height: SHEET_MAX_HEIGHT - kbHeight, transform: [{ translateY }] }]}>
-
-        {/* Drag Handle */}
-        <View {...panResponder.panHandlers} style={mStyle.dragArea}>
-          <View style={mStyle.handle} />
-        </View>
-
-        {/* Header */}
+        <View {...panResponder.panHandlers} style={mStyle.dragArea}><View style={mStyle.handle} /></View>
         <View style={mStyle.header}>
-          <TouchableOpacity onPress={handleClose} hitSlop={12}>
-            <Text style={mStyle.cancel}>Batal</Text>
-          </TouchableOpacity>
+          <TouchableOpacity onPress={handleClose}><Text style={mStyle.cancel}>Batal</Text></TouchableOpacity>
           <Text style={mStyle.title}>{task ? 'Edit Tugas' : 'Tambah Tugas'}</Text>
-          <TouchableOpacity onPress={handleSubmit} disabled={isLoading} hitSlop={12}>
-            <Text style={[mStyle.save, isLoading && { opacity: 0.5 }]}>
-              {isLoading ? 'Simpan...' : 'Simpan'}
-            </Text>
-          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSubmit} disabled={isLoading}><Text style={[mStyle.save, isLoading && { opacity: 0.5 }]}>{isLoading ? 'Simpan...' : 'Simpan'}</Text></TouchableOpacity>
         </View>
 
-        <ScrollView
-          contentContainerStyle={mStyle.body}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          style={{ flex: 1 }}
-        >
-          <Input
-            label="Nama Tugas *"
-            placeholder="Masukan Nama Tugas"
-            value={form.title}
-            onChangeText={(v) => { set('title')(v); if (v.trim()) setTitleError(''); }}
-            style={titleError ? { borderColor: COLORS.danger, borderWidth: 1.5 } : {}}
-          />
-          {titleError ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -8, marginBottom: 12 }}>
-              <MaterialIcons name="error-outline" size={14} color={COLORS.danger} />
-              <Text style={{ fontSize: 12, color: COLORS.danger }}>{titleError}</Text>
-            </View>
-          ) : null}
+        <ScrollView contentContainerStyle={mStyle.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          <Input label="Nama Tugas *" placeholder="Masukan Nama Tugas" value={form.title} onChangeText={(v) => { set('title')(v); if (v.trim()) setTitleError(''); }} style={titleError ? { borderColor: COLORS.danger, borderWidth: 1.5 } : {}} />
+          {titleError && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: -8, marginBottom: 12 }}><MaterialIcons name="error-outline" size={14} color={COLORS.danger} /><Text style={{ fontSize: 12, color: COLORS.danger }}>{titleError}</Text></View>}
           <View style={{ height: 12 }} />
           <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
           <View style={{ height: 12 }} />
@@ -574,12 +503,7 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
             {STATUSES.map(s => {
               const cfg = STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
               const active = form.status === s;
-              return (
-                <TouchableOpacity key={s} onPress={() => set('status')(s)}
-                  style={[mStyle.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}>
-                  <Text style={[mStyle.chipText, active && { color: cfg.text }]}>{cfg.label}</Text>
-                </TouchableOpacity>
-              );
+              return (<TouchableOpacity key={s} onPress={() => set('status')(s)} style={[mStyle.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}><Text style={[mStyle.chipText, active && { color: cfg.text }]}>{cfg.label}</Text></TouchableOpacity>);
             })}
           </ScrollView>
 
@@ -588,153 +512,61 @@ function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories
 
           <Text style={mStyle.label}>Deadline & Waktu</Text>
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-            <TouchableOpacity
-              style={[mStyle.datePickerBtn, { flex: 1, marginBottom: 0 }]}
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textLight }]}>
-                {form.deadline ? form.deadline : 'Pilih Tanggal'}
-              </Text>
+            <TouchableOpacity style={[mStyle.datePickerBtn, { flex: 1, marginBottom: 0 }]} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
+              <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textLight }]}>{form.deadline || 'Pilih Tanggal'}</Text>
               <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[mStyle.datePickerBtn, { flex: 1, marginBottom: 0 }]}
-              onPress={() => setShowTimePicker(true)}
-              activeOpacity={0.7}
-              disabled={!form.deadline}
-            >
-              <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textDisabled }]}>
-                {form.time}
-              </Text>
+            <TouchableOpacity style={[mStyle.datePickerBtn, { flex: 1, marginBottom: 0 }]} onPress={() => setShowTimePicker(true)} activeOpacity={0.7} disabled={!form.deadline}>
+              <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textDisabled }]}>{form.time}</Text>
               <MaterialIcons name="access-time" size={20} color={form.deadline ? COLORS.primary : COLORS.textDisabled} />
             </TouchableOpacity>
           </View>
 
-          {showDatePicker && (
-            <CustomDatePicker
-              visible={showDatePicker}
-              value={form.deadline}
-              onClose={() => setShowDatePicker(false)}
-              onSelect={(date) => {
-                setForm(p => ({ ...p, deadline: date }));
-                setShowDatePicker(false);
-              }}
-            />
-          )}
-
-          {showTimePicker && (
-            <CustomTimePicker
-              visible={showTimePicker}
-              value={form.time}
-              onClose={() => setShowTimePicker(false)}
-              onSelect={(time) => {
-                setForm(p => ({ ...p, time }));
-                setShowTimePicker(false);
-              }}
-            />
-          )}
+          {showDatePicker && <CustomDatePicker visible={showDatePicker} value={form.deadline} onClose={() => setShowDatePicker(false)} onSelect={(date) => { setForm(p => ({ ...p, deadline: date })); setShowDatePicker(false); }} />}
+          {showTimePicker && <CustomTimePicker visible={showTimePicker} value={form.time} onClose={() => setShowTimePicker(false)} onSelect={(time) => { setForm(p => ({ ...p, time })); setShowTimePicker(false); }} />}
 
           <Text style={mStyle.label}>Ingatkan saya (Jam Sebelum Deadline)</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
             {['0', '1', '2', '5', '12', '24'].map(h => {
               const active = form.reminderHours === h;
-              return (
-                <TouchableOpacity key={h} onPress={() => set('reminderHours')(h)}
-                  style={[mStyle.chip, active && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}>
-                  <Text style={[mStyle.chipText, active && { color: COLORS.primary }]}>
-                    {h === '0' ? 'Tidak Ada' : `${h} Jam`}
-                  </Text>
-                </TouchableOpacity>
-              );
+              return (<TouchableOpacity key={h} onPress={() => set('reminderHours')(h)} style={[mStyle.chip, active && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}><Text style={[mStyle.chipText, active && { color: COLORS.primary }]}>{h === '0' ? 'Tidak Ada' : `${h} Jam`}</Text></TouchableOpacity>);
             })}
           </ScrollView>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={[mStyle.label, { marginBottom: 0 }]}>Tugas Berulang</Text>
-            <TouchableOpacity onPress={() => setForm(p => ({ ...p, isRecurring: !p.isRecurring }))}>
-              <MaterialIcons
-                name={form.isRecurring ? "toggle-on" : "toggle-off"}
-                size={40}
-                color={form.isRecurring ? COLORS.success : COLORS.textMuted}
-              />
-            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setForm(p => ({ ...p, isRecurring: !p.isRecurring }))}><MaterialIcons name={form.isRecurring ? "toggle-on" : "toggle-off"} size={40} color={form.isRecurring ? COLORS.success : COLORS.textMuted} /></TouchableOpacity>
           </View>
 
           {form.isRecurring && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-              {[
-                { id: 'HARIAN', label: 'Harian' },
-                { id: 'MINGGUAN', label: 'Mingguan' },
-                { id: 'BULANAN', label: 'Bulanan' },
-              ].map(r => {
+              {[{ id: 'HARIAN', label: 'Harian' }, { id: 'MINGGUAN', label: 'Mingguan' }, { id: 'BULANAN', label: 'Bulanan' }].map(r => {
                 const active = form.recurrence === r.id;
-                return (
-                  <TouchableOpacity key={r.id} onPress={() => set('recurrence')(r.id)}
-                    style={[mStyle.chip, active && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}>
-                    <Text style={[mStyle.chipText, active && { color: COLORS.primary }]}>{r.label}</Text>
-                  </TouchableOpacity>
-                );
+                return (<TouchableOpacity key={r.id} onPress={() => set('recurrence')(r.id)} style={[mStyle.chip, active && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}><Text style={[mStyle.chipText, active && { color: COLORS.primary }]}>{r.label}</Text></TouchableOpacity>);
               })}
             </ScrollView>
           )}
 
           <Text style={mStyle.label}>Daftar Sub-Tugas</Text>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-            <TextInput
-              style={[mStyle.input, { flex: 1, marginBottom: 0 }]}
-              placeholder="Contoh: Beli susu, Kerjakan bab 1..."
-              value={newSubTask}
-              onChangeText={setNewSubTask}
-            />
-            <TouchableOpacity
-              style={[mStyle.addBtn, { backgroundColor: COLORS.primary }]}
-              onPress={() => {
-                if (!newSubTask.trim()) return;
-                setForm(p => ({ ...p, subtasks: [...p.subtasks, { title: newSubTask.trim() }] }));
-                setNewSubTask('');
-              }}
-            >
-              <MaterialIcons name="add" size={24} color="#fff" />
-            </TouchableOpacity>
+            <TextInput style={[mStyle.input, { flex: 1, marginBottom: 0 }]} placeholder="Contoh: Beli susu..." value={newSubTask} onChangeText={setNewSubTask} />
+            <TouchableOpacity style={[mStyle.addBtn, { backgroundColor: COLORS.primary }]} onPress={() => { if (!newSubTask.trim()) return; setForm(p => ({ ...p, subtasks: [...p.subtasks, { title: newSubTask.trim() }] })); setNewSubTask(''); }}><MaterialIcons name="add" size={24} color="#fff" /></TouchableOpacity>
           </View>
 
           {form.subtasks.map((st, i) => (
             <View key={st.id || `new-${i}`} style={mStyle.subTaskItem}>
-              <TouchableOpacity onPress={() => {
-                setForm(p => ({
-                  ...p,
-                  subtasks: p.subtasks.map((s, idx) => idx === i ? { ...s, isDone: !s.isDone } : s)
-                }));
-              }}>
-                <MaterialIcons
-                  name={st.isDone ? "check-box" : "check-box-outline-blank"}
-                  size={22}
-                  color={st.isDone ? COLORS.success : COLORS.textMuted}
-                />
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setForm(p => ({ ...p, subtasks: p.subtasks.map((s, idx) => idx === i ? { ...s, isDone: !s.isDone } : s) }))}><MaterialIcons name={st.isDone ? "check-box" : "check-box-outline-blank"} size={22} color={st.isDone ? COLORS.success : COLORS.textMuted} /></TouchableOpacity>
               <Text style={[mStyle.subTaskText, st.isDone && { textDecorationLine: 'line-through', color: COLORS.textLight }]}>{st.title}</Text>
-              <TouchableOpacity onPress={() => {
-                setForm(p => ({ ...p, subtasks: p.subtasks.filter((_, idx) => idx !== i) }));
-              }}>
-                <MaterialIcons name="remove-circle-outline" size={20} color={COLORS.danger} />
-              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setForm(p => ({ ...p, subtasks: p.subtasks.filter((_, idx) => idx !== i) }))}><MaterialIcons name="remove-circle-outline" size={20} color={COLORS.danger} /></TouchableOpacity>
             </View>
           ))}
 
           <View style={{ height: 20 }} />
-
           <Text style={mStyle.label}>Kategori</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
             {[{ id: '', name: 'Tanpa Kategori', color: COLORS.textMuted }, ...categories].map(c => {
               const active = form.categoryId === String(c.id);
-              return (
-                <TouchableOpacity key={String(c.id)} onPress={() => set('categoryId')(String(c.id))}
-                  style={[mStyle.chip, active && { backgroundColor: c.color + '22', borderColor: c.color }]}>
-                  <Text style={[mStyle.chipText, active && { color: c.color }]}>{c.name}</Text>
-                </TouchableOpacity>
-              );
+              return (<TouchableOpacity key={String(c.id)} onPress={() => set('categoryId')(String(c.id))} style={[mStyle.chip, active && { backgroundColor: c.color + '22', borderColor: c.color }]}><Text style={[mStyle.chipText, active && { color: c.color }]}>{c.name}</Text></TouchableOpacity>);
             })}
           </ScrollView>
         </ScrollView>
