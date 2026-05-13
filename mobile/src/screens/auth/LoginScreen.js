@@ -15,8 +15,7 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger' });
   const [showPassword, setShowPassword] = useState(false);
-  const { login, lastAvatar } = useAuth();
-  const avatarUri = lastAvatar ? (lastAvatar.startsWith('http') ? lastAvatar : `${require('../../config').AVATAR_URL}${lastAvatar}`) : null;
+  const { login }             = useAuth();
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
@@ -51,24 +50,13 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Brand */}
         <View style={styles.brand}>
-          {avatarUri ? (
-            <View style={styles.avatarWrapper}>
-              <Image source={{ uri: avatarUri }} style={styles.lastAvatar} />
-              <View style={styles.avatarBadge}>
-                <MaterialIcons name="person" size={14} color="#fff" />
-              </View>
-            </View>
-          ) : (
-            <Image 
-              source={require('../../../assets/icon.png')} 
-              style={styles.logo} 
-              resizeMode="contain"
-            />
-          )}
+          <Image 
+            source={require('../../../assets/icon.png')} 
+            style={styles.logo} 
+            resizeMode="contain"
+          />
           <Text style={styles.appName}>AgendaKu</Text>
-          <Text style={styles.tagline}>
-            {lastAvatar ? 'Selamat datang kembali!' : 'Kelola tugas & jadwalmu dengan mudah'}
-          </Text>
+          <Text style={styles.tagline}>Kelola tugas & jadwalmu dengan mudah</Text>
         </View>
 
         {/* Card Form */}
@@ -124,38 +112,8 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 60 },
+  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24 },
   brand:     { alignItems: 'center', marginBottom: 32 },
-  avatarWrapper: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: COLORS.surface,
-    padding: 3,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    marginBottom: 14,
-    ...SHADOW.md,
-    position: 'relative',
-  },
-  lastAvatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 45,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: COLORS.primary,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
   logo:      { width: 80, height: 80, marginBottom: 14, ...SHADOW.md },
   appName:   { fontSize: 26, ...FONT.black, color: COLORS.text },
   tagline:   { fontSize: 14, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
