@@ -185,10 +185,24 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <NavigationContainer>
-              <StatusBar style="dark" backgroundColor={COLORS.bg} />
-              <RootNavigator />
-            </NavigationContainer>
+              <NavigationContainer>
+                <View style={Platform.OS === 'web' ? { 
+                  flex: 1, 
+                  backgroundColor: COLORS.bg, // Background full layar
+                  width: '100%',
+                } : { flex: 1 }}>
+                  <View style={Platform.OS === 'web' ? { 
+                    flex: 1, 
+                    maxWidth: 500, 
+                    width: '100%', 
+                    alignSelf: 'center', 
+                    backgroundColor: COLORS.bg,
+                  } : { flex: 1 }}>
+                    <StatusBar style="dark" backgroundColor={COLORS.bg} />
+                    <RootNavigator />
+                  </View>
+                </View>
+              </NavigationContainer>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

@@ -153,39 +153,60 @@ export default function DashboardScreen({ navigation }) {
         )}
       </View>
 
-      {/* Peringatan Tugas Terlewat */}
+      {/* Tugas Terlewat */}
       {tugasTerlewat.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: COLORS.danger }]}>⚠ Peringatan: Tugas Terlewat</Text>
-          {tugasTerlewat.map(task => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-              readonly={true} 
-              onPress={() => goToTasks({ status: 'TERLEWAT' })}
-            />
-          ))}
+          <Card style={{ padding: 12 }}>
+            <Text style={[styles.sectionTitle, { color: COLORS.danger, marginBottom: 8 }]}>Tugas Terlewat</Text>
+            <Divider style={{ marginBottom: 12, marginTop: 4 }} />
+            
+            {tugasTerlewat.slice(0, 3).map(task => (
+              <TouchableOpacity 
+                key={task.id} 
+                onPress={() => goToTasks({ status: 'TERLEWAT' })}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}
+              >
+                <View style={{ width: 4, height: 24, backgroundColor: COLORS.danger, borderRadius: 2 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, ...FONT.bold, color: COLORS.text }} numberOfLines={1}>{task.title}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <MaterialIcons name="event-busy" size={12} color={COLORS.danger} />
+                    <Text style={{ fontSize: 11, color: COLORS.danger, ...FONT.medium }}>
+                      {formatDateTime(task.deadline)}
+                    </Text>
+                  </View>
+                </View>
+                <MaterialIcons name="chevron-right" size={20} color={COLORS.textDisabled} />
+              </TouchableOpacity>
+            ))}
+
+            {tugasTerlewat.length > 3 && (
+              <TouchableOpacity onPress={() => goToTasks({ status: 'TERLEWAT' })} style={{ alignItems: 'center', marginTop: 8 }}>
+                <Text style={{ fontSize: 12, color: COLORS.textMuted, ...FONT.bold }}>Lihat {tugasTerlewat.length - 3} Tugas Lainnya</Text>
+              </TouchableOpacity>
+            )}
+          </Card>
         </View>
       )}
 
       {/* Mendekati Deadline */}
       <View style={styles.section}>
-        <Card style={{ padding: 16 }}>
+        <Card style={{ padding: 12 }}>
           <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Mendekati Deadline</Text>
-          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
+          <Divider style={{ marginBottom: 12, marginTop: 4 }} />
 
           {tugasDeadline.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-              <Ionicons name="happy" size={28} color={COLORS.success} style={{ marginBottom: 6 }} />
-              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
+            <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <Ionicons name="happy" size={24} color={COLORS.success} style={{ marginBottom: 4 }} />
+              <Text style={{ fontSize: 12, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
             </View>
           ) : (
-            <View style={{ gap: 12 }}>
+            <View style={{ gap: 8 }}>
               {tugasDeadline.map(task => {
                 const over = isOverdue(task.deadline);
                 return (
                   <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 4 }]}>
+                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 2 }]}>
                       <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
                       <View style={styles.deadlineInfo}>
                         <Text style={[styles.deadlineTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
@@ -205,35 +226,30 @@ export default function DashboardScreen({ navigation }) {
 
       {/* Tugas Hari Ini */}
       <View style={styles.section}>
-        <Card style={{ padding: 16 }}>
+        <Card style={{ padding: 12 }}>
           <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Tugas Hari Ini</Text>
-          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
+          <Divider style={{ marginBottom: 12, marginTop: 4 }} />
           
           {isLoading ? (
             <View>
               <TaskSkeleton />
-              <TaskSkeleton />
             </View>
           ) : tugasHariIni.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-              <Text style={{ fontSize: 13, ...FONT.semibold, color: COLORS.text }}>Tidak ada tugas hari ini</Text>
-              <Text style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' }}>Tambah tugas baru atau cek daftar lengkap</Text>
+            <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+              <Text style={{ fontSize: 12, ...FONT.semibold, color: COLORS.text }}>Tidak ada tugas hari ini</Text>
             </View>
           ) : (
-            <View style={{ gap: 12 }}>
-              {tugasHariIni.map(task => (
+            <View style={{ gap: 8 }}>
+              {tugasHariIni.slice(0, 5).map(task => (
                 <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                  <View style={[styles.taskRow, { paddingVertical: 4 }]}>
+                  <View style={[styles.taskRow, { paddingVertical: 2 }]}>
                     <View style={[styles.taskDot, {
                       backgroundColor: { SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
                     }]} />
                     <View style={styles.taskInfo}>
                       <Text style={[styles.taskTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
-                      <View style={[styles.taskMeta, { marginTop: 2 }]}>
-                        {task.category && <Text style={[styles.taskCat, { fontSize: 10, color: task.category.color }]}>{task.category.name}</Text>}
-                      </View>
                     </View>
-                    <View style={styles.taskBadge}><Text style={styles.taskBadgeText}>Hari ini</Text></View>
+                    <View style={[styles.taskBadge, { paddingHorizontal: 6, paddingVertical: 1 }]}><Text style={{ fontSize: 9, ...FONT.bold, color: '#dc2626' }}>Hari ini</Text></View>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -281,22 +297,22 @@ const styles = StyleSheet.create({
   avatar:          { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   headerTitle:     { fontSize: 20, ...FONT.bold, color: '#FFF' },
   avatarText:      { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
-  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 16, borderHeight: 100, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
-  statHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  statValue:       { fontSize: 28, ...FONT.bold },
-  statWave:        { marginTop: -4, marginRight: -4 },
-  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
-  statLabel:       { fontSize: 13, color: COLORS.textMuted, ...FONT.bold },
-  progressWrap:    { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: COLORS.borderLight },
-  progressBarBg:   { height: 10, borderRadius: 5, backgroundColor: COLORS.borderLight, overflow: 'hidden', marginBottom: 8 },
-  progressBarFill: { height: 10, backgroundColor: COLORS.success, borderRadius: 5 },
-  progressText:    { fontSize: 13, color: COLORS.textMuted, marginTop: 4, ...FONT.medium },
-  insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
-  insightText:     { fontSize: 13, color: COLORS.textMuted, flex: 1 },
-  section:         { marginTop: 24 },
-  sectionTitle:    { fontSize: 16, ...FONT.bold, color: COLORS.text },
-  divider:         { height: 1, backgroundColor: COLORS.border, marginBottom: 16 },
+  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 10, height: 80, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
+  statHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statValue:       { fontSize: 22, ...FONT.bold, color: COLORS.text },
+  statWave:        { marginTop: -2 },
+  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
+  statLabel:       { fontSize: 11, color: COLORS.textMuted, ...FONT.bold },
+  progressWrap:    { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: COLORS.borderLight },
+  progressBarBg:   { height: 8, borderRadius: 4, backgroundColor: COLORS.borderLight, overflow: 'hidden', marginBottom: 6 },
+  progressBarFill: { height: 8, backgroundColor: COLORS.success, borderRadius: 4 },
+  progressText:    { fontSize: 12, color: COLORS.textMuted, marginTop: 2, ...FONT.medium },
+  insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  insightText:     { fontSize: 12, color: COLORS.textMuted, flex: 1 },
+  section:         { marginTop: 16 },
+  sectionTitle:    { fontSize: 15, ...FONT.bold, color: COLORS.text },
+  divider:         { height: 1, backgroundColor: COLORS.border, marginBottom: 12 },
   alertBox:        { backgroundColor: COLORS.warningLight, borderWidth: 1, borderColor: '#FDE68A', borderRadius: RADIUS.lg, padding: 16 },
   alertTitle:      { fontSize: 14, ...FONT.bold, color: COLORS.warning, marginBottom: 12 },
   alertItem:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },

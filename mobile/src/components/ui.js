@@ -1,7 +1,7 @@
 // Komponen UI Reusable - Mobile
 
 import { useState, useEffect, useRef } from 'react';
-import { Text, TouchableOpacity, TextInput, View, ActivityIndicator, StyleSheet, Modal, Animated } from 'react-native';
+import { Text, TouchableOpacity, TextInput, View, ActivityIndicator, StyleSheet, Modal, Animated, Platform } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COLORS, RADIUS, SHADOW, FONT } from '../utils/theme';
 
@@ -67,6 +67,7 @@ export const Input = ({ label, error, multiline = false, style, containerStyle, 
           color: COLORS.text,
           textAlignVertical: multiline ? 'top' : 'center',
           paddingVertical: multiline ? 12 : 0,
+          ...(Platform.OS === 'web' && { outlineStyle: 'none' }),
         }}
         {...props}
       />
@@ -127,7 +128,7 @@ export const EmptyState = ({ iconName = 'inbox', emoji, title, subtitle, action 
 export const ConfirmModal = ({ visible, title, message, onConfirm, onCancel, confirmText = 'Hapus', cancelText = 'Batal', variant = 'danger', iconName, loading = false }) => (
   <Modal visible={visible} transparent animationType="fade">
     <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-       <View style={{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }}>
+       <View style={[{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }, Platform.OS === 'web' && { maxWidth: 400, alignSelf: 'center' }]}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: variant === 'danger' ? '#fee2e2' : COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
              <MaterialIcons name={iconName || (variant === 'danger' ? 'delete' : 'info')} size={32} color={variant === 'danger' ? COLORS.danger : COLORS.primary} />
           </View>
@@ -146,7 +147,7 @@ export const ConfirmModal = ({ visible, title, message, onConfirm, onCancel, con
 export const AlertModal = ({ visible, title, message, onClose, buttonText = 'OK', variant = 'danger', iconName }) => (
   <Modal visible={visible} transparent animationType="fade">
     <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-       <View style={{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }}>
+       <View style={[{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }, Platform.OS === 'web' && { maxWidth: 400, alignSelf: 'center' }]}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: variant === 'danger' ? '#fee2e2' : variant === 'success' ? '#d1fae5' : COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
              <MaterialIcons name={iconName || (variant === 'danger' ? 'error-outline' : variant === 'success' ? 'check-circle-outline' : 'info')} size={32} color={variant === 'danger' ? COLORS.danger : variant === 'success' ? '#10b981' : COLORS.primary} />
           </View>

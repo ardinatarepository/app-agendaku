@@ -23,6 +23,7 @@ try {
 import { Alert, Platform } from 'react-native';
 
 export const requestNotificationPermission = async () => {
+  if (Platform.OS === 'web') return true;
   try {
     const { status: existing } = await Notifications.getPermissionsAsync();
     if (existing === 'granted') return true;
@@ -44,6 +45,7 @@ export const requestNotificationPermission = async () => {
 };
 
 export const scheduleTaskNotification = async (task) => {
+  if (Platform.OS === 'web') return;
   if (!task.deadline || task.status === 'SELESAI') return;
 
   try {
@@ -94,6 +96,7 @@ export const scheduleTaskNotification = async (task) => {
 };
 
 export const cancelTaskNotification = async (taskId) => {
+  if (Platform.OS === 'web') return;
   const id = String(taskId);
   const keys = [`task-${id}-confirm`, `task-${id}-notif`, `task-${id}-hn`, `task-${id}-h0`, `task-${id}-rem`, `task-${id}-d1`];
   for (const key of keys) {
@@ -104,6 +107,7 @@ export const cancelTaskNotification = async (taskId) => {
 };
 
 export const sendTestNotification = async () => {
+  if (Platform.OS === 'web') return false;
   try {
     const granted = await requestNotificationPermission();
     if (!granted) return false;
@@ -126,6 +130,7 @@ export const sendTestNotification = async () => {
 };
 
 export const rescheduleAllNotifications = async (tasks) => {
+  if (Platform.OS === 'web') return;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
     const granted = await requestNotificationPermission();

@@ -5,7 +5,6 @@
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "softwareKeyboardLayoutMode": "pan",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -26,6 +25,9 @@
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "web": {
+      "bundler": "metro"
+    }
   }
 }
