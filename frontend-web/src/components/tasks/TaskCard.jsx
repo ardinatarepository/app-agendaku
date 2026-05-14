@@ -29,12 +29,12 @@ export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onTog
   const nextLabel   = task.status === 'SELESAI' ? 'Batal' : 'Selesai';
 
   return (
-    <div className={`bg-white border border-[#e2e8f0] rounded-[16px] p-4 flex flex-col h-full shadow-sm hover:shadow-md transition-all duration-300 ${done ? 'opacity-60' : ''}`}>
+    <div className={`bg-white border border-[#e2e8f0] rounded-[16px] p-4 flex flex-col h-full shadow-sm hover:shadow-md transition-all duration-300 ${done ? 'opacity-60' : ''} ${overdue ? 'border-l-4 border-l-red-500' : ''}`}>
 
       {/* Header */}
       <div className="flex items-start gap-3 mb-2.5">
         <div className="flex-1 min-w-0">
-          <h3 className={`font-normal text-[#1e293b] text-sm leading-snug ${done ? 'line-through text-slate-400 font-normal' : ''}`}>
+          <h3 className={`font-bold text-[#1e293b] text-sm leading-snug ${done ? 'line-through text-slate-400 font-normal' : ''}`}>
             {task.title}
           </h3>
           {task.description && (

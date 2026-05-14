@@ -15,7 +15,7 @@ import {
   MdCheck
 } from 'react-icons/md';
 
-const STATUS_OPTS   = [{ v: '', l: 'Semua' }, { v: 'SEDANG_DIKERJAKAN', l: 'Sedang Berjalan' }, { v: 'SELESAI', l: 'Selesai' }, { v: 'TERLEWAT', l: 'Terlewat' }];
+const STATUS_OPTS   = [{ v: '', l: 'Semua' }, { v: 'SEDANG_DIKERJAKAN', l: 'Sedang Dikerjakan' }, { v: 'SELESAI', l: 'Selesai' }, { v: 'TERLEWAT', l: 'Terlewat' }];
 const PRIORITY_OPTS = [{ v: '', l: 'Semua' }, { v: 'TINGGI', l: 'Tinggi' }, { v: 'NORMAL', l: 'Normal' }, { v: 'RENDAH', l: 'Rendah' }];
 
 export default function TasksPage() {

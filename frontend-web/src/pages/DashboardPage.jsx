@@ -76,7 +76,7 @@ export default function DashboardPage() {
       <div className="bg-[#15152b] text-white px-8 py-12 sm:px-12 lg:px-16 border-b border-white/5 relative overflow-hidden">
         <div className="max-w-[1600px] mx-auto relative z-10">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Halo, {user?.name}</h1>
-          <p className="text-white/40 text-base font-medium">Selamat datang kembali di AgendaKu. Mari selesaikan tugasmu hari ini.</p>
+          <p className="text-white/40 text-base font-medium">Selamat datang kembali di AgendaKu. Mari selesaikan tugasmu.</p>
         </div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[120px] -mr-32 -mt-32" />
       </div>
@@ -148,11 +148,11 @@ export default function DashboardPage() {
         {/* Task Sections — Robust Full-Width Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
-          {/* Agenda Hari Ini */}
+          {/* Tugas Hari Ini */}
           <section className="bg-white rounded-[2.5rem] p-8 shadow-premium border border-slate-100">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-800 flex items-center gap-4">
-                <div className="w-1.5 h-6 bg-[#15152b] rounded-full" /> Agenda Hari Ini
+                <div className="w-1.5 h-6 bg-[#15152b] rounded-full" /> Tugas Hari Ini
               </h2>
               <button onClick={() => navigate('/tasks')} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">
                 Lihat Semua
@@ -163,7 +163,7 @@ export default function DashboardPage() {
             {tugasHariIni.length === 0 ? (
               <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] py-28 text-center shadow-sm">
                 <MdAssignment size={64} className="text-slate-100 mx-auto mb-6" />
-                <p className="text-lg font-medium text-slate-300 uppercase tracking-widest">Tidak ada agenda hari ini</p>
+                <p className="text-lg font-medium text-slate-300 uppercase tracking-widest">Tidak ada tugas hari ini</p>
               </div>
             ) : (
               <div className="space-y-6">
