@@ -168,7 +168,7 @@ export default function ChangePasswordScreen({ navigation }) {
               disabled={changePasswordMutation.isPending}
             >
               {changePasswordMutation.isPending ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color="#000" />
               ) : (
                 <Text style={s.saveBtnText}>Simpan Password Baru</Text>
               )}
@@ -263,7 +263,7 @@ const s = StyleSheet.create({
     marginTop: 10,
     ...SHADOW.md,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, ...FONT.bold },
+  saveBtnText: { color: '#000000', fontSize: 16, ...FONT.bold },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',

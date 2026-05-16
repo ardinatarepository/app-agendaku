@@ -459,5 +459,5 @@ const s = StyleSheet.create({
     marginTop: 10,
     ...SHADOW.md,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, ...FONT.bold },
+  saveBtnText: { color: '#000000', fontSize: 16, ...FONT.bold },
 });

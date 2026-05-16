@@ -44,7 +44,8 @@ function CustomDatePicker({ visible, value, onSelect, onClose }) {
   const month = curr.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
@@ -94,31 +95,94 @@ function CustomDatePicker({ visible, value, onSelect, onClose }) {
 function CustomTimePicker({ visible, value, onSelect, onClose }) {
   const [tempTime, setTempTime] = useState(value || '12:00');
   const [hh, mm] = tempTime.split(':');
+  
+  const ITEM_HEIGHT = 44;
+  const VISIBLE_ITEMS = 3;
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const mins = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+  const handleScroll = (type, event) => {
+    const y = event.nativeEvent.contentOffset.y;
+    const index = Math.round(y / ITEM_HEIGHT);
+    if (type === 'h') {
+      const val = hours[index] || '00';
+      setTempTime(`${val}:${mm}`);
+    } else {
+      const val = mins[index] || '00';
+      setTempTime(`${hh}:${val}`);
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       <View style={dpStyle.overlay}>
-        <View style={[dpStyle.card, { padding: 20 }]}>
-          <Text style={[dpStyle.monthTitle, { textAlign: 'center', marginBottom: 20 }]}>Pilih Waktu</Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 15 }}>
-            <ScrollView style={{ height: 150 }} showsVerticalScrollIndicator={false}>
-              {hours.map(h => (
-                <TouchableOpacity key={h} onPress={() => setTempTime(`${h}:${mm}`)} style={{ padding: 10, backgroundColor: h === hh ? COLORS.primaryLight : 'transparent', borderRadius: 8 }}>
-                  <Text style={{ fontSize: 18, ...FONT.bold, color: h === hh ? COLORS.primary : COLORS.textMuted }}>{h}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <Text style={{ fontSize: 24, ...FONT.bold }}>:</Text>
-            <ScrollView style={{ height: 150 }} showsVerticalScrollIndicator={false}>
-              {mins.map(m => (
-                <TouchableOpacity key={m} onPress={() => setTempTime(`${hh}:${m}`)} style={{ padding: 10, backgroundColor: m === mm ? COLORS.primaryLight : 'transparent', borderRadius: 8 }}>
-                  <Text style={{ fontSize: 18, ...FONT.bold, color: m === mm ? COLORS.primary : COLORS.textMuted }}>{m}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+        <View style={[dpStyle.card, { padding: 24, width: '90%', maxWidth: 320 }]}>
+          <Text style={[dpStyle.monthTitle, { textAlign: 'center', marginBottom: 24 }]}>Pilih Waktu</Text>
+          
+          <View style={{ height: ITEM_HEIGHT * VISIBLE_ITEMS, justifyContent: 'center' }}>
+            {/* Fixed Background Indicator */}
+            <View style={{ 
+              position: 'absolute', 
+              top: ITEM_HEIGHT, 
+              left: 0, 
+              right: 0, 
+              height: ITEM_HEIGHT, 
+              backgroundColor: COLORS.primary, 
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: 'rgba(0, 0, 0, 0.1)'
+            }} />
+
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* Jam */}
+              <View style={{ flex: 1, height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
+                <ScrollView 
+                  showsVerticalScrollIndicator={false}
+                  snapToInterval={ITEM_HEIGHT}
+                  decelerationRate="fast"
+                  onMomentumScrollEnd={(e) => handleScroll('h', e)}
+                  contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+                >
+                  {hours.map(h => (
+                    <View key={h} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ 
+                        fontSize: h === hh ? 24 : 18, 
+                        ...FONT.bold, 
+                        color: h === hh ? '#000000' : COLORS.textMuted,
+                        opacity: h === hh ? 1 : 0.4
+                      }}>{h}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <Text style={{ fontSize: 24, ...FONT.bold, marginHorizontal: 15, color: '#000000' }}>:</Text>
+
+              {/* Menit */}
+              <View style={{ flex: 1, height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
+                <ScrollView 
+                  showsVerticalScrollIndicator={false}
+                  snapToInterval={ITEM_HEIGHT}
+                  decelerationRate="fast"
+                  onMomentumScrollEnd={(e) => handleScroll('m', e)}
+                  contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+                >
+                  {mins.map(m => (
+                    <View key={m} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ 
+                        fontSize: m === mm ? 24 : 18, 
+                        ...FONT.bold, 
+                        color: m === mm ? '#000000' : COLORS.textMuted,
+                        opacity: m === mm ? 1 : 0.4
+                      }}>{m}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            </View>
           </View>
-          <View style={dpStyle.footer}>
+
+          <View style={[dpStyle.footer, { marginTop: 24 }]}>
             <TouchableOpacity style={dpStyle.btn} onPress={onClose}><Text style={dpStyle.btnText}>Batal</Text></TouchableOpacity>
             <TouchableOpacity style={dpStyle.btn} onPress={() => onSelect(tempTime)}><Text style={dpStyle.btnText}>Pilih</Text></TouchableOpacity>
           </View>
@@ -311,9 +375,19 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                   <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textLight }]}>{form.deadline || 'Pilih Tanggal'}</Text>
                   <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={[mStyle.datePickerBtn, { flex: 1 }]} onPress={() => setShowTimePicker(true)} disabled={!form.deadline}>
-                  <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textDisabled }]}>{form.time}</Text>
-                  <MaterialIcons name="access-time" size={20} color={form.deadline ? COLORS.primary : COLORS.textDisabled} />
+                <TouchableOpacity 
+                  style={[mStyle.datePickerBtn, { flex: 1 }]} 
+                  onPress={() => {
+                    if (!form.deadline) {
+                      const n = new Date();
+                      const dStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+                      setForm(p => ({ ...p, deadline: dStr }));
+                    }
+                    setShowTimePicker(true);
+                  }}
+                >
+                  <Text style={mStyle.datePickerText}>{form.time}</Text>
+                  <MaterialIcons name="access-time" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
               </View>
 
@@ -322,8 +396,8 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                 {['0', '1', '2', '5', '12', '24'].map(h => {
                   const active = form.reminderHours === h;
                   return (
-                    <TouchableOpacity key={h} onPress={() => set('reminderHours')(h)} style={[mStyle.chip, active && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}>
-                      <Text style={[mStyle.chipText, active && { color: COLORS.primary }]}>{h === '0' ? 'Tidak Ada' : `${h} Jam`}</Text>
+                    <TouchableOpacity key={h} onPress={() => set('reminderHours')(h)} style={[mStyle.chip, active && { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+                      <Text style={[mStyle.chipText, active && { color: '#b45309', ...FONT.bold }]}>{h === '0' ? 'Tidak Ada' : `${h} Jam`}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -412,11 +486,11 @@ const dpStyle = StyleSheet.create({
   cell: { width: '14.28%', height: 44, alignItems: 'center', justifyContent: 'center' },
   circle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   circleSelected: { backgroundColor: COLORS.primary, borderRadius: 17 },
-  circleToday: { backgroundColor: COLORS.primaryLight, borderRadius: 17 },
+  circleToday: { backgroundColor: COLORS.primary, borderRadius: 17 },
   dayNum: { fontSize: 14, color: COLORS.text, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
   dayNumSelected: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
   dayNumToday: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
   btn: { paddingHorizontal: 12, paddingVertical: 8 },
-  btnText: { fontSize: 14, ...FONT.semibold, color: COLORS.primary },
+  btnText: { fontSize: 14, ...FONT.semibold, color: '#000000' },
 });

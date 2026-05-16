@@ -32,8 +32,8 @@ function getFirstDayOfMonth(year, month) {
 function MiniCalendar({ year, month, selectedDate, onSelectDate, taskDates }) {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
@@ -124,10 +124,10 @@ function TaskMiniCard({ task, onPress }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function CalendarScreen({ navigation }) {
   const insets = useSafeAreaInsets();
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
   const { data: allTasks = [], isLoading, refetch, isRefetching } = useQuery({
@@ -162,9 +162,10 @@ export default function CalendarScreen({ navigation }) {
     else setMonth(m => m + 1);
   };
   const goToday = () => {
-    setYear(today.getFullYear());
-    setMonth(today.getMonth());
-    setSelectedDate(todayStr);
+    const n = new Date();
+    setYear(n.getFullYear());
+    setMonth(n.getMonth());
+    setSelectedDate(`${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`);
   };
 
   const selectedLabel = (() => {
@@ -337,9 +338,9 @@ const styles = StyleSheet.create({
   skeleton: { height: 72, backgroundColor: COLORS.borderLight, borderRadius: RADIUS.lg, marginBottom: 10 },
   emptyCard: { padding: 8 },
   addBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  addBtnText: { color: '#fff', fontSize: 13, ...FONT.semibold, textAlign: 'center' },
-  addMoreBtn: { marginTop: 12, padding: 14, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: COLORS.primary, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  addMoreText: { fontSize: 13, color: COLORS.primary, ...FONT.semibold, textAlign: 'center' },
+  addBtnText: { color: '#000000', fontSize: 13, ...FONT.semibold, textAlign: 'center' },
+  addMoreBtn: { marginTop: 12, padding: 14, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: '#CBD5E1', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  addMoreText: { fontSize: 13, color: '#64748B', ...FONT.semibold, textAlign: 'center' },
 });
 
 const cal = StyleSheet.create({

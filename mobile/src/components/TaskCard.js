@@ -127,7 +127,7 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
         {/* TOP ROW: Date & More Menu */}
         <View style={styles.topRow}>
           <View style={styles.dateWrap}>
-            <Ionicons name="calendar-outline" size={14} color={overdue ? '#EF4444' : '#808080'} />
+            <Ionicons name="calendar-outline" size={14} color={overdue ? '#EF4444' : '#555555'} />
             <Text style={[styles.dateText, overdue && { color: '#EF4444' }]}>
               {formatDateTime(task.deadline) || 'Tanpa Deadline'}
             </Text>
@@ -173,52 +173,62 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
           </Modal>
         </View>
 
-        {/* MIDDLE ROW: Title Only */}
-        <View style={styles.mainRow}>
-          <View style={styles.titleContainer}>
-            <Text 
-              style={[
-                styles.titleText, 
-                (isFinished || isOverdueTask) && styles.titleDone
-              ]} 
-              numberOfLines={2}
-            >
-              {task.title}
-            </Text>
-          </View>
-        </View>
-
-        {/* BADGES ROW - Tighter Margin */}
+        {/* AREA KLIK UTAMA (Judul & Progres) */}
         <TouchableOpacity 
-          style={[styles.badgeContainer, { marginBottom: 12 }]}
           onPress={toggleExpand}
           activeOpacity={0.7}
+          style={{ paddingBottom: 4 }}
         >
-          <View style={[styles.badgeStatus, isFinished && { backgroundColor: '#DCFCE7' }]}>
-            <Text style={[styles.badgeStatusText, isFinished && { color: '#14532D' }]}>
-              {statusConfig.label.toUpperCase()}
-            </Text>
+          {/* MIDDLE ROW: Title */}
+          <View style={styles.mainRow}>
+            <View style={styles.titleContainer}>
+              <Text 
+                style={[
+                  styles.titleText, 
+                  (isFinished || isOverdueTask) && styles.titleDone
+                ]} 
+                numberOfLines={2}
+              >
+                {task.title}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.badgePriority}>
-            <Text style={styles.badgePriorityText}>{priorityConfig.symbol}</Text>
+          {/* BADGES & PROGRESS ROW */}
+          <View style={[styles.badgeContainer, { marginBottom: 8 }]}>
+            <View style={[styles.badgeStatus, isFinished && { backgroundColor: '#DCFCE7' }]}>
+              <Text style={[styles.badgeStatusText, isFinished && { color: '#14532D' }]}>
+                {statusConfig.label.toUpperCase()}
+              </Text>
+            </View>
+
+            <View style={styles.badgePriority}>
+              <Text style={styles.badgePriorityText}>{priorityConfig.symbol}</Text>
+            </View>
+            {task.category && (
+              <View style={styles.badgeCategory}>
+                <Text style={styles.badgeCategoryText}>{task.category.name.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+
+            {/* Progress & Chevron (Sejajar Horizontal & Tegas) */}
+            <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {totalSub > 0 && (
+                <>
+                  <View style={styles.progressDot} />
+                  <Text style={styles.progressText}>{doneSub}/{totalSub}</Text>
+                </>
+              )}
+              
+              {(totalSub > 0 || task.description) && (
+                <MaterialCommunityIcons 
+                  name={expanded ? "chevron-up" : "chevron-down"} 
+                  size={24} 
+                  color="#334155" 
+                />
+              )}
+            </View>
           </View>
-          {task.category && (
-            <View style={styles.badgeCategory}>
-              <Text style={styles.badgeCategoryText}>{task.category.name.charAt(0).toUpperCase()}</Text>
-            </View>
-          )}
-          {totalSub > 0 && (
-            <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={styles.progressDot} />
-              <Text style={styles.progressText}>{doneSub}/{totalSub}</Text>
-              <MaterialCommunityIcons 
-                name={expanded ? "chevron-up" : "chevron-down"} 
-                size={24} 
-                color="#334155" 
-              />
-            </View>
-          )}
         </TouchableOpacity>
 
         {/* EXPANDED CONTENT: Description & Subtasks */}
@@ -321,7 +331,7 @@ const styles = StyleSheet.create({
   cardFinished: { opacity: 0.6 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
   dateWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateText: { fontSize: 10, color: '#808080', ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' }, // Slightly smaller
+  dateText: { fontSize: 10, color: '#555555', ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' }, // Slightly smaller
   moreBtn: { padding: 2 },
   mainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
   checkbox: { marginRight: 12 },
