@@ -1,36 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, FONT, RADIUS, SHADOW } from '../utils/theme';
+import { View, Text, Image, StyleSheet } from 'react-native';
+import { FONT, SHADOW } from '../utils/theme';
 
-const Logo = ({ size = 'md', showText = true, className = '' }) => {
+const Logo = ({ size = 'md', showText = true }) => {
   const isSm = size === 'sm';
   const isLg = size === 'lg';
 
   const boxSize = isSm ? 32 : isLg ? 64 : 44;
-  const innerSize = isSm ? 18 : isLg ? 36 : 24;
   const fontSize = isSm ? 16 : isLg ? 32 : 24;
+  const radius = Math.round(boxSize * 0.06);
 
   return (
     <View style={styles.container}>
-      {/* Official Box Icon */}
-      <View style={[
-        styles.box, 
-        { width: boxSize, height: boxSize, borderRadius: isSm ? 8 : 12 }
-      ]}>
-        <View style={[
-          styles.innerBox, 
-          { width: innerSize, height: innerSize, borderRadius: isSm ? 4 : 6 }
-        ]} />
-      </View>
-
-      {showText && (
-        <Text style={[
-          styles.text, 
-          { fontSize: fontSize, marginLeft: isSm ? 8 : 12 }
-        ]}>
-          AgendaKu
-        </Text>
-      )}
+      <Image 
+        source={require('../../assets/logo.png')} 
+        style={[
+          styles.logoImage, 
+          { width: boxSize, height: boxSize }
+        ]}
+        resizeMode="contain"
+      />
     </View>
   );
 };
@@ -40,16 +29,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  box: {
-    backgroundColor: '#1E1E1E',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOW.sm,
-  },
-  innerBox: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    backgroundColor: 'transparent',
+  logoImage: {
+    // Menghapus shadow karena logo sudah punya shadow bawaan di gambarnya
   },
   text: {
     ...FONT.black,

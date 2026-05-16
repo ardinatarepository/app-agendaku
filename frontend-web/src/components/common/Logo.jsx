@@ -17,13 +17,6 @@ export default function Logo({ className = '', size = 'md', showText = true, sta
         alt="AgendaKu Logo" 
         className={`${s.img} object-contain shrink-0`} 
       />
-      
-      {/* Text */}
-      {showText && (
-        <span className={`${s.text} font-black text-[#1E1E1E] tracking-tight`}>
-          AgendaKu
-        </span>
-      )}
     </div>
   );
 }

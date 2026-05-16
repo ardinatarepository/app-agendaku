@@ -1,6 +1,6 @@
 // Design tokens AgendaKu Mobile - LIGHT MODE REFINED
 export const COLORS = {
-  primary:      '#FFD700', // Gold Accent tetap dipertahankan
+  primary:      '#FFD700', // Gold Accent dikembalikan sesuai permintaan
   primaryLight: 'rgba(255, 215, 0, 0.1)',
   primaryDark:  '#B8860B',
   success:      '#10B981',

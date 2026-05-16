@@ -4,7 +4,7 @@ setupURLPolyfill();
 // Perbaikan: main entry point benar, ikon dari @expo/vector-icons
 
 import { useEffect, useCallback, useState, useRef } from 'react';
-import { Platform, Text, View, LogBox, Animated, TouchableOpacity, StyleSheet, Easing, Dimensions } from 'react-native';
+import { Platform, Text, View, Image, LogBox, Animated, TouchableOpacity, StyleSheet, Easing, Dimensions } from 'react-native';
 
 // Supress pesan error/warning expo-notifications di Expo Go
 // Ini HARUS dipanggil sebelum modul expo-notifications dimuat
@@ -56,6 +56,7 @@ import { ThemeProvider }                 from './src/context/ThemeContext';
 import { requestNotificationPermission } from './src/utils/notifications';
 import { COLORS, FONT, SHADOW }            from './src/utils/theme';
 import { PremiumLoader }                 from './src/components/ui';
+import Logo                              from './src/components/Logo';
 
 import LoginScreen     from './src/screens/auth/LoginScreen';
 import RegisterScreen  from './src/screens/auth/RegisterScreen';
@@ -228,9 +229,13 @@ function RootNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.bg }}>
-        <Text style={{ fontSize: 32, ...FONT.black, color: COLORS.primary, letterSpacing: -1 }}>AgendaKu</Text>
-        <PremiumLoader size={36} color={COLORS.primary} style={{ marginTop: 24 }} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+        <Image 
+          source={require('./assets/logo.png')} 
+          style={{ width: 120, height: 120 }} 
+          resizeMode="contain" 
+        />
+        <PremiumLoader size={36} color={COLORS.primary} style={{ marginTop: 40 }} />
       </View>
     );
   }

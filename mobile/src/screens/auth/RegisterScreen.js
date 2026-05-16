@@ -67,8 +67,10 @@ export default function RegisterScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
           <Logo size="lg" showText={false} />
-          <Text style={styles.appName}>Buat Akun</Text>
-          <Text style={styles.tagline}>Gratis selamanya, tidak perlu kartu kredit</Text>
+          <View style={{ marginTop: 16 }}>
+            <Text style={styles.appName}>Buat Akun</Text>
+            <Text style={styles.tagline}>Gratis selamanya, tidak perlu kartu kredit</Text>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -123,11 +125,15 @@ const styles = StyleSheet.create({
   scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 100 },
   brand:     { alignItems: 'center', marginBottom: 28 },
   logo:      { width: 72, height: 72, marginBottom: 12, ...SHADOW.md },
-  appName:   { fontSize: 24, ...FONT.black, color: COLORS.text },
-  tagline:   { fontSize: 13, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
+  appName:   { fontSize: 24, ...FONT.black, color: COLORS.text, textAlign: 'center' },
+  tagline:   { fontSize: 13, color: COLORS.textMuted, marginTop: 0, textAlign: 'center' },
   card:      { backgroundColor: COLORS.surface, borderRadius: RADIUS.xl, padding: 24, borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.md },
   fields:    { gap: 14, marginBottom: 20 },
   footer:    { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText:{ fontSize: 14, color: COLORS.textMuted },
-  link:      { fontSize: 14, color: COLORS.primary, ...FONT.semibold },
+  link:      { 
+    fontSize: 14, 
+    color: '#000000', 
+    ...FONT.semibold 
+  },
 });

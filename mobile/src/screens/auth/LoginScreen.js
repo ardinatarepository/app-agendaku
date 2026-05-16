@@ -51,8 +51,11 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Brand */}
         <View style={styles.brand}>
-          <Logo size="lg" />
-          <Text style={styles.tagline}>Kelola tugas & jadwalmu dengan mudah</Text>
+          <Logo size="lg" showText={false} />
+          <View style={{ marginTop: 16 }}>
+            <Text style={styles.appName}>Masuk</Text>
+            <Text style={styles.tagline}>Kelola tugas & jadwalmu dengan mudah</Text>
+          </View>
         </View>
 
         {/* Card Form */}
@@ -108,11 +111,11 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  scroll:    { flexGrow: 1, justifyContent: 'center', padding: 24, paddingTop: 40 },
-  brand:     { alignItems: 'center', marginBottom: 32 },
-  logo:      { width: 80, height: 80, marginBottom: 14, ...SHADOW.md },
-  appName:   { fontSize: 26, ...FONT.black, color: COLORS.text },
-  tagline:   { fontSize: 14, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
+  scroll:    { flexGrow: 1, justifyContent: 'flex-start', padding: 24, paddingTop: 100 },
+  brand:     { alignItems: 'center', marginBottom: 28 },
+  logo:      { width: 72, height: 72, marginBottom: 12, ...SHADOW.md },
+  appName:   { fontSize: 24, ...FONT.black, color: COLORS.text, textAlign: 'center' },
+  tagline:   { fontSize: 13, color: COLORS.textMuted, marginTop: 0, textAlign: 'center' },
   card:      {
     backgroundColor: COLORS.surface, borderRadius: RADIUS.xl,
     padding: 24, borderWidth: 1, borderColor: COLORS.borderLight,
@@ -123,5 +126,9 @@ const styles = StyleSheet.create({
   btn:       { marginTop: 4 },
   footer:    { flexDirection: 'row', justifyContent: 'center', marginTop: 20 },
   footerText:{ fontSize: 14, color: COLORS.textMuted },
-  link:      { fontSize: 14, color: COLORS.primary, ...FONT.semibold },
+  link:      { 
+    fontSize: 14, 
+    color: '#000000', 
+    ...FONT.semibold 
+  },
 });
