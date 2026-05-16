@@ -4,6 +4,9 @@ import {
   format, formatDistanceToNow, isPast, isWithinInterval, 
   addDays, isToday, isTomorrow, isAfter, startOfDay 
 } from 'date-fns';
+
+// Ekspor utilitas dasar agar konsisten di seluruh aplikasi
+export { isToday, isTomorrow, isAfter };
 import { id as localeId } from 'date-fns/locale';
 
 // ... (formatDate, formatDateTime, formatRelative, isOverdue, isNearDeadline, getDeadlineColor remain the same)

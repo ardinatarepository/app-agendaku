@@ -1,38 +1,115 @@
-import { useState, useMemo } from 'react';
-import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useCategories, useToggleSubtask, useCreateSubtask } from '../hooks';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { 
+  useTasks, 
+  useCreateTask, 
+  useUpdateTask, 
+  useDeleteTask, 
+  useCategories, 
+  useToggleSubtask, 
+  useCreateSubtask 
+} from '../hooks';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskForm from '../components/tasks/TaskForm';
 import { 
-  MdAdd, 
-  MdSearch, 
-  MdFilterList, 
-  MdSchedule,
-  MdEvent,
-  MdPriorityHigh,
-  MdSortByAlpha,
-  MdHistory,
-  MdError,
-  MdCheck
-} from 'react-icons/md';
+  IoSearchOutline, 
+  IoOptionsOutline, 
+  IoAdd,
+  IoCalendarOutline,
+  IoCheckmarkCircleOutline,
+  IoTimeOutline,
+  IoListOutline,
+  IoSunnyOutline,
+  IoCalendarClearOutline,
+  IoDocumentTextOutline,
+  IoFileTrayOutline
+} from 'react-icons/io5';
 
-const STATUS_OPTS   = [{ v: '', l: 'Semua' }, { v: 'SEDANG_DIKERJAKAN', l: 'Sedang Dikerjakan' }, { v: 'SELESAI', l: 'Selesai' }, { v: 'TERLEWAT', l: 'Terlewat' }];
-const PRIORITY_OPTS = [{ v: '', l: 'Semua' }, { v: 'TINGGI', l: 'Tinggi' }, { v: 'NORMAL', l: 'Normal' }, { v: 'RENDAH', l: 'Rendah' }];
+const STATUS_OPTS = [
+  { v: '', l: 'Semua', activeBg: '#FACC15', activeText: '#000000', activeBorder: '#FACC15' }, 
+  { v: 'SEDANG_DIKERJAKAN', l: 'Berjalan', activeBg: '#E0F2FE', activeText: '#0284C7', activeBorder: '#0284C7' }, 
+  { v: 'SELESAI', l: 'Selesai', activeBg: '#ECFDF5', activeText: '#10B981', activeBorder: '#10B981' }, 
+  { v: 'TERLEWAT', l: 'Terlewat', activeBg: '#FEE2E2', activeText: '#EF4444', activeBorder: '#EF4444' }
+];
+
+const TaskSkeleton = () => (
+  <div className="bg-white rounded-[20px] p-4 border border-slate-100 shadow-sm animate-pulse space-y-4 h-44">
+    <div className="flex justify-between">
+      <div className="w-24 h-3 bg-slate-100 rounded" />
+      <div className="w-4 h-4 bg-slate-100 rounded-full" />
+    </div>
+    <div className="w-3/4 h-5 bg-slate-100 rounded" />
+    <div className="flex gap-2">
+      <div className="w-16 h-4 bg-slate-100 rounded" />
+      <div className="w-6 h-6 bg-slate-100 rounded-full" />
+    </div>
+    <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between">
+      <div className="w-20 h-3 bg-slate-100 rounded" />
+      <div className="w-16 h-6 bg-slate-100 rounded-lg" />
+    </div>
+  </div>
+);
 
 export default function TasksPage() {
-  const [filters, setFilters]   = useState({ status: '', priority: '', categoryId: '', search: '' });
-  const [sortBy, setSortBy]     = useState('terbaru'); // terbaru, deadline, prioritas, judul
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState({ 
+    status: searchParams.get('status') || '', 
+    priority: '', 
+    categoryId: '', 
+    search: '' 
+  });
+  const [sortBy, setSortBy] = useState('terbaru'); 
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState(null);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const activeFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ''));
-  const filterCount   = Object.values(filters).filter(Boolean).length;
+  const [highlightedId, setHighlightedId] = useState(null);
 
-  const { data: tasks = [], isLoading } = useTasks(activeFilters);
-  const { data: categories = [] }       = useCategories();
-  const createTask  = useCreateTask();
-  const updateTask  = useUpdateTask();
-  const deleteTask  = useDeleteTask();
+  // Sync state with URL params if they change
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    const highlightParam = searchParams.get('highlightId');
+
+    if (statusParam !== null && statusParam !== filters.status) {
+      setFilters(prev => ({ ...prev, status: statusParam }));
+    }
+
+    if (highlightParam) {
+      setHighlightedId(highlightParam);
+      // Auto scroll after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        const el = document.getElementById(`task-${highlightParam}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+
+      // Remove highlight after 2.5 seconds
+      setTimeout(() => setHighlightedId(null), 2500);
+    }
+  }, [searchParams]);
+
+  const activeFilters = Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== ''));
+  const filterCount = Object.values(filters).filter(Boolean).length;
+
+  const { data: rawTasks = [], isLoading } = useTasks(activeFilters);
+  const tasks = useMemo(() => {
+    let list = filters.status ? rawTasks : rawTasks.filter(t => t.status !== 'TERLEWAT');
+    
+    // Sorting logic
+    if (sortBy === 'terbaru') list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    else if (sortBy === 'deadline') list = [...list].sort((a, b) => (new Date(a.deadline) || 0) - (new Date(b.deadline) || 0));
+    else if (sortBy === 'prioritas') {
+      const pMap = { TINGGI: 3, NORMAL: 2, RENDAH: 1 };
+      list = [...list].sort((a, b) => (pMap[b.priority] || 0) - (pMap[a.priority] || 0));
+    }
+    return list;
+  }, [rawTasks, filters.status, sortBy]);
+
+  const { data: categories = [] } = useCategories();
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const toggleSubtask = useToggleSubtask();
   const createSubtask = useCreateSubtask();
 
@@ -40,255 +117,218 @@ export default function TasksPage() {
 
   const handleSubmit = async (data) => {
     if (editTask) await updateTask.mutateAsync({ id: editTask.id, data });
-    else          await createTask.mutateAsync(data);
+    else await createTask.mutateAsync(data);
     setShowForm(false); setEditTask(null);
   };
 
-  const handleEdit   = (task) => { setEditTask(task); setShowForm(true); };
+  const handleEdit = (task) => { setEditTask(task); setShowForm(true); };
   const handleDelete = async (id) => {
-    console.log('Attempting to delete task with ID:', id);
     if (window.confirm('Hapus tugas ini?')) {
-      try {
-        await deleteTask.mutateAsync(id);
-        console.log('Task deleted successfully:', id);
-      } catch (err) {
-        console.error('Delete mutation failed:', err);
-      }
-    } else {
-      console.log('Delete cancelled by user');
+      await deleteTask.mutateAsync(id);
     }
   };
+
   const handleStatus = async (id, status) => {
     await updateTask.mutateAsync({ id, data: { status } });
-    setFilter('status')(status); // Auto pindah ke tab status yang baru
   };
   
   const handleToggleSubtask = (taskId, subtaskId) => toggleSubtask.mutateAsync({ taskId, subtaskId });
   const handleAddSubtask = (taskId, title) => createSubtask.mutateAsync({ taskId, data: { title } });
 
+  // Grouping Logic
+  const groupedTasks = useMemo(() => {
+    const groups = [
+      { id: 'overdue', l: 'Terlewat', i: <IoTimeOutline size={18} className="text-red-500" />, items: [] },
+      { id: 'today', l: 'Hari Ini', i: <IoSunnyOutline size={18} className="text-black" />, items: [] },
+      { id: 'tomorrow', l: 'Besok', i: <IoCalendarOutline size={18} className="text-slate-500" />, items: [] },
+      { id: 'upcoming', l: 'Mendatang', i: <IoCalendarClearOutline size={18} className="text-slate-500" />, items: [] },
+      { id: 'nodl', l: 'Tugas Lainnya', i: <IoDocumentTextOutline size={18} className="text-slate-500" />, items: [] },
+      { id: 'done', l: 'Selesai', i: <IoCheckmarkCircleOutline size={18} className="text-emerald-500" />, items: [] }
+    ];
+
+    tasks.forEach(t => {
+      if (t.status === 'SELESAI') { groups[5].items.push(t); return; }
+      if (!t.deadline) { groups[4].items.push(t); return; }
+      
+      const now = new Date(); now.setHours(0,0,0,0);
+      const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(0,0,0,0);
+      const taskDate = new Date(t.deadline); taskDate.setHours(0,0,0,0);
+
+      if (taskDate < now) groups[0].items.push(t);
+      else if (taskDate.getTime() === now.getTime()) groups[1].items.push(t);
+      else if (taskDate.getTime() === tmr.getTime()) groups[2].items.push(t);
+      else groups[3].items.push(t);
+    });
+
+    return groups.filter(g => g.items.length > 0);
+  }, [tasks]);
+
   return (
-    <div className="p-4 sm:p-6 lg:p-10 w-full max-w-[1600px] mx-auto">
-
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 sm:mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Semua Tugas</h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{tasks.length} tugas ditemukan</p>
-        </div>
-        <button onClick={() => { setEditTask(null); setShowForm(true); }} className="btn-primary text-xs sm:text-sm">
-          <MdAdd size={20} /> Tambah Tugas
-        </button>
-      </div>
-
-      {/* Search + filter row */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        <div className="relative flex-1 group">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
-            <MdSearch size={22} />
-          </span>
-          <input
-            className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.25rem] text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 shadow-premium transition-all placeholder:text-slate-300"
-            placeholder="Cari tugas Anda hari ini..."
-            value={filters.search}
-            onChange={(e) => setFilter('search')(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowFilterPanel(s => !s)}
-            className={`px-6 py-4 rounded-[1.25rem] border text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-3 shadow-premium ${
-              showFilterPanel || filterCount > 0
-                ? 'border-primary bg-primary text-white'
-                : 'border-slate-100 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
-            }`}
-          >
-            <MdFilterList size={20} />
-            Filter
-            {filterCount > 0 && (
-              <span className="w-5 h-5 bg-white text-primary text-[10px] font-black rounded-full flex items-center justify-center">
-                {filterCount}
-              </span>
-            )}
-          </button>
-          {filterCount > 0 && (
-            <button 
-              onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} 
-              className="px-6 py-4 rounded-[1.25rem] bg-slate-100 text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-200 hover:text-slate-600 transition-all flex items-center gap-2"
+    <div className="min-h-screen bg-[var(--app-bg)] pb-24 font-poppins">
+      
+      {/* Search & Filter Bar — Integrated (No Header) */}
+      <div className="px-8 pt-8 pb-6 sm:px-12 lg:px-16 relative z-30">
+        <div className="max-w-[1200px] mx-auto flex flex-col gap-5">
+          <div className="flex gap-3">
+            <div className="relative flex-1 group">
+              <IoSearchOutline className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-black transition-colors" size={20} />
+              <input
+                className="w-full pl-12 pr-4 h-14 bg-white border border-slate-200 rounded-[24px] text-[15px] font-medium shadow-sm focus:ring-4 focus:ring-[#FACC15]/10 outline-none transition-all placeholder:text-slate-300"
+                placeholder="Cari tugas..."
+                value={filters.search}
+                onChange={(e) => setFilter('search')(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => setShowFilterPanel(!showFilterPanel)}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all border ${
+                showFilterPanel || filterCount > 0 
+                ? 'bg-black text-[#FACC15] border-black' 
+                : 'bg-white text-slate-400 border-slate-200 shadow-sm'
+              }`}
             >
-              <MdHistory size={18} /> Reset
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Status chip bar (always visible) */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {STATUS_OPTS.map(o => (
-          <button key={o.v} onClick={() => setFilter('status')(o.v)}
-            className={`filter-chip shrink-0 ${filters.status === o.v ? 'active' : ''}`}>
-            {o.l}
-          </button>
-        ))}
-      </div>
-
-      {/* Collapsible filter panel (Matching mobile Screenshot) */}
-      {showFilterPanel && (
-        <div className="card p-6 mb-6 shadow-premium border-primary/5 animate-slide-in">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-medium text-slate-800">Filter & Urutkan</h3>
-            <button onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} className="text-xs font-bold text-slate-400 hover:text-primary transition-colors">
-              Reset Semua
+              <IoOptionsOutline size={24} />
             </button>
           </div>
 
-          <div className="space-y-6">
-            {/* Urutkan Berdasarkan */}
-            <div>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Urutkan Berdasarkan</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'terbaru', l: 'Terbaru', i: <MdSchedule size={16} /> },
-                  { id: 'deadline', l: 'Deadline', i: <MdEvent size={16} /> },
-                  { id: 'prioritas', l: 'Prioritas', i: <MdPriorityHigh size={16} /> },
-                  { id: 'judul', l: 'Judul A-Z', i: <MdSortByAlpha size={16} /> },
-                ].map(o => (
-                  <button key={o.id} onClick={() => setSortBy(o.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                      sortBy === o.id ? 'bg-primary/5 border-primary text-primary shadow-sm' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}>
-                    {o.i} {o.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Prioritas */}
-            <div>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Prioritas</p>
-              <div className="flex flex-wrap gap-2">
-                {PRIORITY_OPTS.map(o => (
-                  <button key={o.v} onClick={() => setFilter('priority')(o.v)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                      filters.priority === o.v ? 'bg-primary/5 border-primary text-primary' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}>
-                    {o.l}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Kategori */}
-            <div>
-              <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-3">Kategori</p>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => setFilter('categoryId')('')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                    !filters.categoryId ? 'bg-primary/5 border-primary text-primary' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                  }`}>
-                  Semua
+          {/* Status Chips */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+            {STATUS_OPTS.map(o => {
+              const active = filters.status === o.v;
+              return (
+                <button
+                  key={o.v}
+                  onClick={() => setFilter('status')(o.v)}
+                  className={`px-5 h-9 rounded-full text-[13px] font-bold tracking-tight whitespace-nowrap transition-all border ${
+                    active 
+                    ? 'shadow-sm' 
+                    : 'bg-white text-slate-400 border-slate-200'
+                  }`}
+                  style={active ? { 
+                    backgroundColor: o.activeBg, 
+                    color: o.activeText, 
+                    borderColor: o.activeBorder,
+                    borderWidth: '1.5px'
+                  } : {}}
+                >
+                  {o.l}
                 </button>
-                {categories.map(c => (
-                  <button key={c.id} onClick={() => setFilter('categoryId')(c.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                      filters.categoryId === c.id ? 'bg-primary/5 border-primary text-primary' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
-                    }`}>
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button onClick={() => setShowFilterPanel(false)} className="btn-primary w-full py-3.5 rounded-2xl font-black tracking-tight">
-                Terapkan
-              </button>
-            </div>
+              );
+            })}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Task list with Mobile-inspired Grouping */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-          {[...Array(6)].map((_, i) => <div key={i} className="skeleton h-36" />)}
-        </div>
-      ) : tasks.length === 0 ? (
-        <div className="card p-10 sm:p-14 text-center">
-          <p className="text-3xl sm:text-4xl mb-3">📭</p>
-          <p className="font-semibold text-slate-700 text-sm sm:text-base">Tidak ada tugas</p>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1 mb-4">
-            {filterCount || filters.search ? 'Coba ubah filter atau kata kunci.' : 'Mulai tambahkan tugas pertamamu!'}
-          </p>
-          {!filterCount && !filters.search && (
-            <button onClick={() => setShowForm(true)} className="btn-primary">+ Tambah Tugas</button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-12">
-          {useMemo(() => {
-            const groups = [
-              { id: 'overdue', l: 'Terlewat', i: <MdError className="text-red-500" />, items: [] },
-              { id: 'today', l: 'Hari Ini', i: <MdSchedule className="text-primary" />, items: [] },
-              { id: 'tomorrow', l: 'Besok', i: <MdEvent className="text-amber-500" />, items: [] },
-              { id: 'upcoming', l: 'Mendatang', i: <MdEvent className="text-blue-500" />, items: [] },
-              { id: 'nodl', l: 'Tanpa Deadline', i: <MdHistory className="text-slate-400" />, items: [] },
-              { id: 'done', l: 'Selesai', i: <MdCheck className="text-emerald-500" />, items: [] }
-            ];
-
-            tasks.forEach(t => {
-              if (t.status === 'SELESAI') return groups[5].items.push(t);
-              if (!t.deadline) return groups[4].items.push(t);
-              
-              const d = new Date(t.deadline);
-              const now = new Date(); now.setHours(0,0,0,0);
-              const tmr = new Date(); tmr.setDate(tmr.getDate() + 1); tmr.setHours(0,0,0,0);
-              const taskDate = new Date(t.deadline); taskDate.setHours(0,0,0,0);
-
-              if (taskDate < now) groups[0].items.push(t);
-              else if (taskDate.getTime() === now.getTime()) groups[1].items.push(t);
-              else if (taskDate.getTime() === tmr.getTime()) groups[2].items.push(t);
-              else groups[3].items.push(t);
-            });
-
-            return groups.filter(g => g.items.length > 0).map(group => (
-              <div key={group.id} className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
-                    {group.i}
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-medium text-slate-800 uppercase tracking-widest">{group.l}</h2>
-                    <p className="text-[10px] font-normal text-slate-400 uppercase tracking-widest">{group.items.length} Tugas</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-                  {group.items.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onEdit={handleEdit}
-                      onDelete={handleDelete}
-                      onStatusChange={handleStatus}
-                      onToggleSubtask={handleToggleSubtask}
-                      onAddSubtask={handleAddSubtask}
-                    />
+      <div className="p-8 max-w-[1200px] mx-auto">
+        {/* Filter Panel */}
+        {showFilterPanel && (
+          <div className="bg-white rounded-[24px] p-6 shadow-xl border border-slate-100 mb-10 animate-fade-in">
+             <div className="flex items-center justify-between mb-8">
+              <h3 className="font-bold text-black text-[15px] tracking-tight">URUTAN & FILTER</h3>
+              <button onClick={() => setFilters({ status: '', priority: '', categoryId: '', search: '' })} className="text-[13px] font-bold text-slate-400 hover:text-red-500 transition-colors">Reset Filter</button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div>
+                <p className="text-[12px] font-black text-slate-400 mb-4 tracking-widest">URUTKAN</p>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { id: 'terbaru', l: 'Terbaru', i: <IoTimeOutline size={18} /> },
+                    { id: 'deadline', l: 'Deadline', i: <IoCalendarOutline size={18} /> },
+                    { id: 'prioritas', l: 'Prioritas', i: <IoListOutline size={18} /> },
+                  ].map(o => (
+                    <button key={o.id} onClick={() => setSortBy(o.id)} className={`px-5 py-3 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${sortBy === o.id ? 'bg-black text-[#FACC15] border-black' : 'bg-white border-slate-200 text-slate-400'}`}>
+                      {o.i} {o.l}
+                    </button>
                   ))}
                 </div>
               </div>
-            ));
-          }, [tasks, handleDelete, handleEdit, handleStatus, handleToggleSubtask, handleAddSubtask])}
-        </div>
-      )}
 
-      {/* Modal form */}
+              <div>
+                <p className="text-[12px] font-bold text-slate-400 mb-4 tracking-widest">KATEGORI</p>
+                <div className="flex flex-wrap gap-2.5">
+                  <button onClick={() => setFilter('categoryId')('')} className={`px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest border ${!filters.categoryId ? 'bg-black text-[#FACC15] border-black' : 'bg-white border-slate-200 text-slate-400'}`}>Semua</button>
+                  {categories.map(c => (
+                    <button key={c.id} onClick={() => setFilter('categoryId')(String(c.id))} className={`px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all`} style={{ backgroundColor: filters.categoryId === String(c.id) ? `${c.color}15` : 'white', borderColor: filters.categoryId === String(c.id) ? c.color : '#E5E7EB', color: filters.categoryId === String(c.id) ? c.color : '#6B7280' }}>
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tasks List */}
+        {isLoading ? (
+          <div className="space-y-12">
+            {[1,2].map(s => (
+              <div key={s} className="space-y-6">
+                 <div className="flex items-center gap-3">
+                   <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse" />
+                   <div className="w-40 h-5 bg-slate-200 rounded animate-pulse" />
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {[1,2,3].map(i => <TaskSkeleton key={i} />)}
+                 </div>
+              </div>
+            ))}
+          </div>
+        ) : groupedTasks.length === 0 ? (
+          <div className="bg-white rounded-[28px] p-24 text-center shadow-sm border border-slate-100 flex flex-col items-center animate-fade-in">
+            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-8">
+              <IoFileTrayOutline size={48} className="text-slate-200" />
+            </div>
+            <p className="font-bold text-black text-2xl tracking-tighter">Tidak ada tugas</p>
+            <p className="text-[14px] text-slate-400 mt-4 font-medium max-w-xs mx-auto leading-relaxed">{filters.search || filterCount ? 'Coba ubah filter atau pencarian Anda.' : 'Ketuk tombol + di bawah untuk mulai membuat tugas!'}</p>
+          </div>
+        ) : (
+          <div className="space-y-14">
+            {groupedTasks.map(group => (
+              <div key={group.id} className="space-y-6 animate-fade-in">
+                <div className="flex items-center gap-3 px-2">
+                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center">{group.i}</div>
+                  <h2 className="text-[16px] font-bold text-slate-800 tracking-tight capitalize">{group.l}</h2>
+                  <div className="bg-[#F1F5F9] px-2.5 py-0.5 rounded-lg ml-1">
+                    <span className="text-[12px] font-bold text-[#64748B]">{group.items.length}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {group.items.map(task => (
+                    <div 
+                      key={task.id} 
+                      id={`task-${task.id}`} 
+                      className={`transition-all duration-500 rounded-[24px] ${highlightedId === String(task.id) ? 'pulse-highlight' : ''}`}
+                    >
+                      <TaskCard 
+                        task={task} 
+                        onEdit={handleEdit} 
+                        onDelete={handleDelete} 
+                        onStatusChange={handleStatus} 
+                        onToggleSubtask={handleToggleSubtask} 
+                        onAddSubtask={handleAddSubtask} 
+                        onDeleteSubtask={handleDeleteSubtask}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => { setEditTask(null); setShowForm(true); }}
+        className="fixed bottom-10 right-10 w-16 h-16 bg-[#FACC15] text-black rounded-[20px] shadow-2xl shadow-[#FACC15]/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40"
+      >
+        <IoAdd size={36} />
+      </button>
+
       {showForm && (
-        <TaskForm
-          task={editTask}
-          onSubmit={handleSubmit}
-          onClose={() => { setShowForm(false); setEditTask(null); }}
-          isLoading={createTask.isPending || updateTask.isPending}
-        />
+        <TaskForm task={editTask} onSubmit={handleSubmit} onClose={() => { setShowForm(false); setEditTask(null); }} isLoading={createTask.isPending || updateTask.isPending} />
       )}
     </div>
   );

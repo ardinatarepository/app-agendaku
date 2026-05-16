@@ -5,7 +5,12 @@ import { id as localeId } from 'date-fns/locale';
 
 export const formatDate = (date) => {
   if (!date) return '-';
-  return format(new Date(date), 'd MMM yyyy', { locale: localeId });
+  try {
+    return format(new Date(date), 'd MMM yyyy', { locale: localeId });
+  } catch (e) {
+    console.error("Invalid date:", date);
+    return '-';
+  }
 };
 
 export const formatRelative = (date) => {
@@ -24,13 +29,13 @@ export const isNearDeadline = (date) => {
 };
 
 export const STATUS_CONFIG = {
-  SEDANG_DIKERJAKAN: { label: 'Sedang Dikerjakan', cls: 'badge-dikerjakan', dot: 'bg-blue-500' },
-  SELESAI:           { label: 'Selesai',           cls: 'badge-selesai',    dot: 'bg-emerald-500' },
-  TERLEWAT:          { label: 'Terlewat',          cls: 'badge-terlewat',   dot: 'bg-red-500' },
+  SEDANG_DIKERJAKAN: { label: 'Sedang Berjalan', bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
+  SELESAI:           { label: 'Selesai',         bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
+  TERLEWAT:          { label: 'Terlewat',        bg: '#FEF2F2', text: '#DC2626', dot: '#F87171' },
 };
 
 export const PRIORITY_CONFIG = {
-  RENDAH: { label: 'Rendah', cls: 'badge-rendah' },
-  NORMAL: { label: 'Normal', cls: 'badge-normal' },
-  TINGGI: { label: 'Tinggi', cls: 'badge-tinggi' },
+  RENDAH: { label: 'Rendah', symbol: 'R', bg: '#F1F5F9', text: '#64748B' },
+  NORMAL: { label: 'Normal', symbol: 'N', bg: '#FEF3C7', text: '#F59E0B' },
+  TINGGI: { label: 'Tinggi', symbol: 'T', bg: '#FEE2E2', text: '#EF4444' },
 };

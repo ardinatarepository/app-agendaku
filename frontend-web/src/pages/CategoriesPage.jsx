@@ -7,30 +7,38 @@ import {
   MdAdd, 
   MdClose, 
   MdEdit, 
-  MdDelete, 
-  MdLocalOffer 
+  MdDeleteOutline, 
+  MdLabelOutline 
 } from 'react-icons/md';
 
-const PRESET_COLORS = ['#15152b', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16'];
+const PRESET_COLORS = ['#1E1E1E', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#06b6d4', '#84cc16'];
 
 function ColorPicker({ value, onChange }) {
   return (
-    <div className="flex flex-wrap gap-2 mt-2">
+    <div className="flex flex-wrap gap-3 mt-4">
       {PRESET_COLORS.map(c => (
         <button
           key={c}
           type="button"
           onClick={() => onChange(c)}
-          className="w-7 h-7 rounded-full border-2 transition-all duration-150 cursor-pointer"
+          className={`w-9 h-9 rounded-full border-2 transition-all duration-300 ${
+            value === c ? 'scale-125 ring-2 ring-slate-800 ring-offset-2' : 'hover:scale-110'
+          }`}
           style={{
             backgroundColor: c,
-            borderColor: value === c ? '#1e293b' : 'transparent',
-            transform: value === c ? 'scale(1.2)' : 'scale(1)',
+            borderColor: 'white',
           }}
         />
       ))}
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-        className="w-7 h-7 rounded-full border border-slate-200 cursor-pointer overflow-hidden p-0" title="Warna kustom" />
+      <div className="relative w-9 h-9 rounded-full border-2 border-slate-100 overflow-hidden group">
+        <input 
+          type="color" 
+          value={value} 
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full scale-150 cursor-pointer" 
+          title="Warna kustom" 
+        />
+      </div>
     </div>
   );
 }
@@ -41,7 +49,7 @@ export default function CategoriesPage() {
   const deleteCat = useDeleteCategory();
   const qc        = useQueryClient();
 
-  const [form, setForm]       = useState({ name: '', color: '#15152b' });
+  const [form, setForm]       = useState({ name: '', color: '#1E1E1E' });
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({ name: '', color: '' });
@@ -60,7 +68,7 @@ export default function CategoriesPage() {
     e.preventDefault();
     if (!form.name.trim()) return;
     await createCat.mutateAsync(form);
-    setForm({ name: '', color: '#15152b' });
+    setForm({ name: '', color: '#1E1E1E' });
     setShowForm(false);
   };
 
@@ -80,90 +88,115 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 w-full max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5 sm:mb-6">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-800">Kategori</h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Organisir tugas berdasarkan kategori</p>
-        </div>
-        <button onClick={() => setShowForm(s => !s)} className={`btn-${showForm ? 'secondary' : 'primary'} text-xs sm:text-sm flex items-center gap-2 font-bold`}>
-          {showForm ? <MdClose size={20} /> : <MdAdd size={20} />} {showForm ? 'Tutup' : 'Kategori Baru'}
-        </button>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Header — Solid Primary matching mobile */}
+      <div className="bg-[#1E1E1E] px-6 pt-16 pb-14 rounded-b-xl shadow-premium text-center">
+        <h1 className="text-xl font-black text-white uppercase tracking-widest">Manajemen Kategori</h1>
       </div>
 
-      {/* Form tambah */}
-      {showForm && (
-        <div className="card p-4 sm:p-5 mb-5">
-          <h3 className="font-semibold text-slate-800 text-sm mb-4">Tambah Kategori Baru</h3>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="label">Nama Kategori</label>
-              <input className="input text-sm" placeholder="Contoh: Skripsi, Hobi, Kerja..." value={form.name}
-                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} maxLength={50} required autoFocus />
-            </div>
-            <div>
-              <label className="label">Warna</label>
-              <ColorPicker value={form.color} onChange={(c) => setForm(f => ({ ...f, color: c }))} />
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1 text-sm">Batal</button>
-              <button type="submit" className="btn-primary flex-1 text-sm" disabled={createCat.isPending || !form.name.trim()}>
-                {createCat.isPending ? 'Menyimpan...' : 'Simpan Kategori'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* List kategori */}
-      <div className="max-w-2xl space-y-2.5">
-        {isLoading ? (
-          [...Array(4)].map((_, i) => <div key={i} className="skeleton h-16" />)
-        ) : categories.length === 0 ? (
-          <div className="card p-14 text-center">
-            <p className="text-3xl mb-4 text-slate-200 flex justify-center"><MdLocalOffer size={48} /></p>
-            <p className="font-semibold text-slate-700 text-sm">Belum ada kategori</p>
-            <p className="text-xs text-slate-400 mt-1">Tambahkan kategori untuk mengorganisir tugasmu.</p>
+      <div className="p-6 max-w-[1200px] mx-auto space-y-8">
+        
+        {/* Header Action Row */}
+        <div className="flex items-center justify-between -mt-10 relative z-10 px-2">
+          <div className="bg-white px-6 py-4 rounded-xl shadow-premium flex items-center gap-3">
+             <MdLabelOutline size={24} className="text-slate-400" />
+             <div>
+               <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{categories.length} Kategori</h2>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Organisir tugas Anda</p>
+             </div>
           </div>
-        ) : (
-          categories.map(cat => (
-            <div key={cat.id} className="card p-3 sm:p-4">
-              {editingId === cat.id ? (
-                // Mode edit
-                <div className="space-y-3">
-                  <input className="input text-sm" value={editForm.name}
-                    onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} autoFocus />
-                  <ColorPicker value={editForm.color} onChange={(c) => setEditForm(f => ({ ...f, color: c }))} />
-                  <div className="flex gap-2">
-                    <button onClick={() => setEditingId(null)} className="btn-secondary flex-1 text-xs">Batal</button>
-                    <button onClick={saveEdit} className="btn-primary flex-1 text-xs" disabled={updateMut.isPending}>
-                      {updateMut.isPending ? 'Menyimpan...' : 'Simpan'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                // Mode normal
-                <div className="flex items-center gap-3">
-                  <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-800 text-sm">{cat.name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{cat._count?.tasks ?? 0} tugas</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => startEdit(cat)} className="btn-icon w-8 h-8 text-slate-400 hover:text-primary hover:bg-primary/5" title="Edit">
-                      <MdEdit size={16} />
-                    </button>
-                    <button onClick={() => handleDelete(cat.id, cat.name, cat._count?.tasks ?? 0)}
-                      className="btn-icon w-8 h-8 text-slate-400 hover:text-red-500 hover:bg-red-50" title="Hapus">
-                      <MdDelete size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
+          <button 
+            onClick={() => setShowForm(s => !s)} 
+            className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-premium transition-all active:scale-95 ${
+              showForm ? 'bg-white text-slate-400' : 'bg-[#1E1E1E] text-white'
+            }`}
+          >
+            {showForm ? <MdClose size={28} /> : <MdAdd size={28} />}
+          </button>
+        </div>
+
+        {/* Form tambah */}
+        {showForm && (
+          <div className="bg-white rounded-xl p-8 shadow-premium border border-slate-100 animate-fade-in">
+            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
+               <div className="w-1 h-4 bg-primary rounded-full" /> Tambah Kategori Baru
+            </h3>
+            <form onSubmit={handleCreate} className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Nama Kategori</label>
+                <input 
+                  className="input h-14 bg-slate-50 border-transparent focus:bg-white font-bold" 
+                  placeholder="Contoh: Skripsi, Hobi, Kerja..." 
+                  value={form.name}
+                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} 
+                  maxLength={50} required autoFocus 
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Pilih Warna</label>
+                <ColorPicker value={form.color} onChange={(c) => setForm(f => ({ ...f, color: c }))} />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 text-[10px] font-black rounded-xl uppercase tracking-widest">Batal</button>
+                <button type="submit" className="flex-1 py-4 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium active:scale-95 transition-all disabled:opacity-50" disabled={createCat.isPending || !form.name.trim()}>
+                  {createCat.isPending ? 'Menyimpan...' : 'Simpan Kategori'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
+
+        {/* List kategori */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            [...Array(6)].map((_, i) => <div key={i} className="h-28 bg-white rounded-xl animate-pulse" />)
+          ) : categories.length === 0 ? (
+            <div className="col-span-full py-24 text-center bg-white border-2 border-dashed border-slate-100 rounded-xl shadow-sm">
+              <MdLabelOutline size={64} className="mx-auto text-slate-100 mb-6" />
+              <p className="text-lg font-black text-slate-300 uppercase tracking-widest">Belum ada kategori</p>
+              <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest opacity-60">Tambahkan kategori untuk mengorganisir tugasmu.</p>
+            </div>
+          ) : (
+            categories.map(cat => (
+              <div key={cat.id} className="bg-white rounded-xl p-6 shadow-premium border border-slate-100 group hover:shadow-premium-hover transition-all duration-300">
+                {editingId === cat.id ? (
+                  // Mode edit
+                  <div className="space-y-4">
+                    <input className="input h-12 bg-slate-50 border-transparent font-bold text-sm" value={editForm.name}
+                      onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} autoFocus />
+                    <ColorPicker value={editForm.color} onChange={(c) => setEditForm(f => ({ ...f, color: c }))} />
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => setEditingId(null)} className="flex-1 py-2 text-slate-500 text-[10px] font-black rounded-xl border border-slate-100 uppercase tracking-widest">Batal</button>
+                      <button onClick={saveEdit} className="flex-1 py-2 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium" disabled={updateMut.isPending}>
+                        {updateMut.isPending ? 'Simpan...' : 'Simpan'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // Mode normal
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-black/5" style={{ backgroundColor: `${cat.color}15` }}>
+                       <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cat.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black text-slate-800 uppercase tracking-widest truncate">{cat.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{cat._count?.tasks ?? 0} tugas aktif</p>
+                    </div>
+                    <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => startEdit(cat)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-[#1E1E1E] transition-colors" title="Edit">
+                        <MdEdit size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(cat.id, cat.name, cat._count?.tasks ?? 0)}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 text-red-400 hover:text-red-500 transition-colors" title="Hapus">
+                        <MdDeleteOutline size={18} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

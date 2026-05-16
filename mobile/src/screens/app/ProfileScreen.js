@@ -1,18 +1,19 @@
-// ProfileScreen - Updated
-// Perubahan: pengaturan notifikasi (H-1/H-2/H-3, jam, toggle), edit kategori, hapus akun
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Image,
-  Alert, StyleSheet, TextInput, Switch, StatusBar,
+  Alert, StyleSheet, TextInput, Switch, StatusBar, Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { categoryAPI, taskAPI } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import Logo from '../../components/Logo';
 import { Card, Button, EmptyState, ConfirmModal, Toast, CategorySkeleton } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW } from '../../utils/theme';
+import { setTabBarVisible, resetTabBarVisible } from '../../utils/tabBarControl';
 import { rescheduleAllNotifications, cancelTaskNotification, sendTestNotification } from '../../utils/notifications';
 import { AVATAR_URL } from '../../config';
 
@@ -29,6 +30,7 @@ const SectionHeader = ({ title, noMarginTop }) => (
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function ProfileScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState(null); // { id, name, taskCount }
@@ -120,19 +122,57 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  return (
-    <View style={s.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      
-      {/* Header Bar */}
-      <View style={s.headerBar}>
-        <Text style={s.headerTitle}>Profil & Pengaturan</Text>
-      </View>
+  const scrollOffset = useRef(0);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
 
-      <ScrollView style={s.container} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+  const handleScroll = (event) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const currentOffset = contentOffset.y;
+    const layoutHeight = layoutMeasurement.height;
+    const contentHeight = contentSize.height;
+
+    const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+    const isAtBottom = currentOffset + layoutHeight >= contentHeight - 20;
+    
+    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
+      setIsNavbarVisible(false);
+      setTabBarVisible(false);
+    } else if (direction === 'up' && !isNavbarVisible && !isAtBottom) {
+      setIsNavbarVisible(true);
+      setTabBarVisible(true);
+    }
+    scrollOffset.current = currentOffset;
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsNavbarVisible(true);
+      resetTabBarVisible();
+
+      StatusBar.setBarStyle('dark-content');
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
+  return (
+    <View style={[s.container, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
+
+      {/* Header removed for minimalist look */}
+
+      <ScrollView 
+        style={s.container} 
+        contentContainerStyle={s.content} 
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
  
       {/* ── Info Akun ── */}
-      <Card style={{ marginBottom: 24, padding: 20, marginTop: 10 }}>
+      <View style={s.accountCard}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 20 }}>
           <View style={[s.avatar, { width: 64, height: 64, borderRadius: 32, overflow: 'hidden' }]}>
             {user?.avatar ? (
@@ -150,12 +190,21 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
         <TouchableOpacity 
-          style={{ backgroundColor: '#f1f5f9', paddingVertical: 12, borderRadius: RADIUS.md, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' }} 
+          style={{ 
+            backgroundColor: COLORS.primary, 
+            paddingVertical: 12, 
+            borderRadius: 30, 
+            alignItems: 'center', 
+            flexDirection: 'row',
+            justifyContent: 'center',
+            gap: 8,
+            ...SHADOW.sm 
+          }} 
           onPress={() => navigation.navigate('EditProfile')}
         >
-          <Text style={{ fontSize: 14, color: COLORS.text, ...FONT.semibold }}>Edit Profil</Text>
+          <Text style={{ fontSize: 14, color: '#000000', ...FONT.bold, includeFontPadding: false, textAlignVertical: 'center' }}>Edit Profil</Text>
         </TouchableOpacity>
-      </Card>
+      </View>
 
       {/* ── Pengaturan Notifikasi ── */}
       <SectionHeader title="Pengaturan Notifikasi" />
@@ -319,7 +368,7 @@ export default function ProfileScreen({ navigation }) {
                     hitSlop={8} 
                     style={[s.catActBtn, { backgroundColor: '#f1f5f9' }]}
                   >
-                    <MaterialIcons name="edit" size={18} color={COLORS.primary} />
+                    <MaterialIcons name="edit" size={18} color="#F59E0B" />
                   </TouchableOpacity>
                   <TouchableOpacity 
                     onPress={() => handleDeleteCat(cat.id, cat.name, cat._count?.tasks ?? 0)} 
@@ -406,7 +455,8 @@ export default function ProfileScreen({ navigation }) {
 
 const s = StyleSheet.create({
   container:      { flex: 1, backgroundColor: COLORS.bg },
-  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
+  accountCard:    { backgroundColor: COLORS.surface, borderRadius: 24, padding: 20, marginBottom: 24, marginTop: 10, ...SHADOW.sm, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
+  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
   headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
   searchRow: { flexDirection: 'row', gap: 10, padding: 16, marginTop: 10, zIndex: 10 },
   content:        { padding: 20, paddingBottom: 48 },
@@ -419,7 +469,7 @@ const s = StyleSheet.create({
   editProfileBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.full },
   sectionLabel:   { fontSize: 11, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10, marginTop: 28 },
   sectionHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 28 },
-  addLink:        { fontSize: 13, color: COLORS.primary, ...FONT.semibold },
+  addLink:        { fontSize: 13, color: '#000000', ...FONT.semibold },
   card:           { marginBottom: 10, padding: 16 },
   notifRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   notifLabel:     { fontSize: 14, ...FONT.semibold, color: COLORS.text },
@@ -428,14 +478,14 @@ const s = StyleSheet.create({
   hariBtn:        { paddingVertical: 9, paddingHorizontal: 18, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg },
   hariBtnActive:  { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   hariBtnText:    { fontSize: 14, ...FONT.semibold, color: COLORS.textMuted },
-  hariBtnTextActive: { color: COLORS.primary },
+  hariBtnTextActive: { color: '#000000' },
   jamRow:         { gap: 8 },
   jamBtn:         { paddingVertical: 10, paddingHorizontal: 14, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.bg },
   jamBtnActive:   { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   jamBtnText:     { fontSize: 13, color: COLORS.textMuted, ...FONT.medium },
-  jamBtnTextActive:{ color: COLORS.primary, ...FONT.semibold },
+  jamBtnTextActive:{ color: '#000000', ...FONT.semibold },
   saveNotifBtn:   { marginTop: 16, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 12, alignItems: 'center' },
-  saveNotifText:  { color: '#fff', fontSize: 14, ...FONT.semibold },
+  saveNotifText:  { color: '#000000', fontSize: 14, ...FONT.bold },
   catInput:       { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.bg },
   colorRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   colorDot:       { width: 28, height: 28, borderRadius: 14 },

@@ -2,6 +2,10 @@
 
 import api from './axios';
 
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Gunakan path relatif agar otomatis mengikuti domain/proxy (Lokal/Produksi)
+export const AVATAR_BASE_URL = '/uploads/avatars/';
+
 // ─── Auth ─────────────────────────────────────────────────────────────────
 export const authAPI = {
   register:      (data) => api.post('/auth/register', data),

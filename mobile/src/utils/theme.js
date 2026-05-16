@@ -1,70 +1,73 @@
-// Design tokens AgendaKu Mobile - RESTORED ORIGINAL DEEP BLUE
+// Design tokens AgendaKu Mobile - LIGHT MODE REFINED
 export const COLORS = {
-  primary:      '#1E1E1E', // Charcoal Dark
-  primaryLight: '#E2E8F0',
-  primaryDark:  '#020617',
-  success:      '#059669', // Emerald
+  primary:      '#FFD700', // Gold Accent tetap dipertahankan
+  primaryLight: 'rgba(255, 215, 0, 0.1)',
+  primaryDark:  '#B8860B',
+  success:      '#10B981',
   successLight: '#ECFDF5',
-  warning:      '#D97706', // Amber
+  warning:      '#F59E0B',
   warningLight: '#FFFBEB',
-  danger:       '#DC2626', // Red
+  danger:       '#EF4444',
   dangerLight:  '#FEF2F2',
 
-  // Neutrals
+  // Neutrals (Light Mode)
   white:        '#ffffff',
-  bg:           '#F8FAFC', // Very soft slate
-  surface:      '#FFFFFF',
-  border:       '#E2E8F0',
-  borderLight:  '#F1F5F9',
+  bg:           '#f5f5f0', // Kode warna spesifik dari user
+  surface:      '#ffffff', // Kartu tetap putih agar kontras
+  surfaceLight: '#f9fafb',
+  border:       '#E5E7EB',
+  borderLight:  '#F3F4F6',
 
-  text:         '#1E1E1E',
-  textMuted:    '#475569', 
-  textLight:    '#94A3B8',
-  textDisabled: '#CBD5E1',
+  text:         '#1F2937', // Teks Gelap
+  textMuted:    '#6B7280', 
+  textLight:    '#9CA3AF',
+  textDisabled: '#D1D5DB',
 };
 
 export const RADIUS = {
   sm:  8,
   md:  12,
   lg:  16,
-  xl:  20,
+  xl:  24,
   full: 999,
 };
 
 export const FONT = {
   regular:   { fontFamily: 'Poppins_400Regular' },
-  medium:    { fontFamily: 'Poppins_500Medium', fontWeight: '500' },
-  semibold:  { fontFamily: 'Poppins_600SemiBold', fontWeight: '600' },
-  bold:      { fontFamily: 'Poppins_700Bold', fontWeight: 'bold' },
-  black:     { fontFamily: 'Poppins_900Black', fontWeight: '900' },
+  medium:    { fontFamily: 'Poppins_500Medium' },
+  semibold:  { fontFamily: 'Poppins_600SemiBold' },
+  bold:      { fontFamily: 'Poppins_700Bold' },
+  black:     { fontFamily: 'Poppins_900Black' },
+  display:   { fontFamily: 'Inter_700Bold' },
+  heading:   { fontFamily: 'ArchivoBlack_400Regular' },
 };
 
 export const SHADOW = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 2,
   },
   md: {
-    shadowColor: '#1E1E1E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
   },
 };
 
 export const STATUS_CONFIG = {
-  'BELUM_MULAI':       { label: 'Belum Mulai',       bg: '#F1F5F9', text: '#475569', dot: '#94A3B8' },
-  'SEDANG_DIKERJAKAN': { label: 'Sedang Berjalan', bg: '#EFF6FF', text: '#1D4ED8', dot: '#3B82F6' },
-  'SELESAI':           { label: 'Selesai',            bg: '#ECFDF5', text: '#059669', dot: '#10B981' },
-  'TERLEWAT':          { label: 'Terlewat',          bg: '#FEF2F2', text: '#DC2626', dot: '#F87171' },
+  'BELUM_MULAI':       { label: 'Belum Mulai',       bg: '#F3F4F6', text: '#4B5563', dot: '#9CA3AF' },
+  'SEDANG_DIKERJAKAN': { label: 'Berjalan',          bg: '#E0F2FE', text: '#0284C7', dot: '#0284C7' },
+  'SELESAI':           { label: 'Selesai',           bg: '#ECFDF5', text: '#10B981', dot: '#10B981' },
+  'TERLEWAT':          { label: 'Terlewat',          bg: '#FEE2E2', text: '#EF4444', dot: '#EF4444' },
 };
 
 export const PRIORITY_CONFIG = {
   'RENDAH': { label: 'Rendah', bg: '#F1F5F9', text: '#475569' },
-  'NORMAL': { label: 'Normal', bg: '#FFFBEB', text: '#B45309' },
+  'NORMAL': { label: 'Normal', bg: 'rgba(128, 128, 128, 0.1)', text: '#808080' },
   'TINGGI': { label: 'Tinggi', bg: '#FEF2F2', text: '#DC2626' },
 };

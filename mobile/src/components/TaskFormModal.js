@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Button, Input } from './ui';
+import { Button, Input, Toast } from './ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -66,8 +66,16 @@ function CustomDatePicker({ visible, value, onSelect, onClose }) {
               const isToday = dateStr === todayStr;
               return (
                 <TouchableOpacity key={dateStr} style={dpStyle.cell} onPress={() => onSelect(dateStr)}>
-                  <View style={[dpStyle.circle, isSelected && dpStyle.circleSelected]}>
-                    <Text style={[dpStyle.dayNum, isSelected && dpStyle.dayNumSelected, isToday && !isSelected && { color: COLORS.primary, ...FONT.bold }]}>{day}</Text>
+                  <View style={[
+                    dpStyle.circle, 
+                    isSelected && dpStyle.circleSelected,
+                    isToday && !isSelected && dpStyle.circleToday
+                  ]}>
+                    <Text style={[
+                      dpStyle.dayNum, 
+                      isSelected && dpStyle.dayNumSelected, 
+                      isToday && !isSelected && dpStyle.dayNumToday
+                    ]}>{day}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -122,7 +130,7 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories, initialDate, headerHeight = 113 }) {
+export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories, initialDate, headerHeight = 60 }) {
   const STATUSES = ['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT'];
   
   const [form, setForm] = useState({
@@ -134,6 +142,8 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
   const [newSubTask, setNewSubTask] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'danger' });
+  const [titleError, setTitleError] = useState('');
 
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isMounted = useRef(false);
@@ -186,7 +196,10 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
 
   const handleSubmit = () => {
-    if (!form.title.trim()) { Alert.alert('Peringatan', 'Judul tugas wajib diisi.'); return; }
+    if (!form.title.trim()) { 
+      setTitleError('Judul tugas wajib diisi.');
+      return; 
+    }
     let finalDeadline = null;
     if (form.deadline) {
       const [y, m, d] = form.deadline.split('-').map(Number);
@@ -231,9 +244,17 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
           >
             <View style={mStyle.dragArea}><View style={mStyle.handle} /></View>
             <View style={mStyle.header}>
-              <TouchableOpacity onPress={closeSheet}><Text style={mStyle.cancel}>Batal</Text></TouchableOpacity>
-              <Text style={mStyle.title}>{task ? 'Edit Tugas' : 'Tambah Tugas'}</Text>
-              <TouchableOpacity onPress={handleSubmit} disabled={isLoading}><Text style={[mStyle.save, isLoading && { opacity: 0.5 }]}>Simpan</Text></TouchableOpacity>
+              <TouchableOpacity onPress={closeSheet} style={mStyle.cancelBtn}>
+                <Text style={mStyle.cancel}>Batal</Text>
+              </TouchableOpacity>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity 
+                onPress={handleSubmit} 
+                disabled={isLoading} 
+                style={[mStyle.saveBtn, isLoading && { opacity: 0.5 }]}
+              >
+                <Text style={mStyle.save}>Simpan</Text>
+              </TouchableOpacity>
             </View>
 
             <ScrollView 
@@ -242,7 +263,16 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
               keyboardShouldPersistTaps="handled" 
               showsVerticalScrollIndicator={false}
             >
-              <Input label="Nama Tugas *" placeholder="Masukan Nama Tugas" value={form.title} onChangeText={set('title')} />
+              <Input 
+                label="Nama Tugas *" 
+                placeholder="Masukan Nama Tugas" 
+                value={form.title} 
+                onChangeText={(v) => {
+                  set('title')(v);
+                  if (titleError) setTitleError('');
+                }} 
+                error={titleError}
+              />
               <View style={{ height: 12 }} />
               <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
               
@@ -261,6 +291,19 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
 
               <Text style={mStyle.label}>Prioritas</Text>
               <PrioritySelector value={form.priority} onChange={set('priority')} />
+
+              <Text style={mStyle.label}>Sub-Tugas</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+                <TextInput style={[mStyle.input, { flex: 1, marginBottom: 0 }]} placeholder="Tambah sub-tugas..." value={newSubTask} onChangeText={setNewSubTask} />
+                <TouchableOpacity style={[mStyle.addBtn, { backgroundColor: COLORS.primary }]} onPress={addSubtask}><MaterialIcons name="add" size={24} color="#fff" /></TouchableOpacity>
+              </View>
+              {form.subtasks.map((st, i) => (
+                <View key={i} style={mStyle.subTaskItem}>
+                  <View style={mStyle.subTaskDot} />
+                  <Text style={mStyle.subTaskText}>{st.title}</Text>
+                  <TouchableOpacity onPress={() => removeSubtask(i)}><MaterialIcons name="delete-outline" size={20} color={COLORS.danger} /></TouchableOpacity>
+                </View>
+              ))}
 
               <Text style={mStyle.label}>Deadline & Waktu</Text>
               <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
@@ -303,18 +346,6 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                 </ScrollView>
               )}
 
-              <Text style={mStyle.label}>Sub-Tugas</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                <TextInput style={[mStyle.input, { flex: 1, marginBottom: 0 }]} placeholder="Tambah sub-tugas..." value={newSubTask} onChangeText={setNewSubTask} />
-                <TouchableOpacity style={[mStyle.addBtn, { backgroundColor: COLORS.primary }]} onPress={addSubtask}><MaterialIcons name="add" size={24} color="#fff" /></TouchableOpacity>
-              </View>
-              {form.subtasks.map((st, i) => (
-                <View key={i} style={mStyle.subTaskItem}>
-                  <View style={mStyle.subTaskDot} />
-                  <Text style={mStyle.subTaskText}>{st.title}</Text>
-                  <TouchableOpacity onPress={() => removeSubtask(i)}><MaterialIcons name="delete-outline" size={20} color={COLORS.danger} /></TouchableOpacity>
-                </View>
-              ))}
 
               <Text style={mStyle.label}>Kategori</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
@@ -330,6 +361,13 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
 
           <CustomDatePicker visible={showDatePicker} value={form.deadline} onClose={() => setShowDatePicker(false)} onSelect={(date) => { setForm(p => ({ ...p, deadline: date })); setShowDatePicker(false); }} />
           <CustomTimePicker visible={showTimePicker} value={form.time} onClose={() => setShowTimePicker(false)} onSelect={(time) => { setForm(p => ({ ...p, time })); setShowTimePicker(false); }} />
+          
+          <Toast 
+            visible={toast.visible} 
+            message={toast.message} 
+            type={toast.type} 
+            onHide={() => setToast({ ...toast, visible: false })} 
+          />
         </Animated.View>
       </View>
     </Modal>
@@ -341,10 +379,11 @@ const mStyle = StyleSheet.create({
   sheet: { position: 'absolute', left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...SHADOW.lg, overflow: 'hidden' },
   dragArea: { alignItems: 'center', paddingVertical: 12 },
   handle: { width: 40, height: 5, backgroundColor: COLORS.borderLight, borderRadius: 3 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, backgroundColor: COLORS.surface },
-  title: { fontSize: 16, ...FONT.bold, color: COLORS.text },
-  cancel: { fontSize: 14, color: COLORS.textMuted },
-  save: { fontSize: 14, color: COLORS.primary, ...FONT.semibold, textAlign: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, backgroundColor: COLORS.surface },
+  cancelBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.danger },
+  saveBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, ...SHADOW.sm },
+  cancel: { fontSize: 14, color: COLORS.danger, ...FONT.bold },
+  save: { fontSize: 14, color: '#000000', ...FONT.bold, textAlign: 'center' },
   body: { padding: 20, paddingBottom: 100 },
   label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, marginTop: 12, marginBottom: 8 },
   datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
@@ -372,9 +411,11 @@ const dpStyle = StyleSheet.create({
   dayLabel: { width: '14.28%', textAlign: 'center', fontSize: 11, ...FONT.semibold, color: COLORS.textMuted, marginBottom: 8 },
   cell: { width: '14.28%', height: 44, alignItems: 'center', justifyContent: 'center' },
   circle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  circleSelected: { backgroundColor: COLORS.primary },
-  dayNum: { fontSize: 14, color: COLORS.text, ...FONT.medium },
-  dayNumSelected: { color: '#fff', ...FONT.bold },
+  circleSelected: { backgroundColor: COLORS.primary, borderRadius: 17 },
+  circleToday: { backgroundColor: COLORS.primaryLight, borderRadius: 17 },
+  dayNum: { fontSize: 14, color: COLORS.text, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  dayNumSelected: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  dayNumToday: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
   btn: { paddingHorizontal: 12, paddingVertical: 8 },
   btnText: { fontSize: 14, ...FONT.semibold, color: COLORS.primary },

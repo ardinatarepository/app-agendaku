@@ -10,50 +10,65 @@ export default function TimePicker({ value, onSelect, onClose }) {
 
   const scrollRefH = useRef(null);
   const scrollRefM = useRef(null);
+  const touchStartY = useRef(0);
 
-  // Auto scroll to current value on open
+  // Sync scroll position on value change
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (scrollRefH.current) {
-        const idx = hours.indexOf(selectedH);
-        scrollRefH.current.scrollTop = idx * 44;
-      }
-      if (scrollRefM.current) {
-        const idx = mins.indexOf(selectedM);
-        scrollRefM.current.scrollTop = idx * 44;
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+    if (scrollRefH.current) scrollRefH.current.scrollTop = hours.indexOf(selectedH) * 44;
+    if (scrollRefM.current) scrollRefM.current.scrollTop = mins.indexOf(selectedM) * 44;
+  }, [selectedH, selectedM]);
 
-  const handleScroll = (ref, setter, items) => {
-    const scrollTop = ref.current.scrollTop;
-    const idx = Math.round(scrollTop / 44);
-    if (items[idx] && items[idx] !== (ref === scrollRefH ? selectedH : selectedM)) {
-      setter(items[idx]);
+  const handleStep = (type, direction) => {
+    if (type === 'H') {
+      const currIdx = hours.indexOf(selectedH);
+      const nextIdx = Math.max(0, Math.min(hours.length - 1, currIdx + direction));
+      setSelectedH(hours[nextIdx]);
+    } else {
+      const currIdx = mins.indexOf(selectedM);
+      const nextIdx = Math.max(0, Math.min(mins.length - 1, currIdx + direction));
+      setSelectedM(mins[nextIdx]);
+    }
+  };
+
+  const onWheel = (e, type) => {
+    e.preventDefault();
+    const direction = e.deltaY > 0 ? 1 : -1;
+    handleStep(type, direction);
+  };
+
+  const onTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const onTouchEnd = (e, type) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const diff = touchStartY.current - touchEndY;
+    if (Math.abs(diff) > 20) {
+      handleStep(type, diff > 0 ? 1 : -1);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-[340px] shadow-2xl animate-scale-in" onClick={e => e.stopPropagation()}>
         
         <h3 className="text-center font-bold text-slate-800 text-lg mb-8">Pilih Jam</h3>
 
-        <div className="relative flex justify-center items-center h-[200px] gap-2 overflow-hidden bg-white">
-          {/* Highlight Indicator — Precise 44px Height */}
+        <div className="relative flex justify-center items-center h-[200px] gap-2 overflow-hidden bg-white select-none">
+          {/* Highlight Indicator */}
           <div className="absolute top-1/2 -translate-y-1/2 left-4 right-4 h-[44px] bg-slate-50 border border-slate-100 rounded-xl z-0" />
 
-          {/* Hours */}
+          {/* Hours Column */}
           <div 
             ref={scrollRefH}
-            onScroll={() => handleScroll(scrollRefH, setSelectedH, hours)}
-            className="flex-1 h-full overflow-y-auto scroll-smooth snap-y snap-mandatory z-10 no-scrollbar select-none"
-            style={{ scrollPadding: '78px 0' }}
+            onWheel={(e) => onWheel(e, 'H')}
+            onTouchStart={onTouchStart}
+            onTouchEnd={(e) => onTouchEnd(e, 'H')}
+            className="flex-1 h-full overflow-hidden z-10 no-scrollbar cursor-ns-resize"
           >
-            <div className="py-[78px]">
+            <div className="py-[78px] transition-all duration-200">
               {hours.map(h => (
-                <div key={h} className={`h-[44px] flex items-center justify-center snap-center transition-all duration-200 ${selectedH === h ? 'text-2xl font-bold text-slate-800' : 'text-sm text-slate-300 font-medium'}`}>
+                <div key={h} className={`h-[44px] flex items-center justify-center transition-all duration-200 ${selectedH === h ? 'text-2xl font-bold text-slate-800' : 'text-sm text-slate-300 font-medium'}`}>
                   {h}
                 </div>
               ))}
@@ -62,16 +77,17 @@ export default function TimePicker({ value, onSelect, onClose }) {
 
           <div className="text-2xl font-bold text-slate-800 z-10 mb-1">:</div>
 
-          {/* Minutes */}
+          {/* Minutes Column */}
           <div 
             ref={scrollRefM}
-            onScroll={() => handleScroll(scrollRefM, setSelectedM, mins)}
-            className="flex-1 h-full overflow-y-auto scroll-smooth snap-y snap-mandatory z-10 no-scrollbar select-none"
-            style={{ scrollPadding: '78px 0' }}
+            onWheel={(e) => onWheel(e, 'M')}
+            onTouchStart={onTouchStart}
+            onTouchEnd={(e) => onTouchEnd(e, 'M')}
+            className="flex-1 h-full overflow-hidden z-10 no-scrollbar cursor-ns-resize"
           >
-            <div className="py-[78px]">
+            <div className="py-[78px] transition-all duration-200">
               {mins.map(m => (
-                <div key={m} className={`h-[44px] flex items-center justify-center snap-center transition-all duration-200 ${selectedM === m ? 'text-2xl font-bold text-slate-800' : 'text-sm text-slate-300 font-medium'}`}>
+                <div key={m} className={`h-[44px] flex items-center justify-center transition-all duration-200 ${selectedM === m ? 'text-2xl font-bold text-slate-800' : 'text-sm text-slate-300 font-medium'}`}>
                   {m}
                 </div>
               ))}

@@ -3,8 +3,8 @@ setupURLPolyfill();
 // App.js - Entry point AgendaKu Mobile
 // Perbaikan: main entry point benar, ikon dari @expo/vector-icons
 
-import { useEffect, useCallback } from 'react';
-import { Platform, Text, View, LogBox } from 'react-native';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { Platform, Text, View, LogBox, Animated, TouchableOpacity, StyleSheet, Easing, Dimensions } from 'react-native';
 
 // Supress pesan error/warning expo-notifications di Expo Go
 // Ini HARUS dipanggil sebelum modul expo-notifications dimuat
@@ -30,8 +30,10 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
+import { registerTabBarAnimator } from './src/utils/tabBarControl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { 
@@ -41,6 +43,11 @@ import {
   Poppins_700Bold,
   Poppins_900Black 
 } from '@expo-google-fonts/poppins';
+import { 
+  Inter_700Bold,
+  Inter_900Black
+} from '@expo-google-fonts/inter';
+import { ArchivoBlack_400Regular } from '@expo-google-fonts/archivo';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -74,45 +81,135 @@ const TAB_ICONS = {
   Profil:    { active: 'person', inactive: 'person' },
 };
 
-function AppTabs() {
+function CustomTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
-  
-  // Hitung padding bawah yang responsif
-  // Jika insets.bottom > 0 (biasanya navigasi gestur/swipe), gunakan insets tersebut + sedikit tambahan
-  // Jika insets.bottom === 0 (biasanya navigasi 3 tombol), gunakan padding default yang nyaman
-  const dynamicPaddingBottom = insets.bottom > 0 ? insets.bottom + 6 : 14;
-  const dynamicHeight = Platform.OS === 'ios' ? 88 + insets.bottom : 70 + dynamicPaddingBottom;
+  const tabBarAnim = useRef(new Animated.Value(0)).current;
+
+
+  useEffect(() => {
+    registerTabBarAnimator(
+      // animateFn: untuk scroll hide/show (smooth)
+      (visible) => {
+        Animated.timing(tabBarAnim, {
+          toValue: visible ? 0 : 100,
+          duration: 250,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }).start();
+      },
+      // resetFn: untuk pindah tab (instan)
+      () => {
+        tabBarAnim.stopAnimation();
+        tabBarAnim.setValue(0);
+      }
+    );
+  }, []);
+
+  const ICONS = {
+    Dashboard: 'home',
+    Tugas:     'assignment',
+    Kalender:  'event',
+    Profil:    'person',
+  };
 
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: true,
-        tabBarStyle: {
-          backgroundColor: COLORS.surface,
-          borderTopColor:  COLORS.border,
-          height:          dynamicHeight,
-          paddingBottom:   dynamicPaddingBottom,
-          paddingTop:      12,
-          ...SHADOW.md,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          ...FONT.medium,
-          marginBottom: Platform.OS === 'ios' ? 0 : 4,
-        },
-        tabBarActiveTintColor:   COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName = 'help-outline';
-          if (route.name === 'Dashboard') iconName = 'home';
-          else if (route.name === 'Tugas') iconName = 'assignment';
-          else if (route.name === 'Kalender') iconName = 'event';
-          else if (route.name === 'Profil') iconName = 'person';
-          
-          return <MaterialIcons name={iconName} size={size ?? 24} color={color} />;
-        },
+    <Animated.View style={[
+      tabStyles.container,
+      {
+        height: 70 + (insets.bottom > 0 ? insets.bottom : 0),
+        paddingBottom: insets.bottom > 0 ? insets.bottom : 0,
+        transform: [{ translateY: tabBarAnim }],
+      }
+    ]}>
+
+      {state.routes.map((route, index) => {
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate({ name: route.name, merge: true });
+          }
+        };
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            onPress={onPress}
+            style={tabStyles.tabItem}
+            activeOpacity={0.8}
+          >
+            <View style={tabStyles.iconContainer}>
+              <MaterialIcons
+                name={ICONS[route.name] || 'help-outline'}
+                size={28}
+                color={isFocused ? '#000000' : '#94A3B8'}
+              />
+            </View>
+            <Text 
+              style={[
+                tabStyles.tabLabel, 
+                { color: isFocused ? '#1e293b' : '#94A3B8', marginTop: 4 }
+              ]}
+            >
+              {route.name}
+            </Text>
+          </TouchableOpacity>
+        );
       })}
+    </Animated.View>
+  );
+}
+
+const tabStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    height: 70,
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    zIndex: 1000,
+    paddingHorizontal: 10,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainerActive: {
+    backgroundColor: COLORS.primary,
+  },
+  tabLabel: {
+    fontSize: 11,
+    ...FONT.medium,
+    marginTop: 4,
+  },
+});
+
+function AppTabs() {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Tugas"     component={TaskListScreen} />
@@ -163,6 +260,9 @@ export default function App() {
     Poppins_600SemiBold,
     Poppins_700Bold,
     Poppins_900Black,
+    Inter_700Bold,
+    Inter_900Black,
+    'ArchivoBlack_400Regular': 'https://github.com/google/fonts/raw/main/ofl/archivoblack/ArchivoBlack-Regular.ttf',
   });
 
   const onLayoutRootView = useCallback(async () => {
@@ -173,6 +273,9 @@ export default function App() {
 
   // Fallback: Pastikan splash screen tertutup jika onLayout tidak terpanggil
   useEffect(() => {
+    if (fontError) {
+      console.log('Font Load Error:', fontError);
+    }
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync().catch(() => {});
     }
@@ -198,7 +301,7 @@ export default function App() {
                     alignSelf: 'center', 
                     backgroundColor: COLORS.bg,
                   } : { flex: 1 }}>
-                    <StatusBar style="dark" backgroundColor={COLORS.bg} />
+
                     <RootNavigator />
                   </View>
                 </View>

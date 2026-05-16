@@ -1,11 +1,14 @@
 import React, { memo, useState, useRef, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, Animated, 
-  LayoutAnimation, Platform, UIManager
+  LayoutAnimation, Platform, UIManager, Modal, Pressable, Dimensions
 } from 'react-native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { COLORS, FONT, RADIUS, SHADOW } from '../utils/theme';
 import { formatDateTime, isOverdue } from '../utils/helpers';
+import { Input, ConfirmModal } from './ui';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -28,8 +31,8 @@ const CountdownTimer = ({ deadline }) => {
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
       let str = '';
-      if (d > 0) str += `${d}h `;
-      if (h > 0) str += `${h}j `;
+      if (d > 0) str += `${d}d `;
+      if (h > 0) str += `${h}h `;
       str += `${m}m`;
       setTimeLeft(str);
     };
@@ -43,200 +46,356 @@ const CountdownTimer = ({ deadline }) => {
   return <Text style={styles.countdownText}>{timeLeft}</Text>;
 };
 
-const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly }) => {
+const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly, isHighlighted }) => {
   const [expanded, setExpanded] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 20 });
+  const menuBtnRef = useRef(null);
+  const [newSubtask, setNewSubtask] = useState('');
+  const [undoModalVisible, setUndoModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const moreBtnRef = useRef(null);
-
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+ 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
   }, []);
 
+  useEffect(() => {
+    if (isHighlighted) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.05, duration: 400, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+        ]),
+        { iterations: 3 }
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isHighlighted]);
+
+  const openMenu = () => {
+      menuBtnRef.current.measureInWindow((x, y, width, height) => {
+        setMenuPos({ top: y + height, right: 40 });
+        setMenuVisible(true);
+      });
+  };
+
   const isFinished = task.status === 'SELESAI';
+  const isOverdueTask = task.status === 'TERLEWAT' || (!isFinished && isOverdue(task.deadline));
   const totalSub = task.subtasks?.length || 0;
   const doneSub = task.subtasks?.filter(st => st.isDone).length || 0;
   const overdue = !isFinished && isOverdue(task.deadline);
 
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
-    ]).start(() => {
-      if (!readonly && onEdit) onEdit(task);
-    });
+  const toggleExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(!expanded);
   };
 
-  const openMenu = () => {
-    if (readonly) return;
-    Alert.alert(
-      'Opsi Tugas',
-      'Pilih tindakan untuk tugas ini',
-      [
-        { text: 'Edit', onPress: () => onEdit(task) },
-        { text: 'Hapus', style: 'destructive', onPress: () => onDelete(task.id) },
-        { text: 'Batal', style: 'cancel' }
-      ]
-    );
-  };
+  const priorityConfig = {
+    TINGGI: { color: '#FF4444', symbol: 'T', bg: 'rgba(255, 68, 68, 0.15)' },
+    NORMAL: { color: '#F59E0B', symbol: 'N', bg: 'rgba(245, 158, 11, 0.15)' },
+    RENDAH: { color: '#94A3B8', symbol: 'R', bg: 'rgba(148, 163, 184, 0.15)' },
+  }[task.priority || 'NORMAL'];
+
+  const statusConfig = {
+    SEDANG_DIKERJAKAN: { label: 'Berjalan', color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.15)' },
+    SELESAI: { label: 'Selesai', color: '#10b981', bg: '#ecfdf5' },
+    TERLEWAT: { label: 'Terlewat', color: '#ef4444', bg: '#fee2e2' },
+  }[task.status];
 
   return (
-    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }, { scale: scaleAnim }] }}>
-      <TouchableOpacity 
-        activeOpacity={0.9} 
-        onPress={handlePress}
+    <>
+    <Animated.View 
+      style={{ 
+        zIndex: menuVisible || isHighlighted ? 100 : 1, 
+        opacity: fadeAnim, 
+        transform: [
+          { translateY: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) },
+          { scale: pulseAnim }
+        ] 
+      }}
+    >
+      <View 
         style={[
           styles.card, 
-          isFinished && styles.cardFinished, 
-          overdue && styles.cardOverdue
+          isFinished && styles.cardFinished,
+          isOverdueTask && styles.cardOverdue,
+          isHighlighted && styles.cardHighlighted,
         ]}
       >
-        <View style={styles.headerRow}>
-          <View style={styles.dateContainer}>
-            <MaterialCommunityIcons name="calendar" size={14} color={overdue ? '#ef4444' : COLORS.textMuted} />
-            <Text style={[styles.dateLabel, overdue && { color: '#ef4444' }]}>
-              {formatDateTime(task.deadline) || 'Tanpa Tenggat'}
+        {/* TOP ROW: Date & More Menu */}
+        <View style={styles.topRow}>
+          <View style={styles.dateWrap}>
+            <Ionicons name="calendar-outline" size={14} color={overdue ? '#EF4444' : '#808080'} />
+            <Text style={[styles.dateText, overdue && { color: '#EF4444' }]}>
+              {formatDateTime(task.deadline) || 'Tanpa Deadline'}
             </Text>
           </View>
           
-          {!readonly && (
-            <View style={styles.priorityDot}>
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: task.priority === 'TINGGI' ? '#ef4444' : task.priority === 'NORMAL' ? '#f59e0b' : '#94a3b8' }} />
-            </View>
-          )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            {/* Tombol Undo khusus status Selesai */}
+            {isFinished && (
+              <TouchableOpacity 
+                style={styles.undoBtnTop} 
+                onPress={() => setUndoModalVisible(true)}
+                activeOpacity={0.6}
+              >
+                <Ionicons name="arrow-undo" size={14} color={COLORS.danger} />
+                <Text style={styles.undoTextTop}>Undo</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity ref={menuBtnRef} onPress={openMenu} style={styles.moreBtn}>
+              <MaterialCommunityIcons name="dots-vertical" size={22} color="#94A3B8" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Action Menu Modal */}
+          <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+            <Pressable style={styles.modalOverlay} onPress={() => setMenuVisible(false)}>
+              <View style={[styles.inlineMenu, { top: menuPos.top, right: menuPos.right }]}>
+                {!(isFinished || isOverdueTask) && (
+                  <>
+                    <TouchableOpacity style={styles.inlineMenuItem} onPress={() => { setMenuVisible(false); onEdit(task); }}>
+                      <MaterialIcons name="edit" size={16} color="#F59E0B" />
+                      <Text style={styles.inlineMenuText}>Edit</Text>
+                    </TouchableOpacity>
+                    <View style={styles.inlineMenuDivider} />
+                  </>
+                )}
+                <TouchableOpacity style={styles.inlineMenuItem} onPress={() => { setMenuVisible(false); onDelete(task.id); }}>
+                  <MaterialIcons name="delete" size={16} color={COLORS.danger} />
+                  <Text style={[styles.inlineMenuText, { color: COLORS.danger }]}>Hapus</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Modal>
         </View>
 
-        <View style={styles.titleContainer}>
-          {!readonly && (
-            <TouchableOpacity
-              onPress={() => onStatusChange(task.id, isFinished ? 'SEDANG_DIKERJAKAN' : 'SELESAI')}
-              style={styles.checkbox}
+        {/* MIDDLE ROW: Title Only */}
+        <View style={styles.mainRow}>
+          <View style={styles.titleContainer}>
+            <Text 
+              style={[
+                styles.titleText, 
+                (isFinished || isOverdueTask) && styles.titleDone
+              ]} 
+              numberOfLines={2}
             >
-              <Ionicons
-                name={isFinished ? 'checkmark-circle' : 'ellipse-outline'}
-                size={28}
-                color={isFinished ? COLORS.success : COLORS.border}
-              />
-            </TouchableOpacity>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, isFinished && styles.titleDone]} numberOfLines={2}>
               {task.title}
             </Text>
-            {task.description ? (
-              <Text style={styles.description} numberOfLines={1}>{task.description}</Text>
-            ) : null}
           </View>
         </View>
 
-        <View style={styles.footer}>
+        {/* BADGES ROW - Tighter Margin */}
+        <TouchableOpacity 
+          style={[styles.badgeContainer, { marginBottom: 12 }]}
+          onPress={toggleExpand}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.badgeStatus, isFinished && { backgroundColor: '#DCFCE7' }]}>
+            <Text style={[styles.badgeStatusText, isFinished && { color: '#14532D' }]}>
+              {statusConfig.label.toUpperCase()}
+            </Text>
+          </View>
+
+          <View style={styles.badgePriority}>
+            <Text style={styles.badgePriorityText}>{priorityConfig.symbol}</Text>
+          </View>
+          {task.category && (
+            <View style={styles.badgeCategory}>
+              <Text style={styles.badgeCategoryText}>{task.category.name.charAt(0).toUpperCase()}</Text>
+            </View>
+          )}
+          {totalSub > 0 && (
+            <View style={{ marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={styles.progressDot} />
+              <Text style={styles.progressText}>{doneSub}/{totalSub}</Text>
+              <MaterialCommunityIcons 
+                name={expanded ? "chevron-up" : "chevron-down"} 
+                size={24} 
+                color="#334155" 
+              />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* EXPANDED CONTENT: Description & Subtasks */}
+        {expanded && (
+          <View style={styles.expandedContent}>
+            {task.description ? (
+              <Text style={styles.descriptionText}>{task.description}</Text>
+            ) : null}
+            
+            {task.subtasks?.length > 0 && (
+              <View style={styles.subtaskBox}>
+                {task.subtasks.map(st => (
+                  <TouchableOpacity 
+                    key={st.id} 
+                    style={styles.subtaskItem}
+                    onPress={() => onSubtaskToggle(task.id, st.id, !st.isDone)}
+                  >
+                    <Ionicons 
+                      name={st.isDone ? "checkmark-circle" : "ellipse-outline"} 
+                      size={18} 
+                      color={st.isDone ? COLORS.primary : "#D1D5DB"} 
+                    />
+                    <Text style={[styles.subtaskText, st.isDone && styles.subtaskTextDone]}>
+                      {st.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* FOOTER ROW - More Compact */}
+        <View style={styles.footerRow}>
           <View style={styles.footerLeft}>
-            <MaterialCommunityIcons name="timer" size={14} color={overdue ? '#ef4444' : COLORS.textMuted} />
+            <Ionicons name="time-outline" size={13} color={COLORS.primary} />
             <CountdownTimer deadline={task.deadline} />
           </View>
 
-          {totalSub > 0 && (
-            <View style={styles.subtaskBadge}>
-              <Text style={styles.subtaskCount}>{doneSub}/{totalSub}</Text>
-            </View>
-          )}
+          <View style={styles.footerRight}>
+            {!(isFinished || isOverdueTask) && (
+              <TouchableOpacity 
+                style={styles.doneBtnAction} 
+                onPress={() => onStatusChange(task.id, 'SELESAI')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.doneBtnActionText}>Selesai</Text>
+                <Ionicons name="chevron-forward" size={14} color="#000" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </TouchableOpacity>
+
+      </View>
     </Animated.View>
+
+    {/* Modal Konfirmasi Undo dipindahkan ke luar agar tidak terganggu animasi */}
+    <ConfirmModal
+      visible={undoModalVisible}
+      title="Batalkan Selesai?"
+      message="Apakah Anda yakin ingin mengembalikan tugas ini ke status 'Berjalan'?"
+      confirmText="Ya"
+      cancelText="Batal"
+      variant="primary"
+      iconName="undo"
+      onConfirm={() => {
+        setUndoModalVisible(false);
+        onStatusChange(task.id, 'SEDANG_DIKERJAKAN');
+      }}
+      onCancel={() => setUndoModalVisible(false)}
+    />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.xl,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: COLORS.borderLight,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 12, // Reduced from 16
+    marginBottom: 12, // Reduced from 16
     ...SHADOW.sm,
-  },
-  cardFinished: {
-    opacity: 0.7,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   cardOverdue: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FEE2E2',
+    opacity: 0.7,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  cardHighlighted: {
+    borderColor: COLORS.primary,
+    borderWidth: 2,
+    elevation: 8,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  cardFinished: { opacity: 0.6 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
+  dateWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dateText: { fontSize: 10, color: '#808080', ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' }, // Slightly smaller
+  moreBtn: { padding: 2 },
+  mainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
+  checkbox: { marginRight: 12 },
+  titleContainer: { flex: 1 },
+  titleText: { fontSize: 15, ...FONT.bold, color: '#000000' }, // Slightly smaller from 16
+  titleDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+  badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  badgeStatus: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }, // More compact
+  badgeStatusText: { fontSize: 9, ...FONT.bold, color: '#14532D' },
+  badgePriority: { backgroundColor: '#E0E7FF', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  badgePriorityText: { fontSize: 9, ...FONT.bold, color: '#3730A3' },
+  badgeCategory: { backgroundColor: '#FCE7F3', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  badgeCategoryText: { fontSize: 9, ...FONT.bold, color: '#9D174D' },
+  expandedContent: { marginBottom: 12, paddingHorizontal: 4 },
+  descriptionText: { fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 10, ...FONT.medium },
+  subtaskBox: { gap: 6 },
+  subtaskItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  subtaskText: { fontSize: 13, color: '#334155', ...FONT.medium },
+  subtaskTextDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+  footerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    backgroundColor: '#000000',
+    marginHorizontal: -12, // Matching card padding
+    marginBottom: -12, // Matching card padding
+    marginTop: 10,
+    padding: 10, // Reduced from 12
+    paddingHorizontal: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  dateLabel: {
-    fontSize: 11,
-    color: COLORS.textMuted,
-    ...FONT.semibold,
-    textTransform: 'uppercase',
-  },
-  priorityDot: {
-    padding: 4,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  checkbox: {
-    marginRight: 12,
-    marginTop: -2,
-  },
-  title: {
-    fontSize: 16,
-    ...FONT.bold,
-    color: COLORS.text,
-    lineHeight: 22,
-  },
-  titleDone: {
-    textDecorationLine: 'line-through',
-    color: COLORS.textMuted,
-  },
-  description: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 4,
-    ...FONT.medium,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.borderLight,
-  },
-  footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  countdownText: {
-    fontSize: 12,
-    color: COLORS.text,
-    ...FONT.bold,
-  },
-  subtaskBadge: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  countdownText: { fontSize: 10, color: COLORS.primary, ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' },
+  footerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  progressDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#334155' },
+  progressText: { fontSize: 10, color: '#334155', ...FONT.bold },
+  
+  // Inline Menu & Overlay
+  inlineMenu: { position: 'absolute', backgroundColor: '#fff', borderRadius: 12, width: 120, padding: 4, ...SHADOW.md, borderWidth: 1, borderColor: '#f1f5f9', zIndex: 1000 },
+  inlineMenuItem: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8 },
+  inlineMenuText: { fontSize: 12, ...FONT.bold, color: COLORS.text },
+  inlineMenuDivider: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 4 },
+  modalOverlay: { flex: 1, backgroundColor: 'transparent' },
+  
+  undoBtnTop: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 4, 
+    backgroundColor: '#F1F5F9', 
+    paddingHorizontal: 10, 
+    paddingVertical: 5, 
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  subtaskCount: {
-    fontSize: 11,
-    color: COLORS.primary,
+  undoTextTop: { fontSize: 11, ...FONT.bold, color: COLORS.danger },
+  
+  doneBtnAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    ...SHADOW.sm,
+  },
+  doneBtnActionText: {
+    fontSize: 12,
     ...FONT.bold,
+    color: '#000',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
 });
 

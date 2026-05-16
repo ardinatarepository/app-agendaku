@@ -8,6 +8,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, AlertModal } from '../../components/ui';
+import Logo from '../../components/Logo';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
 
 export default function RegisterScreen({ navigation }) {
@@ -65,11 +66,7 @@ export default function RegisterScreen({ navigation }) {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.brand}>
-          <Image 
-            source={require('../../../assets/icon.png')} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
+          <Logo size="lg" showText={false} />
           <Text style={styles.appName}>Buat Akun</Text>
           <Text style={styles.tagline}>Gratis selamanya, tidak perlu kartu kredit</Text>
         </View>

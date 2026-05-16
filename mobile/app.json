@@ -2,6 +2,7 @@
   "expo": {
     "name": "AgendaKu",
     "slug": "agendaku",
+    "privacy": "public",
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
@@ -28,6 +29,18 @@
     ],
     "web": {
       "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d5323be0-d069-4839-8dd0-532150031c2d"
+      }
+    },
+    "owner": "ardinata16",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d5323be0-d069-4839-8dd0-532150031c2d"
     }
   }
 }

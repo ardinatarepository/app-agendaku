@@ -1,185 +1,270 @@
-import { useState } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { 
-  MdCheck, 
-  MdEdit, 
-  MdDelete, 
-  MdEvent, 
-  MdAccessTime, 
-  MdError, 
-  MdChevronRight,
-  MdPlaylistAddCheck,
-  MdAlarm,
-  MdAdd
-} from 'react-icons/md';
-import { STATUS_CONFIG, PRIORITY_CONFIG, formatDate, isOverdue, isNearDeadline } from '../../utils';
+  IoCalendarOutline, 
+  IoEllipsisVertical, 
+  IoArrowUndo, 
+  IoTrashOutline, 
+  IoCreateOutline,
+  IoChevronDown,
+  IoChevronUp,
+  IoCheckmarkCircle,
+  IoEllipseOutline,
+  IoTimeOutline,
+  IoChevronForward
+} from 'react-icons/io5';
+import { format } from 'date-fns';
 
-export default function TaskCard({ task, onEdit, onDelete, onStatusChange, onToggleSubtask, onAddSubtask }) {
-  const [newSubtask, setNewSubtask] = useState('');
-  const [showSubtasks, setShowSubtasks] = useState(false);
-  const sc   = STATUS_CONFIG[task.status];
-  const pc   = PRIORITY_CONFIG[task.priority];
-  const overdue     = task.deadline && task.status !== 'SELESAI' && isOverdue(task.deadline);
-  const nearDl      = task.deadline && task.status !== 'SELESAI' && isNearDeadline(task.deadline);
-  const done        = task.status === 'SELESAI';
+const CountdownTimer = ({ deadline }) => {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      if (!deadline) return setTimeLeft('');
+      const target = new Date(deadline).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+
+      if (diff <= 0) return setTimeLeft('Waktu Habis');
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+      let str = '';
+      if (d > 0) str += `${d}d `;
+      if (h > 0) str += `${h}h `;
+      str += `${m}m`;
+      setTimeLeft(str);
+    };
+
+    update();
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [deadline]);
+
+  if (!timeLeft) return null;
+  return <span className="text-[11px] font-black text-[#FACC15] uppercase tracking-wider">{timeLeft}</span>;
+};
+
+const TaskCard = ({ 
+    task, 
+    onEdit, 
+    onDelete, 
+    onStatusChange, 
+    onToggleSubtask, 
+    onAddSubtask,
+    onDeleteSubtask 
+  }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [newSub, setNewSub] = useState('');
+
+  const isFinished = task.status === 'SELESAI';
+  const isOverdue = task.status === 'TERLEWAT' || (task.status !== 'SELESAI' && task.deadline && new Date(task.deadline) < new Date());
   
-  const dlColor     = overdue ? 'text-red-500' : nearDl ? 'text-amber-500' : 'text-slate-400';
-  const dlIcon      = overdue ? <MdError size={14} /> : nearDl ? <MdAccessTime size={14} /> : <MdEvent size={14} />;
+  const totalSub = task.subtasks?.length || 0;
+  const doneSub = task.subtasks?.filter(st => st.isDone).length || 0;
 
-  const nextStatus  = task.status === 'SELESAI' ? 'SEDANG_DIKERJAKAN' : 'SELESAI';
-  const nextLabel   = task.status === 'SELESAI' ? 'Batal' : 'Selesai';
+  const handleAddSubmit = (e) => {
+    if (e.key === 'Enter' && newSub.trim()) {
+      onAddSubtask(task.id, newSub.trim());
+      setNewSub('');
+    }
+  };
+
+  const priorityCfg = {
+    TINGGI: { color: '#dc2626', symbol: 'T', bg: '#fee2e2' },
+    NORMAL: { color: '#b45309', symbol: 'N', bg: '#fef3c7' },
+    RENDAH: { color: '#475569', symbol: 'R', bg: '#f1f5f9' },
+  }[task.priority || 'NORMAL'] || { color: '#475569', symbol: 'N', bg: '#f1f5f9' };
+
+  const statusCfg = {
+    SEDANG_DIKERJAKAN: { label: 'BERJALAN', color: '#0284C7', bg: '#E0F2FE' },
+    SELESAI: { label: 'SELESAI', color: '#10B981', bg: '#ECFDF5' },
+    TERLEWAT: { label: 'TERLEWAT', color: '#EF4444', bg: '#FEE2E2' },
+  }[task.status] || { label: 'TUGAS', color: '#0284C7', bg: '#E0F2FE' };
 
   return (
-    <div className={`bg-white border border-[#e2e8f0] rounded-[16px] p-4 flex flex-col h-full shadow-sm hover:shadow-md transition-all duration-300 ${done ? 'opacity-60' : ''} ${overdue ? 'border-l-4 border-l-red-500' : ''}`}>
-
-      {/* Header */}
-      <div className="flex items-start gap-3 mb-2.5">
-        <div className="flex-1 min-w-0">
-          <h3 className={`font-bold text-[#1e293b] text-sm leading-snug ${done ? 'line-through text-slate-400 font-normal' : ''}`}>
-            {task.title}
-          </h3>
-          {task.description && (
-            <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{task.description}</p>
-          )}
-        </div>
-
-        {/* Actions — always show delete, edit only when not done */}
-        <div className="flex items-center gap-1 shrink-0">
-          {!done && onEdit && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); onEdit(task); }} 
-              className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-[#1e293b] rounded-xl hover:bg-slate-50 transition-all"
-              title="Edit Tugas"
-            >
-              <MdEdit size={18} />
-            </button>
-          )}
-          {onDelete && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} 
-              className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-red-500 rounded-xl hover:bg-red-50 transition-all"
-              title="Hapus Tugas"
-            >
-              <MdDelete size={18} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Badges */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-3">
-        {task.status !== 'TERLEWAT' && (
-          <span className={`${sc.cls} text-[9px] uppercase tracking-wider`}>{sc.label}</span>
-        )}
-        <span className={`${pc.cls} text-[9px] uppercase tracking-wider`}>{pc.label}</span>
-        {task.category && (
-          <span className="text-[9px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider"
-            style={{ backgroundColor: task.category.color + '15', color: task.category.color }}>
-            {task.category.name}
-          </span>
-        )}
-        {task.isRecurring && (
-          <span className="text-[9px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider bg-blue-50 text-blue-600">
-            🔁 {task.recurrence === 'HARIAN' ? 'Harian' : task.recurrence === 'MINGGUAN' ? 'Mingguan' : 'Bulanan'}
-          </span>
-        )}
-      </div>
-
-      {/* Subtasks Progress */}
-      {task.subtasks && task.subtasks.length > 0 && (
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-normal text-slate-500 flex items-center gap-1 cursor-pointer" onClick={() => setShowSubtasks(!showSubtasks)}>
-              <MdPlaylistAddCheck size={14} /> Sub-Tugas ({task.subtasks.filter(st => st.isDone).length}/{task.subtasks.length})
+    <div className={`bg-white rounded-[20px] border border-slate-100 shadow-sm overflow-hidden flex flex-col transition-all group ${(isFinished || isOverdue) ? 'opacity-60' : ''} ${isOverdue && !isFinished ? 'bg-red-50/30' : ''}`}>
+      
+      <div className="p-4 flex-1">
+        {/* Top Row: Date & Menu */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <IoCalendarOutline size={14} className={isOverdue && !isFinished ? 'text-red-500' : ''} />
+            <span className={`text-[10px] font-bold uppercase tracking-tight ${isOverdue && !isFinished ? 'text-red-500' : ''}`}>
+              {task.deadline ? format(new Date(task.deadline), 'dd MMM yyyy, HH:mm') : 'Tanpa Deadline'}
             </span>
-            <span className="text-[10px] font-normal text-[#15152b]">
-              {Math.round((task.subtasks.filter(st => st.isDone).length / task.subtasks.length) * 100)}%
-            </span>
-          </div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div 
-              className="bg-[#15152b] h-full rounded-full transition-all duration-500"
-              style={{ width: `${(task.subtasks.filter(st => st.isDone).length / task.subtasks.length) * 100}%` }}
-            />
           </div>
           
-          {showSubtasks && (
-            <div className="mt-2 space-y-1.5">
-              {task.subtasks.map(st => (
-                <div key={st.id} className="flex items-start gap-2 group">
+          <div className="relative">
+            <div className="flex items-center gap-2">
+              {isFinished && (
+                <button 
+                  onClick={() => onStatusChange(task.id, 'SEDANG_DIKERJAKAN')}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#F1F5F9] border border-[#E2E8F0] text-red-500 text-[10px] font-black hover:bg-red-50 transition-colors"
+                >
+                  <IoArrowUndo size={12} />
+                  <span>UNDO</span>
+                </button>
+              )}
+              <button 
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-1 text-slate-300 hover:text-slate-600 transition-colors"
+              >
+                <IoEllipsisVertical size={20} />
+              </button>
+            </div>
+
+            {showMenu && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-2xl border border-slate-100 py-1 z-50 animate-fade-in">
+                  {!(isFinished || isOverdue) && (
+                    <button 
+                      onClick={() => { setShowMenu(false); onEdit(task); }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-[12px] font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-600 transition-colors"
+                    >
+                      <IoCreateOutline size={16} />
+                      <span>Edit</span>
+                    </button>
+                  )}
                   <button 
-                    onClick={() => onToggleSubtask && onToggleSubtask(task.id, st.id)}
-                    className={`shrink-0 w-4 h-4 rounded-sm border mt-0.5 flex items-center justify-center transition-colors ${
-                      st.isDone ? 'bg-[#15152b] border-[#15152b] text-white' : 'border-slate-300 text-transparent hover:border-[#15152b]'
-                    }`}
+                    onClick={() => { setShowMenu(false); onDelete(task.id); }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-[12px] font-bold text-red-500 hover:bg-red-50 transition-colors"
                   >
-                    <MdCheck size={10} />
+                    <IoTrashOutline size={16} />
+                    <span>Hapus</span>
                   </button>
-                  <span className={`text-[11px] leading-snug flex-1 ${st.isDone ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
-                    {st.title}
-                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className={`text-[15px] font-bold text-black leading-tight mb-4 tracking-tight ${(isFinished || isOverdue) ? 'line-through text-slate-400' : ''}`}>
+          {task.title}
+        </h3>
+
+        {/* Badges Row */}
+        <div className="flex items-center gap-2">
+          <div 
+            className="px-2.5 py-1 rounded-md text-[9px] font-black uppercase tracking-widest"
+            style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
+          >
+            {statusCfg.label}
+          </div>
+
+          <div 
+            className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-black"
+            style={{ backgroundColor: priorityCfg.bg, color: priorityCfg.color }}
+          >
+            {priorityCfg.symbol}
+          </div>
+
+          {task.category && (
+            <div 
+              className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
+              style={{ backgroundColor: task.category.color }}
+            >
+              {task.category.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+
+          {totalSub > 0 && (
+            <button 
+              onClick={() => setExpanded(!expanded)}
+              className="ml-auto flex items-center gap-1.5 group/sub"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-[#334155]" />
+              <span className="text-[10px] font-black text-[#334155]">{doneSub}/{totalSub}</span>
+              {expanded ? <IoChevronUp size={18} className="text-[#334155]" /> : <IoChevronDown size={18} className="text-[#334155]" />}
+            </button>
+          )}
+          {totalSub === 0 && !isFinished && (
+            <button 
+              onClick={() => setExpanded(!expanded)}
+              className="ml-auto text-[10px] font-bold text-slate-300 hover:text-primary transition-colors uppercase tracking-widest"
+            >
+              {expanded ? 'Tutup' : '+ Subtask'}
+            </button>
+          )}
+        </div>
+
+        {/* Expanded: Subtasks & Description */}
+        {expanded && (
+          <div className="mt-5 space-y-4 pt-4 border-t border-slate-50 animate-fade-in">
+            {task.description && (
+              <p className="text-[13px] font-medium text-slate-500 leading-relaxed">
+                {task.description}
+              </p>
+            )}
+            
+            <div className="space-y-3">
+              {task.subtasks?.map(st => (
+                <div key={st.id} className="flex items-center justify-between group/st">
+                  <button 
+                    onClick={() => onToggleSubtask(task.id, st.id)}
+                    className="flex-1 flex items-center gap-3 text-left"
+                  >
+                    {st.isDone ? (
+                      <IoCheckmarkCircle size={20} className="text-[#FACC15]" />
+                    ) : (
+                      <IoEllipseOutline size={20} className="text-[#D1D5DB]" />
+                    )}
+                    <span className={`text-[13px] font-bold ${st.isDone ? 'line-through text-[#94A3B8]' : 'text-slate-600'}`}>
+                      {st.title}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => onDeleteSubtask(task.id, st.id)}
+                    className="opacity-0 group-hover/st:opacity-100 p-1 text-slate-300 hover:text-red-500 transition-all"
+                  >
+                    <IoTrashOutline size={14} />
+                  </button>
                 </div>
               ))}
               
-              {/* Add Subtask Input */}
-              {onAddSubtask && !done && (
-                <div className="flex items-center gap-1 mt-2">
+              {!isFinished && (
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="w-5 h-5 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                  </div>
                   <input 
-                    type="text" 
-                    value={newSubtask}
-                    onChange={(e) => setNewSubtask(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newSubtask.trim()) {
-                        onAddSubtask(task.id, newSubtask.trim());
-                        setNewSubtask('');
-                      }
-                    }}
-                    placeholder="Tambah sub-tugas..."
-                    className="flex-1 text-[11px] bg-slate-50 border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-[#15152b]"
+                    type="text"
+                    placeholder="Tambah subtask..."
+                    className="flex-1 bg-transparent border-none text-[13px] font-bold text-slate-600 outline-none placeholder:text-slate-300 placeholder:font-medium"
+                    value={newSub}
+                    onChange={e => setNewSub(e.target.value)}
+                    onKeyDown={handleAddSubmit}
                   />
-                  <button 
-                    onClick={() => {
-                      if (newSubtask.trim()) {
-                        onAddSubtask(task.id, newSubtask.trim());
-                        setNewSubtask('');
-                      }
-                    }}
-                    className="w-6 h-6 flex items-center justify-center bg-[#15152b] text-white rounded hover:bg-[#15152b]/90"
-                  >
-                    <MdAdd size={14} />
-                  </button>
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-auto pt-2">
-        {task.deadline ? (
-          <div className="flex flex-col">
-            <span className={`text-[10px] font-normal flex items-center gap-1 ${dlColor}`}>
-              {dlIcon}
-              {overdue ? 'Terlambat · ' : ''}{formatDate(task.deadline)}
-            </span>
-            {task.reminderHours > 0 && (
-              <span className="text-[9px] text-primary font-normal flex items-center gap-1 mt-0.5">
-                <MdAlarm size={12} /> Diingatkan {task.reminderHours}j sebelum
-              </span>
-            )}
           </div>
-        ) : (
-          <span className="text-[10px] text-slate-300 font-medium italic">Tanpa deadline</span>
         )}
+      </div>
 
-        {!done && (
-          <button onClick={() => onStatusChange(task.id, nextStatus)}
-            className="flex items-center gap-1 px-3 py-1 bg-[#1e293b]/5 text-[#1e293b] text-[10px] font-bold rounded-full hover:bg-[#1e293b]/10 transition-all">
-            {nextLabel} 
-            <MdChevronRight size={14} />
+      {/* Footer Bar (Black Parity) */}
+      <div className="bg-black p-3 px-5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <IoTimeOutline size={14} className="text-[#FACC15]" />
+          <CountdownTimer deadline={task.deadline} />
+        </div>
+
+        {!(isFinished || isOverdue) && (
+          <button 
+            onClick={() => onStatusChange(task.id, 'SELESAI')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FACC15] text-black text-[12px] font-black rounded-xl hover:scale-105 transition-transform shadow-sm"
+          >
+            <span>Selesai</span>
+            <IoChevronForward size={14} />
           </button>
         )}
       </div>
     </div>
   );
-}
+};
+
+export default memo(TaskCard);

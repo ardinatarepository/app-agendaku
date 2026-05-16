@@ -1,18 +1,13 @@
-// RegisterPage - Responsif
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { 
-  MdPerson, 
-  MdEmail, 
-  MdLock, 
   MdVisibility, 
-  MdVisibilityOff, 
-  MdArrowForward, 
-  MdCheck 
+  MdVisibilityOff 
 } from 'react-icons/md';
+
+import Logo from '../components/common/Logo';
 
 export default function RegisterPage() {
   const [form, setForm]         = useState({ name: '', email: '', password: '', confirm: '' });
@@ -23,7 +18,6 @@ export default function RegisterPage() {
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
 
-  // Indikator kekuatan password
   const strength = (() => {
     const p = form.password;
     if (!p) return null;
@@ -49,45 +43,48 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]" />
-
-      <div className="w-full max-w-sm relative z-10">
-        {/* Brand */}
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-white rounded-[2rem] shadow-premium mx-auto mb-6 flex items-center justify-center border border-slate-100">
-            <img src="/logo.png" className="w-12 h-12" alt="Logo AgendaKu" />
-          </div>
-          <h1 className="text-4xl font-black text-primary tracking-tight">AgendaKu</h1>
-          <p className="text-sm text-slate-400 mt-2 font-medium">Mulai perjalanan produktivitasmu</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6 py-12">
+      <div className="w-full max-w-sm">
+        {/* Brand Section */}
+        <div className="text-center mb-12">
+          <Logo size="lg" stacked={true} className="mb-4" />
+          <p className="text-sm font-medium text-slate-500">Mulai kelola tugasmu dengan lebih profesional</p>
         </div>
 
-        <div className="card p-8 bg-white/80 backdrop-blur-xl shadow-premium border-white">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Register Card */}
+        <div className="bg-white p-10 rounded-[32px] shadow-premium border border-slate-50">
+          <h2 className="text-xl font-black text-slate-800 mb-8">Daftar Akun</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="label">Nama Lengkap</label>
-              <div className="relative">
-                <MdPerson className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input className="input pl-11" placeholder="Nama kamu" value={form.name} onChange={set('name')} required autoFocus minLength={2} />
-              </div>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Nama Lengkap</label>
+              <input 
+                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
+                placeholder="Nama kamu" 
+                value={form.name} 
+                onChange={set('name')} 
+                required 
+                autoFocus 
+              />
             </div>
             <div>
-              <label className="label">Alamat Email</label>
-              <div className="relative">
-                <MdEmail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input type="email" className="input pl-11" placeholder="email@contoh.com" value={form.email} onChange={set('email')} required />
-              </div>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Email</label>
+              <input 
+                type="email" 
+                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
+                placeholder="email@contoh.com" 
+                value={form.email} 
+                onChange={set('email')} 
+                required 
+              />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Password</label>
               <div className="relative">
-                <MdLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                 <input
                   type={showPass ? 'text' : 'password'}
-                  className="input pl-11 pr-11"
-                  placeholder="Minimal 6 karakter"
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  placeholder="Min. 6 karakter"
                   value={form.password}
                   onChange={set('password')}
                   required
@@ -95,52 +92,52 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
                 >
-                  {showPass ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+                  {showPass ? <MdVisibilityOff size={22} /> : <MdVisibility size={22} />}
                 </button>
               </div>
               {strength && (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                <div className="mt-2 px-1">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Kekuatan: {strength.label}</span>
+                  </div>
+                  <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div className={`h-full ${strength.color} ${strength.w} transition-all duration-500`} />
                   </div>
-                  <span className="text-[10px] font-black uppercase text-slate-400">{strength.label}</span>
                 </div>
               )}
             </div>
             <div>
-              <label className="label">Konfirmasi Password</label>
-              <div className="relative">
-                <MdLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input
-                  type={showPass ? 'text' : 'password'}
-                  className="input pl-11"
-                  placeholder="Ulangi password"
-                  value={form.confirm}
-                  onChange={set('confirm')}
-                  required
-                />
-                {form.confirm && form.password === form.confirm && (
-                  <MdCheck className="absolute right-3.5 top-1/2 -translate-y-1/2 text-emerald-500" size={20} />
-                )}
-              </div>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Konfirmasi Password</label>
+              <input
+                type={showPass ? 'text' : 'password'}
+                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                placeholder="Ulangi password"
+                value={form.confirm}
+                onChange={set('confirm')}
+                required
+              />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2 font-black tracking-tight text-base shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group">
-              {loading ? 'Mendaftar...' : 'Daftar Sekarang'}
-              {!loading && <MdArrowForward size={20} className="group-hover:translate-x-1 transition-transform" />}
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-16 bg-[#1E1E1E] text-white rounded-[20px] text-base font-black shadow-premium active:scale-95 transition-all flex items-center justify-center mt-4"
+            >
+              {loading ? 'Mendaftar...' : 'Buat Akun'}
             </button>
           </form>
+        </div>
 
-          <div className="mt-8 text-center pt-6 border-t border-slate-100">
-            <p className="text-sm text-slate-400 font-medium">
-              Sudah punya akun?{' '}
-              <Link to="/login" className="text-primary font-black hover:underline underline-offset-4">
-                Masuk Disini
-              </Link>
-            </p>
-          </div>
+        {/* Footer Link */}
+        <div className="mt-10 text-center">
+          <p className="text-sm font-medium text-slate-500">
+            Sudah punya akun?{' '}
+            <Link to="/login" className="text-slate-800 font-black hover:underline underline-offset-4">
+              Masuk di sini
+            </Link>
+          </p>
         </div>
       </div>
     </div>

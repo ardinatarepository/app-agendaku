@@ -1,344 +1,85 @@
-// DashboardScreen - Fixed
-// Perbaikan: ikon menggunakan @expo/vector-icons (Ionicons)
-
-import { useEffect, useCallback, useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, Image,
-  RefreshControl, StyleSheet, StatusBar,
-} from 'react-native';
-import { format } from 'date-fns';
-import { useFocusEffect } from '@react-navigation/native';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useAuth } from '../../context/AuthContext';
-import { taskAPI } from '../../api';
-import TaskCard from '../../components/TaskCard';
-import { Card, Skeleton, TaskSkeleton, Divider } from '../../components/ui';
-import { COLORS, FONT, RADIUS, SHADOW } from '../../utils/theme';
-import { formatDate, formatDateTime, isOverdue } from '../../utils/helpers';
-import { rescheduleAllNotifications } from '../../utils/notifications';
-import { AVATAR_URL } from '../../config';
-
-const StatCard = ({ label, value, color, iconName, onPress }) => (
-  <TouchableOpacity 
-    style={styles.statCard} 
-    onPress={onPress} 
-    activeOpacity={0.75}
-  >
-    <View style={styles.statHeader}>
-      <Text style={[styles.statValue, { color: COLORS.text }]}>{value}</Text>
-      <MaterialIcons name={iconName} size={24} color={color} style={styles.statWave} />
-    </View>
-    <View style={styles.statFooter}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <MaterialIcons name="chevron-right" size={18} color={COLORS.textLight} />
-    </View>
-  </TouchableOpacity>
-);
-
-const ProgressBar = ({ selesai, total }) => {
-  const pct  = total > 0 ? Math.round((selesai / total) * 100) : 0;
-  const fill = total > 0 ? selesai / total : 0;
-  return (
-    <View style={styles.progressWrap}>
-      <View style={styles.progressBarBg}>
-        <View style={[styles.progressBarFill, { width: `${pct}%` }]} />
-      </View>
-      <Text style={styles.progressText}>{selesai} dari {total} tugas selesai ({pct}%)</Text>
-    </View>
-  );
-};
+import { RefreshControl, ScrollView, View, StatusBar, StyleSheet } from 'react-native';
+import { COLORS } from '../../utils/theme';
+import { useDashboard } from '../../hooks/useDashboard';
+import { 
+  DashboardHeader, 
+  DashboardStats, 
+  DashboardProgress, 
+  DashboardSections 
+} from './components/DashboardComponents';
 
 export default function DashboardScreen({ navigation }) {
-  const qc = useQueryClient();
-  const { user, lastAvatar } = useAuth();
-  
-  // Resolve avatar URL with fallback
-  const displayAvatar = user?.avatar || lastAvatar;
-  const avatarUri = displayAvatar ? (displayAvatar.startsWith('http') ? displayAvatar : `${AVATAR_URL}${displayAvatar}?t=${new Date().getTime()}`) : null;
+  const {
+    user,
+    lastAvatar,
+    stats,
+    tugasDeadline,
+    tugasTerlewat,
+    tugasMingguIni,
+    tugasHariIni,
+    isLoading,
+    refreshing,
+    handleRefresh,
+    handleScroll,
+    goToTasks
+  } = useDashboard(navigation);
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn:  () => taskAPI.getDashboard().then(r => r.data.data),
-  });
-
-  const [refreshing, setRefreshing] = useState(false);
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([
-      refetch(),
-      qc.invalidateQueries({ queryKey: ['tasks'] })
-    ]);
-    setRefreshing(false);
-  }, [refetch, qc]);
-
-  const { data: allTasks = [] } = useQuery({
-    queryKey: ['tasks', {}],
-    queryFn:  () => taskAPI.getAll({}).then(r => r.data.data),
-  });
-
-  // Refresh data saat layar difokuskan (tanpa memunculkan animasi loading/kedut)
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-      qc.invalidateQueries({ queryKey: ['tasks'] });
-    }, [refetch, qc])
-  );
-
-  useEffect(() => {
-    if (allTasks.length > 0) {
-      rescheduleAllNotifications(allTasks).catch(() => {});
-    }
-  }, [allTasks]);
-
-  const stats         = data?.stats || {};
-  const tugasDeadline = data?.tugasMendekatiDeadline || [];
-  const tugasTerlewat = data?.tugasTerlewat || [];
-
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const tugasHariIni = allTasks.filter(t => {
-    if (t.status === 'SELESAI' || !t.deadline) return false;
-    const dl = new Date(t.deadline); dl.setHours(0, 0, 0, 0);
-    return dl.getTime() === today.getTime();
-  });
-
-  const goToTasks = (filter = {}) => navigation.navigate('Tugas', { initialFilter: filter });
+  const handleTaskPress = (taskId, status = 'SEDANG_DIKERJAKAN') => {
+    navigation.navigate('Tugas', { 
+      highlightId: taskId,
+      initialFilter: { status: status }
+    });
+  };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
       
-      {/* Header (Top Bar) - FIXED */}
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.greeting}>Halo, {user?.name?.split(' ')[0]}</Text>
-          <Text style={styles.subtitle}>Selamat datang kembali di AgendaKu</Text>
-        </View>
-        <View style={[styles.avatar, { overflow: 'hidden' }]}>
-          {avatarUri ? (
-            <Image 
-              source={{ uri: avatarUri }} 
-              style={{ width: '100%', height: '100%' }} 
-            />
-          ) : (
-            <Text style={styles.avatarText}>{user?.name?.[0]?.toUpperCase()}</Text>
-          )}
-        </View>
-      </View>
+      <DashboardHeader 
+        user={user} 
+        lastAvatar={lastAvatar}
+        onProfilePress={() => navigation.navigate('Profil')} 
+      />
 
       <ScrollView 
         style={styles.container} 
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={handleRefresh} 
+            tintColor={COLORS.primary} 
+          />
+        }
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
+        <DashboardStats 
+          stats={stats} 
+          tugasMingguIniCount={tugasMingguIni.length} 
+          isLoading={isLoading} 
+          onStatPress={goToTasks}
+        />
 
-      {/* Stats Grid */}
-      <View style={styles.statsGrid}>
-        {isLoading ? (
-          <>
-            <View style={styles.statCard}><Skeleton width={24} height={24} style={{ marginBottom: 8 }} /><Skeleton width={40} height={20} style={{ marginBottom: 4 }} /><Skeleton width={60} height={12} /></View>
-            <View style={styles.statCard}><Skeleton width={24} height={24} style={{ marginBottom: 8 }} /><Skeleton width={40} height={20} style={{ marginBottom: 4 }} /><Skeleton width={60} height={12} /></View>
-            <View style={styles.statCard}><Skeleton width={24} height={24} style={{ marginBottom: 8 }} /><Skeleton width={40} height={20} style={{ marginBottom: 4 }} /><Skeleton width={60} height={12} /></View>
-            <View style={styles.statCard}><Skeleton width={24} height={24} style={{ marginBottom: 8 }} /><Skeleton width={40} height={20} style={{ marginBottom: 4 }} /><Skeleton width={60} height={12} /></View>
-          </>
-        ) : (
-          <>
-            <StatCard label="Total"      value={stats.total            ?? 0} color={COLORS.text}    iconName="assignment"   onPress={() => goToTasks({})} />
-            <StatCard label="Dikerjakan" value={stats.sedangDikerjakan ?? 0} color="#2563eb"        iconName="bolt"         onPress={() => goToTasks({ status: 'SEDANG_DIKERJAKAN' })} />
-            <StatCard label="Selesai"    value={stats.selesai          ?? 0} color={COLORS.success} iconName="check-circle" onPress={() => goToTasks({ status: 'SELESAI' })} />
-            <StatCard label="Terlewat"   value={stats.terlewat         ?? 0} color={COLORS.danger}  iconName="error"        onPress={() => goToTasks({ status: 'TERLEWAT' })} />
-          </>
-        )}
-      </View>
+        <DashboardSections 
+          tugasTerlewat={tugasTerlewat}
+          tugasDeadline={tugasDeadline}
+          tugasHariIni={tugasHariIni}
+          onTaskPress={handleTaskPress}
+          onSectionPress={goToTasks}
+        />
 
-      {/* Tugas Terlewat */}
-      {tugasTerlewat.length > 0 && (
-        <View style={styles.section}>
-          <Card style={{ padding: 12 }}>
-            <Text style={[styles.sectionTitle, { color: COLORS.danger, marginBottom: 8 }]}>Tugas Terlewat</Text>
-            <Divider style={{ marginBottom: 12, marginTop: 4 }} />
-            
-            {tugasTerlewat.slice(0, 3).map(task => (
-              <TouchableOpacity 
-                key={task.id} 
-                onPress={() => goToTasks({ status: 'TERLEWAT' })}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}
-              >
-                <View style={{ width: 4, height: 24, backgroundColor: COLORS.danger, borderRadius: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, ...FONT.bold, color: COLORS.text }} numberOfLines={1}>{task.title}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                    <MaterialIcons name="event-busy" size={12} color={COLORS.danger} />
-                    <Text style={{ fontSize: 11, color: COLORS.danger, ...FONT.medium }}>
-                      {formatDateTime(task.deadline)}
-                    </Text>
-                  </View>
-                </View>
-                <MaterialIcons name="chevron-right" size={20} color={COLORS.textDisabled} />
-              </TouchableOpacity>
-            ))}
-
-            {tugasTerlewat.length > 3 && (
-              <TouchableOpacity onPress={() => goToTasks({ status: 'TERLEWAT' })} style={{ alignItems: 'center', marginTop: 8 }}>
-                <Text style={{ fontSize: 12, color: COLORS.textMuted, ...FONT.bold }}>Lihat {tugasTerlewat.length - 3} Tugas Lainnya</Text>
-              </TouchableOpacity>
-            )}
-          </Card>
-        </View>
-      )}
-
-      {/* Mendekati Deadline */}
-      <View style={styles.section}>
-        <Card style={{ padding: 12 }}>
-          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Mendekati Deadline</Text>
-          <Divider style={{ marginBottom: 12, marginTop: 4 }} />
-
-          {tugasDeadline.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-              <Ionicons name="happy" size={24} color={COLORS.success} style={{ marginBottom: 4 }} />
-              <Text style={{ fontSize: 12, ...FONT.semibold, color: COLORS.text }}>Semua deadline aman!</Text>
-            </View>
-          ) : (
-            <View style={{ gap: 8 }}>
-              {tugasDeadline.map(task => {
-                const over = isOverdue(task.deadline);
-                return (
-                  <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                    <View style={[styles.deadlineRow, over && { opacity: 0.8 }, { paddingVertical: 2 }]}>
-                      <View style={[styles.urgentDot, { backgroundColor: over ? COLORS.danger : COLORS.warning }]} />
-                      <View style={styles.deadlineInfo}>
-                        <Text style={[styles.deadlineTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
-                      </View>
-                      <View style={[styles.deadlineDateWrap, { flexDirection: 'row', gap: 6, alignItems: 'center' }]}>
-                        <Text style={[styles.deadlineUrgency, { fontSize: 10, color: over ? COLORS.danger : COLORS.warning }]}>{over ? 'Terlambat' : 'Segera'}</Text>
-                        <Text style={[styles.deadlineDate, { fontSize: 10 }]}>{format(new Date(task.deadline), 'HH:mm')}</Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </Card>
-      </View>
-
-      {/* Tugas Hari Ini */}
-      <View style={styles.section}>
-        <Card style={{ padding: 12 }}>
-          <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Tugas Hari Ini</Text>
-          <Divider style={{ marginBottom: 12, marginTop: 4 }} />
-          
-          {isLoading ? (
-            <View>
-              <TaskSkeleton />
-            </View>
-          ) : tugasHariIni.length === 0 ? (
-            <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-              <Text style={{ fontSize: 12, ...FONT.semibold, color: COLORS.text }}>Tidak ada tugas hari ini</Text>
-            </View>
-          ) : (
-            <View style={{ gap: 8 }}>
-              {tugasHariIni.slice(0, 5).map(task => (
-                <TouchableOpacity key={task.id} onPress={() => goToTasks({})} activeOpacity={0.85}>
-                  <View style={[styles.taskRow, { paddingVertical: 2 }]}>
-                    <View style={[styles.taskDot, {
-                      backgroundColor: { SEDANG_DIKERJAKAN: '#3b82f6', SELESAI: COLORS.success }[task.status],
-                    }]} />
-                    <View style={styles.taskInfo}>
-                      <Text style={[styles.taskTitle, { fontSize: 13 }]} numberOfLines={1}>{task.title}</Text>
-                    </View>
-                    <View style={[styles.taskBadge, { paddingHorizontal: 6, paddingVertical: 1 }]}><Text style={{ fontSize: 9, ...FONT.bold, color: '#dc2626' }}>Hari ini</Text></View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </Card>
-      </View>
-
-      {/* Progress Section */}
-      <View style={[styles.section, { marginBottom: 32 }]}>
-        <Card style={{ padding: 16 }}>
-          <Text style={[styles.sectionTitle, { marginTop: 0, marginBottom: 8 }]}>Progress Tugas</Text>
-          <Divider style={{ marginBottom: 16, marginTop: 4 }} />
-          {isLoading ? (
-            <View style={{ gap: 8 }}>
-              <Skeleton width="100%" height={12} borderRadius={6} />
-              <Skeleton width="70%" height={12} />
-            </View>
-          ) : (
-            <>
-              <ProgressBar selesai={stats.selesai ?? 0} total={stats.total ?? 0} />
-              
-              <View style={styles.insightBox}>
-                <Text style={styles.insightText}>
-                  {stats.total > 0 
-                    ? `Kamu sudah menyelesaikan ${Math.round((stats.selesai/stats.total)*100)}% tugas. Semangat!` 
-                    : 'Mulai kerjakan tugasmu hari ini!'}
-                </Text>
-              </View>
-            </>
-          )}
-        </Card>
-      </View>
-    </ScrollView>
+        <DashboardProgress 
+          stats={stats} 
+          isLoading={isLoading} 
+        />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:       { flex: 1, backgroundColor: COLORS.bg },
-  content:         { padding: 20 },
-  topBar:          { backgroundColor: COLORS.primary, padding: 24, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', ...SHADOW.md, zIndex: 10 },
-  greeting:        { fontSize: 24, ...FONT.bold, color: '#FFFFFF' },
-  subtitle:        { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-  avatar:          { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  headerTitle:     { fontSize: 20, ...FONT.bold, color: '#FFF' },
-  avatarText:      { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
-  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  statCard:        { width: '48%', backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 10, height: 80, justifyContent: 'space-between', borderWidth: 1, borderColor: COLORS.borderLight, ...SHADOW.sm },
-  statHeader:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statValue:       { fontSize: 22, ...FONT.bold, color: COLORS.text },
-  statWave:        { marginTop: -2 },
-  statFooter:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  statLabel:       { fontSize: 11, color: COLORS.textMuted, ...FONT.bold },
-  progressWrap:    { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: COLORS.borderLight },
-  progressBarBg:   { height: 8, borderRadius: 4, backgroundColor: COLORS.borderLight, overflow: 'hidden', marginBottom: 6 },
-  progressBarFill: { height: 8, backgroundColor: COLORS.success, borderRadius: 4 },
-  progressText:    { fontSize: 12, color: COLORS.textMuted, marginTop: 2, ...FONT.medium },
-  insightBox:      { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
-  insightText:     { fontSize: 12, color: COLORS.textMuted, flex: 1 },
-  section:         { marginTop: 16 },
-  sectionTitle:    { fontSize: 15, ...FONT.bold, color: COLORS.text },
-  divider:         { height: 1, backgroundColor: COLORS.border, marginBottom: 12 },
-  alertBox:        { backgroundColor: COLORS.warningLight, borderWidth: 1, borderColor: '#FDE68A', borderRadius: RADIUS.lg, padding: 16 },
-  alertTitle:      { fontSize: 14, ...FONT.bold, color: COLORS.warning, marginBottom: 12 },
-  alertItem:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  alertDot:        { width: 7, height: 7, borderRadius: 3.5, flexShrink: 0 },
-  alertText:       { fontSize: 12, flex: 1, ...FONT.medium },
-  sectionHeader:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  seeAllBadge:     { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: RADIUS.full },
-  seeAll:          { fontSize: 12, color: COLORS.primary, ...FONT.bold },
-  skeleton:        { height: 72, backgroundColor: COLORS.borderLight, borderRadius: RADIUS.lg, marginBottom: 10 },
-  taskCard:        { marginBottom: 10, padding: 14 },
-  taskRow:         { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  taskDot:         { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  taskInfo:        { flex: 1 },
-  taskTitle:       { fontSize: 14, ...FONT.semibold, color: COLORS.text },
-  taskMeta:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  taskCat:         { fontSize: 11, ...FONT.medium },
-  taskBadge:       { paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.full, backgroundColor: '#fee2e2' },
-  taskBadgeText:   { fontSize: 10, ...FONT.bold, color: '#dc2626' },
-  deadlineCard:    { marginBottom: 10, padding: 14 },
-  overdueCard:     { borderColor: '#fca5a5', backgroundColor: '#fff9f9' },
-  deadlineRow:     { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  urgentDot:       { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  deadlineInfo:    { flex: 1 },
-  deadlineTitle:   { fontSize: 14, ...FONT.semibold, color: COLORS.text },
-  deadlineCat:     { fontSize: 12, ...FONT.medium, marginTop: 2 },
-  deadlineDateWrap:{ alignItems: 'flex-end' },
-  deadlineUrgency: { fontSize: 11, ...FONT.bold },
-  deadlineDate:    { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  container: { flex: 1, backgroundColor: COLORS.bg },
+  content:   { padding: 20 },
 });

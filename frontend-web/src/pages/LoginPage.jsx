@@ -1,21 +1,21 @@
-// LoginPage - Responsif + show/hide password + lupa password
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { 
-  MdEmail, 
-  MdLock, 
   MdVisibility, 
   MdVisibilityOff, 
-  MdArrowForward 
+  MdErrorOutline
 } from 'react-icons/md';
+
+import Logo from '../components/common/Logo';
 
 export default function LoginPage() {
   const [form, setForm]       = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  
   const { login }             = useAuth();
   const navigate              = useNavigate();
 
@@ -29,50 +29,46 @@ export default function LoginPage() {
       toast.success('Selamat datang kembali!');
       navigate('/');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Email atau password salah.');
+      setErrorMsg(err.response?.data?.message || 'Email atau password yang Anda masukkan salah. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]" />
-
-      <div className="w-full max-w-sm relative z-10">
-        {/* Brand */}
-        <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-white rounded-[2rem] shadow-premium mx-auto mb-6 flex items-center justify-center border border-slate-100">
-            <img src="/logo.png" className="w-12 h-12" alt="Logo AgendaKu" />
-          </div>
-          <h1 className="text-4xl font-black text-primary tracking-tight">AgendaKu</h1>
-          <p className="text-sm text-slate-400 mt-2 font-medium">Kelola tugas & jadwalmu dengan mudah</p>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6 py-12">
+      <div className="w-full max-w-sm">
+        {/* Brand Section */}
+        <div className="text-center mb-12">
+          <Logo size="lg" stacked={true} className="mb-4" />
+          <p className="text-sm font-medium text-slate-500">Kelola tugas & jadwalmu dengan mudah</p>
         </div>
 
-        <div className="card p-8 bg-white/80 backdrop-blur-xl shadow-premium border-white">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Login Card */}
+        <div className="bg-white p-10 rounded-[32px] shadow-premium border border-slate-50">
+          <h2 className="text-xl font-black text-slate-800 mb-8">Masuk</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="label">Alamat Email</label>
-              <div className="relative">
-                <MdEmail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-                <input type="email" className="input pl-11" placeholder="email@contoh.com" value={form.email} onChange={set('email')} required autoFocus />
-              </div>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Email</label>
+              <input 
+                type="email" 
+                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
+                placeholder="email@contoh.com" 
+                value={form.email} 
+                onChange={set('email')} 
+                required 
+                autoFocus 
+              />
             </div>
+            
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="label mb-0">Password</label>
-                <button type="button" onClick={() => toast('Hubungi admin untuk reset password.')} className="text-[11px] text-primary hover:underline font-bold">
-                  Lupa password?
-                </button>
-              </div>
+              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Password</label>
               <div className="relative">
-                <MdLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                 <input
                   type={showPass ? 'text' : 'password'}
-                  className="input pl-11 pr-11"
-                  placeholder="••••••••"
+                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  placeholder="Password kamu"
                   value={form.password}
                   onChange={set('password')}
                   required
@@ -80,29 +76,55 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
                 >
-                  {showPass ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+                  {showPass ? <MdVisibilityOff size={22} /> : <MdVisibility size={22} />}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full py-4 mt-2 font-black tracking-tight text-base shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group">
-              {loading ? 'Masuk...' : 'Masuk Sekarang'}
-              {!loading && <MdArrowForward size={20} className="group-hover:translate-x-1 transition-transform" />}
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-16 bg-[#1E1E1E] text-white rounded-[20px] text-base font-black shadow-premium active:scale-95 transition-all flex items-center justify-center mt-4"
+            >
+              {loading ? 'Masuk...' : 'Masuk'}
             </button>
           </form>
+        </div>
 
-          <div className="mt-8 text-center pt-6 border-t border-slate-100">
-            <p className="text-sm text-slate-400 font-medium">
-              Belum punya akun?{' '}
-              <Link to="/register" className="text-primary font-black hover:underline underline-offset-4">
-                Daftar Gratis
-              </Link>
-            </p>
-          </div>
+        {/* Footer Link */}
+        <div className="mt-10 text-center">
+          <p className="text-sm font-medium text-slate-500">
+            Belum punya akun?{' '}
+            <Link to="/register" className="text-slate-800 font-black hover:underline underline-offset-4">
+              Daftar sekarang
+            </Link>
+          </p>
         </div>
       </div>
+
+      {/* Error Modal */}
+      {errorMsg && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-fade-in">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setErrorMsg(null)} />
+          <div className="bg-white w-full max-w-xs rounded-[40px] p-10 relative z-10 shadow-2xl text-center animate-scale-in">
+            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <MdErrorOutline className="text-red-500" size={40} />
+            </div>
+            <h3 className="text-lg font-black text-slate-800 uppercase tracking-widest mb-3">Login Gagal</h3>
+            <p className="text-sm font-bold text-slate-400 leading-relaxed mb-8 px-2">
+              {errorMsg}
+            </p>
+            <button 
+              onClick={() => setErrorMsg(null)}
+              className="w-full py-4 bg-[#1E1E1E] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-premium active:scale-95 transition-all"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

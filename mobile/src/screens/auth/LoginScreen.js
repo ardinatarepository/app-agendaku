@@ -8,6 +8,7 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Input, AlertModal } from '../../components/ui';
+import Logo from '../../components/Logo';
 import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
 
 export default function LoginScreen({ navigation }) {
@@ -50,12 +51,7 @@ export default function LoginScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Brand */}
         <View style={styles.brand}>
-          <Image 
-            source={require('../../../assets/icon.png')} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
-          <Text style={styles.appName}>AgendaKu</Text>
+          <Logo size="lg" />
           <Text style={styles.tagline}>Kelola tugas & jadwalmu dengan mudah</Text>
         </View>
 

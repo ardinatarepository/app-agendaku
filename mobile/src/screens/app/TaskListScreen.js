@@ -9,7 +9,10 @@ import {
   Platform
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import Logo from '../../components/Logo';
 import { taskAPI, categoryAPI, subtaskAPI } from '../../api';
 import { scheduleTaskNotification, cancelTaskNotification } from '../../utils/notifications';
 import TaskCard from '../../components/TaskCard';
@@ -18,6 +21,7 @@ import TaskFormModal from '../../components/TaskFormModal';
 import FilterSheet from '../../components/FilterSheet';
 import { Button, EmptyState, Card, ConfirmModal, Toast, TaskSkeleton } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../../utils/theme';
+import { setTabBarVisible, resetTabBarVisible } from '../../utils/tabBarControl';
 import { groupTasksByDate, formatDateTime } from '../../utils/helpers';
 
 const STATUSES = ['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT'];
@@ -29,14 +33,15 @@ const SORT_OPTIONS = [
   { key: 'title-asc',      label: 'Judul A-Z',     sort: 'title',     order: 'asc' },
 ];
 
-export default function TaskListScreen({ route }) {
+export default function TaskListScreen({ route, navigation }) {
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const initialFilter = route?.params?.initialFilter || {};
   
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ status: initialFilter.status || '', priority: '', categoryId: '' });
   const [sortKey, setSortKey] = useState('createdAt-desc');
-  const [headerHeight, setHeaderHeight] = useState(113);
+  const [headerHeight, setHeaderHeight] = useState(60);
   const [showFilter, setShowFilter] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,19 +50,50 @@ export default function TaskListScreen({ route }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
   const [successData, setSuccessData] = useState(null);
+  const [highlightedId, setHighlightedId] = useState(null);
   const statusRef = useRef(null);
+  const listRef = useRef(null);
 
   // Sync route params
   useEffect(() => {
+    let hasChanged = false;
+
     if (route?.params?.openAddModal) {
       setEditTask(null);
       setInitialDate(route.params.initialDate || '');
       setShowForm(true);
+      hasChanged = true;
     }
+    
     if (route?.params?.initialFilter) {
-      setFilters(prev => ({ ...prev, status: route.params.initialFilter.status || '' }));
+      const newStatus = route.params.initialFilter.status ?? '';
+      setFilters(prev => ({ ...prev, status: newStatus }));
+      hasChanged = true;
     }
-  }, [route?.params]);
+
+    if (route?.params?.highlightId) {
+      setHighlightedId(route.params.highlightId);
+      hasChanged = true;
+    }
+
+    // Bersihkan params setelah dikonsumsi agar tidak re-trigger
+    if (hasChanged) {
+      navigation.setParams({ 
+        highlightId: undefined, 
+        initialFilter: undefined, 
+        openAddModal: undefined,
+        initialDate: undefined 
+      });
+    }
+  }, [route?.params, navigation]);
+
+  // Efek untuk membersihkan highlight id setelah beberapa saat
+  useEffect(() => {
+    if (highlightedId) {
+      const timer = setTimeout(() => setHighlightedId(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedId]);
 
   const CHIP_DATA = [{ id: '', label: 'Semua' }, ...STATUSES.map(s => ({ id: s, label: (STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN']).label }))];
 
@@ -68,6 +104,41 @@ export default function TaskListScreen({ route }) {
     }
   }, [filters.status]);
 
+  // Handle auto-scroll to highlighted task
+  useEffect(() => {
+    // Hanya jalan jika ada ID yang di-highlight dan data sudah tersedia & tidak sedang loading
+    if (highlightedId && tasks.length > 0 && !isLoading) {
+      const sections = groupTasksByDate(tasks);
+      let foundSection = -1;
+      let foundItem = -1;
+
+      sections.forEach((sec, sIdx) => {
+        const iIdx = sec.data.findIndex(t => t.id === highlightedId);
+        if (iIdx !== -1) {
+          foundSection = sIdx;
+          foundItem = iIdx;
+        }
+      });
+
+      if (foundSection !== -1 && listRef.current) {
+        // Gunakan requestAnimationFrame untuk memastikan render selesai
+        const timer = setTimeout(() => {
+          try {
+            listRef.current?.scrollToLocation({
+              sectionIndex: foundSection,
+              itemIndex: foundItem,
+              animated: true,
+              viewPosition: 0.2
+            });
+          } catch (e) {
+            console.log('Scroll error:', e);
+          }
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [highlightedId, tasks, isLoading]);
+
   const currentSort = SORT_OPTIONS.find(s => s.key === sortKey) || SORT_OPTIONS[0];
   const activeFilters = Object.fromEntries(Object.entries({ ...filters, search, sort: currentSort.sort, order: currentSort.order }).filter(([, v]) => v));
   const filterCount = Object.values(filters).filter(Boolean).length;
@@ -75,7 +146,14 @@ export default function TaskListScreen({ route }) {
   // ─── Queries ───────────────────────────────────────────────────────────────
   const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['tasks', activeFilters],
-    queryFn: () => taskAPI.getAll(activeFilters).then(r => r.data.data),
+    queryFn: () => taskAPI.getAll(activeFilters).then(r => {
+      let list = r.data.data;
+      // Jika filter status kosong (Semua), hilangkan yang TERLEWAT
+      if (!filters.status) {
+        list = list.filter(t => t.status !== 'TERLEWAT');
+      }
+      return list;
+    }),
   });
 
   const { data: categories = [] } = useQuery({
@@ -90,7 +168,10 @@ export default function TaskListScreen({ route }) {
   }, [refetch]);
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['tasks'] });
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['tasks'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+  };
 
   const createMut = useMutation({
     mutationFn: taskAPI.create,
@@ -116,6 +197,11 @@ export default function TaskListScreen({ route }) {
       setShowForm(false);
       setEditTask(null);
       if (res.data?.data && variables?.skipNotify !== true) scheduleTaskNotification(res.data.data);
+      
+      // Sinkronisasi otomatis filter tab jika status berubah (terutama untuk Undo)
+      if (variables?.data?.status === 'SEDANG_DIKERJAKAN') {
+        setFilters(f => ({ ...f, status: 'SEDANG_DIKERJAKAN' }));
+      }
     },
     onError: () => setToast({ visible: true, message: 'Gagal memperbarui tugas.', type: 'danger' })
   });
@@ -140,15 +226,27 @@ export default function TaskListScreen({ route }) {
   const handleDelete = (id) => setConfirmDelete(id);
   const handleStatus = (id, status) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    updateMut.mutate({ id, data: { status }, skipNotify: true });
+    updateMut.mutate({ id, data: { status }, skipNotify: true }, {
+      onSuccess: () => {
+        // Feedback instan kepada pengguna
+        if (status === 'SELESAI') {
+          setToast({ visible: true, message: 'Hebat! Tugas telah diselesaikan.', type: 'success' });
+          // Otomatis pindah ke tab Selesai agar pengguna tahu tugasnya ada di sana
+          setFilters(f => ({ ...f, status: 'SELESAI' }));
+        } else if (status === 'SEDANG_DIKERJAKAN') {
+          setToast({ visible: true, message: 'Tugas dikembalikan ke Berjalan.', type: 'success' });
+          setFilters(f => ({ ...f, status: 'SEDANG_DIKERJAKAN' }));
+        }
+      }
+    });
   };
 
-  const handleSubtaskToggle = (taskId, subtaskId, isDone) => {
-    subtaskAPI.update(subtaskId, { isDone }).then(invalidate);
+  const handleSubtaskToggle = (taskId, subtaskId) => {
+    subtaskAPI.toggle(taskId, subtaskId).then(invalidate);
   };
 
   const handleAddSubtask = (taskId, title) => {
-    subtaskAPI.create({ taskId, title }).then(invalidate).catch(() => setToast({ visible: true, message: 'Gagal menambah sub-tugas.', type: 'danger' }));
+    subtaskAPI.create(taskId, { title }).then(invalidate).catch(() => setToast({ visible: true, message: 'Gagal menambah sub-tugas.', type: 'danger' }));
   };
 
   const handleResetFilters = () => {
@@ -157,45 +255,61 @@ export default function TaskListScreen({ route }) {
     setSortKey('createdAt-desc');
   };
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+  const scrollOffset = useRef(0);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
 
-      {/* Header */}
-      <View 
-        style={styles.headerBar}
-        onLayout={(e) => {
-          const newHeight = Math.round(e.nativeEvent.layout.height);
-          if (Math.abs(headerHeight - newHeight) > 2) {
-            setHeaderHeight(newHeight);
-          }
-        }}
-      >
-        <Text style={styles.headerTitle}>Daftar Tugas</Text>
-      </View>
+  const handleScroll = (event) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const currentOffset = contentOffset.y;
+    const layoutHeight = layoutMeasurement.height;
+    const contentHeight = contentSize.height;
+
+    const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+    const isAtBottom = currentOffset + layoutHeight >= contentHeight - 20;
+
+    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
+      setIsNavbarVisible(false);
+      setTabBarVisible(false);
+    } else if (direction === 'up' && !isNavbarVisible && !isAtBottom) {
+      setIsNavbarVisible(true);
+      setTabBarVisible(true);
+    }
+    scrollOffset.current = currentOffset;
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsNavbarVisible(true);
+      resetTabBarVisible();
+
+      StatusBar.setBarStyle('dark-content');
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+
+
+      {/* Header removed for minimalist look */}
 
       {/* Search & Filter Bar */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
+          <Ionicons name="search-outline" size={20} color="#4B5563" />
           <TextInput
             placeholder="Cari tugas..."
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor="#9CA3AF"
             value={search}
             onChangeText={setSearch}
             style={styles.searchInput}
           />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
-              <MaterialIcons name="cancel" size={20} color={COLORS.textLight} />
-            </TouchableOpacity>
-          )}
         </View>
-        <TouchableOpacity style={[styles.filterBtn, filterCount > 0 && styles.filterBtnActive]} onPress={() => setShowFilter(true)}>
-          <Ionicons name="filter-outline" size={22} color={filterCount > 0 ? COLORS.primary : COLORS.textMuted} />
-          {filterCount > 0 && (
-            <View style={styles.filterBadge}><Text style={styles.filterBadgeText}>{filterCount}</Text></View>
-          )}
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilter(true)}>
+          <Ionicons name="options-outline" size={22} color={COLORS.text} />
         </TouchableOpacity>
       </View>
 
@@ -207,19 +321,43 @@ export default function TaskListScreen({ route }) {
           showsHorizontalScrollIndicator={false}
           data={CHIP_DATA}
           keyExtractor={item => item.id || 'ALL'}
+          onScrollToIndexFailed={info => {
+            const wait = new Promise(resolve => setTimeout(resolve, 500));
+            wait.then(() => {
+              statusRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });
+            });
+          }}
           contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}
           renderItem={({ item }) => {
             const active = filters.status === item.id;
-            const cfg = item.id ? (STATUS_CONFIG[item.id] || STATUS_CONFIG['SEDANG_DIKERJAKAN']) : { bg: COLORS.primaryLight, text: COLORS.primary, dot: COLORS.primary };
+            const config = STATUS_CONFIG[item.id] || { bg: COLORS.primary, text: '#000', dot: COLORS.primary };
+            
+            // Warna khusus untuk tab "Semua" agar tetap kontras
+            const activeBg = item.id === '' ? COLORS.primary : config.bg;
+            const activeText = item.id === '' ? '#000000' : config.text;
+            const activeBorder = item.id === '' ? COLORS.primary : config.text;
+
             return (
               <TouchableOpacity
                 onPress={() => {
                   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                   setFilters(f => ({ ...f, status: item.id }));
                 }}
-                style={[styles.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}
+                style={[
+                  styles.chip, 
+                  active && { 
+                    backgroundColor: activeBg, 
+                    borderColor: activeBorder,
+                    borderWidth: item.id === '' ? 1 : 1.5 
+                  }
+                ]}
               >
-                <Text style={[styles.chipText, active && { color: cfg.text }]}>{item.label}</Text>
+                <Text style={[
+                  styles.chipText, 
+                  active && { color: activeText, ...FONT.bold }
+                ]}>
+                  {item.label}
+                </Text>
               </TouchableOpacity>
             );
           }}
@@ -228,24 +366,37 @@ export default function TaskListScreen({ route }) {
 
       {/* Task List */}
       <SectionList
+        ref={listRef}
         sections={groupTasksByDate(tasks)}
         keyExtractor={t => String(t.id)}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
-            <MaterialIcons name={section.icon} size={18} color={COLORS.textMuted} />
+            <Ionicons 
+              name={
+                section.icon === 'today' ? 'sunny-outline' : 
+                section.icon === 'event' ? 'calendar-outline' : 
+                section.icon === 'upcoming' ? 'calendar-clear-outline' : 
+                'document-text-outline'
+              } 
+              size={16} 
+              color="#808080" 
+            />
             <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>{section.data.length}</Text>
+            <View style={styles.sectionCountBadge}>
+              <Text style={styles.sectionCountText}>{section.data.length}</Text>
             </View>
           </View>
         )}
         renderItem={({ item }) => (
           <TaskCard
             task={item}
+            isHighlighted={item.id === highlightedId}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={handleStatus}
@@ -268,7 +419,7 @@ export default function TaskListScreen({ route }) {
 
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={() => { setEditTask(null); setShowForm(true); }} activeOpacity={0.85}>
-        <MaterialIcons name="add" size={32} color="#fff" />
+        <MaterialIcons name="add" size={32} color="#000000" />
       </TouchableOpacity>
 
       {/* Modals */}
@@ -329,29 +480,44 @@ const styles = StyleSheet.create({
   headerBar: { 
     backgroundColor: COLORS.primary, 
     paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'ios' ? 60 : (StatusBar.currentHeight || 0) + 20, 
+    paddingTop: 60, 
     paddingBottom: 25, 
-    borderBottomLeftRadius: 20, 
-    borderBottomRightRadius: 20, 
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
     flexDirection: 'row', 
     justifyContent: 'center', 
-    alignItems: 'center', 
-    ...SHADOW.md 
+    alignItems: 'center',
+    ...SHADOW.md,
   },
-  headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
+  headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
   searchRow: { flexDirection: 'row', gap: 10, padding: 16, marginTop: 10, zIndex: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.surface, borderRadius: 16, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', height: 52, ...SHADOW.sm },
-  searchInput: { flex: 1, fontSize: 16, color: COLORS.text, ...FONT.medium },
-  filterBtn: { width: 52, height: 52, backgroundColor: COLORS.surface, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E2E8F0', ...SHADOW.sm },
-  filterBtnActive: { borderColor: COLORS.primary, backgroundColor: '#F1F5F9' },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor: '#D1D5DB', height: 52, ...SHADOW.sm },
+  searchInput: { flex: 1, fontSize: 15, color: COLORS.text, ...FONT.medium },
+  filterBtn: { width: 52, height: 52, backgroundColor: '#FFFFFF', borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB', ...SHADOW.sm },
+  filterBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   filterBadge: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   filterBadgeText: { fontSize: 9, color: '#fff', ...FONT.bold },
   chip: { paddingHorizontal: 16, height: 36, borderRadius: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-  chipText: { fontSize: 13, color: COLORS.textMuted, ...FONT.medium, textAlign: 'center' },
-  list: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 100 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 24, marginBottom: 12, marginLeft: 4 },
-  sectionTitle: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  sectionBadge: { backgroundColor: COLORS.borderLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginLeft: 4 },
-  sectionBadgeText: { fontSize: 10, ...FONT.bold, color: COLORS.textMuted },
-  fab: { position: 'absolute', bottom: 20, right: 20, width: 56, height: 56, backgroundColor: '#2563EB', borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...SHADOW.md },
+  chipText: { fontSize: 13, color: COLORS.textMuted, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  list: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 150 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 28, marginBottom: 16, marginLeft: 4 },
+  sectionTitle: { fontSize: 15, ...FONT.bold, color: '#1E293B', textTransform: 'capitalize', letterSpacing: 0 },
+  sectionCountBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 8, marginLeft: 6 },
+  sectionCountText: { fontSize: 12, ...FONT.bold, color: '#64748B' },
+  fab: { 
+    position: 'absolute', 
+    bottom: 140, 
+    right: 20, 
+    width: 60, 
+    height: 60, 
+    backgroundColor: COLORS.primary, 
+    borderRadius: 18, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    elevation: 8,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
 });

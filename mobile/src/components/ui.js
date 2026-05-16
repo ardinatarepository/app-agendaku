@@ -8,7 +8,7 @@ import { COLORS, RADIUS, SHADOW, FONT } from '../utils/theme';
 // ─── Button ──────────────────────────────────────────────────────────────────
 export const Button = ({ title, onPress, variant = 'primary', loading = false, disabled = false, style }) => {
   const styles = {
-    primary:   { bg: COLORS.primary,  text: '#fff' },
+    primary:   { bg: COLORS.primary,  text: '#000' },
     secondary: { bg: COLORS.surface,  text: COLORS.text,    border: COLORS.border },
     danger:    { bg: COLORS.danger,   text: '#fff' },
     ghost:     { bg: 'transparent',   text: COLORS.primary  },
@@ -36,7 +36,7 @@ export const Button = ({ title, onPress, variant = 'primary', loading = false, d
     >
       {loading
         ? <PremiumLoader size={20} color={styles.text} />
-        : <Text style={{ color: styles.text, fontSize: 15, ...FONT.semibold, textAlign: 'center' }}>{title}</Text>
+        : <Text style={{ color: styles.text, fontSize: 15, ...FONT.semibold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' }}>{title}</Text>
       }
     </TouchableOpacity>
   );
@@ -101,7 +101,7 @@ export const Card = ({ children, style, onPress }) => {
 // ─── Badge ───────────────────────────────────────────────────────────────────
 export const Badge = ({ label, bg, color }) => (
   <View style={{ backgroundColor: bg, borderRadius: RADIUS.full, paddingHorizontal: 10, paddingVertical: 3, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center' }}>
-    <Text style={{ color, fontSize: 11, ...FONT.medium, textAlign: 'center' }}>{label}</Text>
+    <Text style={{ color, fontSize: 11, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' }}>{label}</Text>
   </View>
 );
 
@@ -127,16 +127,23 @@ export const EmptyState = ({ iconName = 'inbox', emoji, title, subtitle, action 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────────
 export const ConfirmModal = ({ visible, title, message, onConfirm, onCancel, confirmText = 'Hapus', cancelText = 'Batal', variant = 'danger', iconName, loading = false }) => (
   <Modal visible={visible} transparent animationType="fade">
-    <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-       <View style={[{ backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, width: '100%', padding: 24, ...SHADOW.md }, Platform.OS === 'web' && { maxWidth: 400, alignSelf: 'center' }]}>
+     <View style={{ flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <View style={[{ 
+          backgroundColor: COLORS.surface, 
+          borderRadius: RADIUS.lg, 
+          width: '100%', 
+          maxWidth: 320, 
+          padding: 20, 
+          ...SHADOW.md 
+        }, Platform.OS === 'web' && { maxWidth: 400, alignSelf: 'center' }]}>
           <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: variant === 'danger' ? '#fee2e2' : COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
              <MaterialIcons name={iconName || (variant === 'danger' ? 'delete' : 'info')} size={32} color={variant === 'danger' ? COLORS.danger : COLORS.primary} />
           </View>
           <Text style={{ fontSize: 18, ...FONT.bold, color: COLORS.text, marginBottom: 8 }}>{title}</Text>
           <Text style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 20, marginBottom: 24 }}>{message}</Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-             <Button title={cancelText} variant="secondary" style={{ flex: 1 }} onPress={onCancel} disabled={loading} />
-             <Button title={confirmText} variant={variant} style={{ flex: 1 }} onPress={onConfirm} loading={loading} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+             <Button title={cancelText} variant="secondary" style={{ flex: 1, paddingVertical: 10 }} onPress={onCancel} disabled={loading} />
+             <Button title={confirmText} variant={variant} style={{ flex: 1, paddingVertical: 10 }} onPress={onConfirm} loading={loading} />
           </View>
        </View>
     </View>
@@ -161,9 +168,26 @@ export const AlertModal = ({ visible, title, message, onClose, buttonText = 'OK'
 
 // ─── Toast ─────────────────────────────────────────────────────────────
 export const Toast = ({ visible, message, onHide, type = 'success' }) => {
+  const slideAnim = useRef(new Animated.Value(-100)).current;
+
   useEffect(() => {
     if (visible) {
-      const timer = setTimeout(onHide, 3000);
+      // Slide Down
+      Animated.spring(slideAnim, {
+        toValue: Platform.OS === 'ios' ? 60 : 50,
+        useNativeDriver: true,
+        bounciness: 8
+      }).start();
+
+      const timer = setTimeout(() => {
+        // Slide Up to hide
+        Animated.timing(slideAnim, {
+          toValue: -100,
+          duration: 300,
+          useNativeDriver: true
+        }).start(() => onHide());
+      }, 3000);
+
       return () => clearTimeout(timer);
     }
   }, [visible]);
@@ -171,14 +195,24 @@ export const Toast = ({ visible, message, onHide, type = 'success' }) => {
   if (!visible) return null;
 
   return (
-    <View style={{ 
-      position: 'absolute', top: 50, left: 20, right: 20, 
+    <Animated.View style={{ 
+      position: 'absolute', 
+      top: 0, 
+      left: 16, 
+      right: 16, 
       backgroundColor: type === 'success' ? '#10b981' : COLORS.danger, 
-      borderRadius: RADIUS.md, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12, ...SHADOW.md, zIndex: 9999 
+      borderRadius: RADIUS.lg, 
+      padding: 16, 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      gap: 12, 
+      ...SHADOW.md, 
+      zIndex: 10000,
+      transform: [{ translateY: slideAnim }]
     }}>
       <MaterialIcons name={type === 'success' ? 'check-circle' : 'error'} size={24} color="#fff" />
-      <Text style={{ color: '#fff', fontSize: 14, ...FONT.medium, flex: 1 }}>{message}</Text>
-    </View>
+      <Text style={{ color: '#fff', fontSize: 14, ...FONT.bold, flex: 1, includeFontPadding: false }}>{message}</Text>
+    </Animated.View>
   );
 };
 
@@ -267,30 +301,29 @@ export const PremiumLoader = ({ size = 40, color = COLORS.primary, style }) => {
 };
 
 export const TaskSkeleton = () => (
-  <Card style={{ marginBottom: 12, opacity: 0.6 }}>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <Skeleton width={10} height={10} borderRadius={5} />
-        <Skeleton width={180} height={18} />
+  <View style={{ 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: RADIUS.lg, 
+    padding: 16, 
+    marginBottom: 12, 
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  }}>
+    <Skeleton width={4} height={40} borderRadius={2} />
+    <View style={{ flex: 1, gap: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Skeleton width="60%" height={16} borderRadius={4} />
+        <Skeleton width={20} height={20} borderRadius={10} />
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Skeleton width={24} height={24} borderRadius={6} />
-        <Skeleton width={24} height={24} borderRadius={6} />
+        <Skeleton width={80} height={12} borderRadius={4} />
+        <Skeleton width={40} height={12} borderRadius={4} />
       </View>
     </View>
-    <View style={{ marginLeft: 20, marginBottom: 12 }}>
-       <Skeleton width="90%" height={12} style={{ marginBottom: 6 }} />
-       <Skeleton width="60%" height={12} />
-    </View>
-    <View style={{ flexDirection: 'row', gap: 8, marginLeft: 20, marginBottom: 16 }}>
-       <Skeleton width={60} height={20} borderRadius={10} />
-       <Skeleton width={60} height={20} borderRadius={10} />
-    </View>
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginLeft: 20 }}>
-       <Skeleton width={120} height={14} />
-       <Skeleton width={60} height={24} borderRadius={12} />
-    </View>
-  </Card>
+  </View>
 );
 
 export const CalendarTaskSkeleton = () => (

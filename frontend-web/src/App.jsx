@@ -11,6 +11,7 @@ import TasksPage      from './pages/TasksPage';
 import CategoriesPage from './pages/CategoriesPage';
 import CalendarPage   from './pages/CalendarPage';
 import ProfilePage    from './pages/ProfilePage';
+import EditProfilePage from './pages/EditProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 
 // Guard: redirect ke /login jika belum login
@@ -39,6 +40,7 @@ function AppRoutes() {
         <Route path="categories" element={<CategoriesPage />} />
         <Route path="calendar"   element={<CalendarPage />} />
         <Route path="profile"    element={<ProfilePage />} />
+        <Route path="edit-profile" element={<EditProfilePage />} />
         <Route path="profile/password" element={<ChangePasswordPage />} />
       </Route>
 

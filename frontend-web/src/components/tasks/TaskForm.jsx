@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from '../../hooks';
-import { MdClose, MdAdd, MdDelete, MdCalendarToday, MdAccessTime } from 'react-icons/md';
+import { 
+  IoClose, 
+  IoAdd, 
+  IoTrashOutline, 
+  IoCalendarOutline, 
+  IoTimeOutline 
+} from 'react-icons/io5';
 import DatePicker from '../ui/DatePicker';
 import TimePicker from '../ui/TimePicker';
 
-const STATUSES  = ['SEDANG_DIKERJAKAN', 'SELESAI'];
-const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai' };
+const STATUSES  = ['SEDANG_DIKERJAKAN', 'SELESAI', 'TERLEWAT'];
+const STATUS_LBL = { SEDANG_DIKERJAKAN: 'Sedang Berjalan', SELESAI: 'Selesai', TERLEWAT: 'Terlewat' };
 const PRIO_CFG  = {
-  RENDAH: { label: 'Rendah', active: 'border-slate-400 bg-slate-100 text-slate-700' },
-  NORMAL: { label: 'Normal', active: 'border-amber-400 bg-amber-100 text-amber-700' },
-  TINGGI: { label: 'Tinggi', active: 'border-red-400 bg-red-100 text-red-700' },
+  RENDAH: { label: 'Rendah', active: 'border-blue-400 bg-blue-50 text-blue-600' },
+  NORMAL: { label: 'Normal', active: 'border-amber-400 bg-amber-50 text-amber-600' },
+  TINGGI: { label: 'Tinggi', active: 'border-red-400 bg-red-50 text-red-600' },
 };
 const REMINDERS = ['Tidak Ada', '1 Jam', '2 Jam', '5 Jam', '12 Jam'];
 
@@ -78,7 +84,8 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
     // Combine deadline and time
     let finalDeadline = null;
     if (form.deadline) {
-       finalDeadline = `${form.deadline}T${form.time}:00Z`; // Simple combination
+       // Send without 'Z' to treat as local time
+       finalDeadline = `${form.deadline}T${form.time}:00`;
     }
 
     // Map reminder label to hours
@@ -88,238 +95,250 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
     else if (form.reminder === '5 Jam') reminderHours = 5;
     else if (form.reminder === '12 Jam') reminderHours = 12;
 
-    onSubmit({
+    const payload = {
       ...form,
       categoryId: form.categoryId ? parseInt(form.categoryId) : null,
       deadline:   finalDeadline,
       isRecurring: form.isRepeating,
       recurrence: form.isRepeating ? form.recurrence : null,
-      reminderHours
-    });
+      reminderHours,
+      subtasks: form.subtasks.map(st => ({ title: st.title, isDone: !!st.isDone }))
+    };
+
+    onSubmit(payload);
   };
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-slide-in h-[90vh] flex flex-col">
-
-        {/* Header ala Mobile */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
-          <button onClick={onClose} className="text-slate-500 font-medium hover:text-slate-700">Batal</button>
-          <h2 className="text-[17px] font-black text-slate-800">
-            {task ? 'Edit Tugas' : 'Tambah Tugas'}
-          </h2>
-          <button onClick={handleSubmit} disabled={isLoading || !form.title.trim()} className="text-slate-500 font-medium hover:text-[#15152b] disabled:opacity-50">
-            Simpan
+      <div className="bg-white rounded-[40px] w-full max-w-lg shadow-2xl overflow-hidden animate-slide-in h-[92vh] flex flex-col relative">
+        
+        {/* Mobile-Style Top Actions */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-50 shrink-0 bg-white">
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-2xl border-2 border-red-500 text-red-500 text-[15px] font-bold hover:bg-red-50 transition-all"
+          >
+            Batal
+          </button>
+          <button 
+            type="button" 
+            onClick={handleSubmit}
+            disabled={isLoading || !form.title.trim()}
+            className="px-8 py-2.5 rounded-2xl bg-[#1E1E1E] text-white text-[15px] font-bold hover:opacity-90 shadow-lg disabled:opacity-50 transition-all"
+          >
+            {isLoading ? '...' : 'Simpan'}
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 pb-20">
-
-          {/* Judul & Deskripsi */}
-          <div className="space-y-4 mb-6">
-            <div>
-              <label className="text-xs font-bold text-slate-500 mb-2 block">Nama Tugas *</label>
-              <input className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-[#15152b] focus:ring-1 focus:ring-[#15152b] outline-none transition-all" value={form.title} onChange={set('title')} placeholder="Masukan Nama Tugas" maxLength={200} required autoFocus />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 mb-2 block">Deskripsi (opsional)</label>
-              <textarea className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm h-24 resize-none focus:border-[#15152b] focus:ring-1 focus:ring-[#15152b] outline-none transition-all" value={form.description} onChange={set('description')} placeholder="Deskripsi Tugas (Opsional)" />
-            </div>
-          </div>
-
-          {/* Status */}
-          <div className="mb-6">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Status</label>
-            <div className="flex flex-wrap gap-2">
-              {STATUSES.map(s => (
-                <button
-                  key={s} type="button" onClick={() => setForm(f => ({...f, status: s}))}
-                  className={`px-4 py-2 text-xs font-medium rounded-full border transition-all ${
-                    form.status === s ? 'border-[#15152b] bg-[#15152b]/5 text-[#15152b]' : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                  }`}
-                >
-                  {STATUS_LBL[s]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prioritas */}
-          <div className="mb-6">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Prioritas</label>
-            <div className="flex gap-2">
-              {Object.entries(PRIO_CFG).map(([key, cfg]) => (
-                <button
-                  key={key} type="button" onClick={() => setPrio(key)}
-                  className={`flex-1 py-2.5 text-xs font-medium rounded-xl border transition-all ${
-                    form.priority === key ? cfg.active : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
-                  }`}
-                >
-                  {cfg.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Deadline & Waktu — Custom Mobile Style */}
-          <div className="mb-6">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Deadline & Waktu</label>
-            <div className="flex gap-3">
-              {/* Date Trigger */}
-              <button
-                type="button"
-                onClick={() => setShowDatePicker(true)}
-                className="flex-1 flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 hover:border-[#15152b] transition-all bg-white"
-              >
-                <span>{form.deadline || 'Pilih Tanggal'}</span>
-                <MdCalendarToday className="text-slate-400" size={18} />
-              </button>
-
-              {/* Time Trigger */}
-              <button
-                type="button"
-                onClick={() => setShowTimePicker(true)}
-                className="w-32 flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 hover:border-[#15152b] transition-all bg-white"
-              >
-                <span>{form.time}</span>
-                <MdAccessTime className="text-slate-400" size={18} />
-              </button>
-            </div>
-          </div>
-
-          {showDatePicker && (
-            <DatePicker
-              value={form.deadline}
-              onSelect={(d) => { setForm(f => ({ ...f, deadline: d })); setShowDatePicker(false); }}
-              onClose={() => setShowDatePicker(false)}
-            />
-          )}
-
-          {showTimePicker && (
-            <TimePicker
-              value={form.time}
-              onSelect={(t) => setForm(f => ({ ...f, time: t }))}
-              onClose={() => setShowTimePicker(false)}
-            />
-          )}
-
-          {/* Ingatkan saya */}
-          <div className="mb-6 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Ingatkan saya (Jam Sebelum Deadline)</label>
-            <div className="flex gap-2 min-w-max">
-              {REMINDERS.map(r => (
-                <button
-                  key={r} type="button" onClick={() => setForm(f => ({...f, reminder: r}))}
-                  className={`px-4 py-2 text-xs font-medium rounded-full border transition-all ${
-                    form.reminder === r ? 'border-[#15152b] bg-[#15152b]/5 text-[#15152b]' : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Tugas Berulang Toggle */}
-          <div className="mb-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-500">Tugas Berulang</label>
-              <button 
-                type="button" onClick={() => setForm(f => ({...f, isRepeating: !f.isRepeating}))}
-                className={`w-12 h-6 rounded-full p-1 transition-colors ${form.isRepeating ? 'bg-[#15152b]' : 'bg-slate-300'}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${form.isRepeating ? 'translate-x-6' : 'translate-x-0'}`} />
-              </button>
-            </div>
+        <div className="flex-1 overflow-y-auto p-8 no-scrollbar pt-4">
+          <form onSubmit={handleSubmit} className="space-y-8">
             
-            {form.isRepeating && (
-              <div className="flex gap-2">
-                {['HARIAN', 'MINGGUAN', 'BULANAN'].map(rec => (
+            {/* Nama Tugas */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Nama Tugas *</label>
+              <input 
+                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
+                value={form.title} 
+                onChange={set('title')} 
+                placeholder="Masukan Nama Tugas" 
+                maxLength={200} 
+                required 
+                autoFocus 
+              />
+            </div>
+
+            {/* Deskripsi */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Deskripsi (opsional)</label>
+              <textarea 
+                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium h-32 resize-none focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
+                value={form.description} 
+                onChange={set('description')} 
+                placeholder="Deskripsi Tugas (Opsional)" 
+              />
+            </div>
+
+            {/* Status (From mobile reference) */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Status</label>
+              <div className="flex gap-2.5">
+                {STATUSES.map(s => {
+                  const isActive = form.status === s;
+                  // Senior Failsafe: Use standard Tailwind colors + Inline Style
+                  let activeClass = 'border-blue-500 bg-blue-50 text-blue-600 border-2'; 
+                  if (s === 'SELESAI') activeClass = 'border-emerald-500 bg-emerald-50 text-emerald-600 border-2';
+                  if (s === 'TERLEWAT') activeClass = 'border-red-500 bg-red-50 text-red-600 border-2';
+
+                  return (
+                    <button
+                      key={s} type="button" 
+                      onClick={() => setForm(f => ({ ...f, status: s }))}
+                      className={`flex-1 py-3.5 text-sm font-bold rounded-2xl border transition-all ${
+                        isActive ? activeClass : 'border-slate-100 bg-white text-slate-300 hover:border-slate-200'
+                      }`}
+                      style={isActive && s === 'SEDANG_DIKERJAKAN' ? { borderColor: '#3B82F6', color: '#2563EB', backgroundColor: '#EFF6FF' } : {}}
+                    >
+                      {STATUS_LBL[s]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Prioritas */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Prioritas</label>
+              <div className="flex gap-3">
+                {Object.entries(PRIO_CFG).map(([key, cfg]) => (
                   <button
-                    key={rec} type="button" onClick={() => setForm(f => ({...f, recurrence: rec}))}
-                    className={`flex-1 py-2 text-xs font-medium rounded-xl border transition-all ${
-                      form.recurrence === rec ? 'border-[#15152b] bg-[#15152b]/5 text-[#15152b]' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'
+                    key={key} type="button" onClick={() => setPrio(key)}
+                    className={`flex-1 py-3.5 text-sm font-bold rounded-2xl border-2 transition-all ${
+                      form.priority === key ? cfg.active : 'border-slate-100 bg-white text-slate-300 hover:border-slate-200'
                     }`}
                   >
-                    {rec === 'HARIAN' ? 'Harian' : rec === 'MINGGUAN' ? 'Mingguan' : 'Bulanan'}
+                    {cfg.label}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Daftar Sub-Tugas */}
-          <div className="mb-6">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Daftar Sub-Tugas</label>
-            
-            <div className="space-y-2 mb-3">
-              {form.subtasks.map((st, i) => (
-                <div key={i} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            {/* Sub-Tugas */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Sub-Tugas</label>
+              <div className="flex gap-3 mb-4">
+                <input 
+                  className="flex-1 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-primary outline-none transition-all placeholder:text-slate-300 shadow-sm bg-[#F8FAFC]/50" 
+                  placeholder="Tambah sub-tugas..." 
+                  value={newSubtask} 
+                  onChange={e => setNewSubtask(e.target.value)} 
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSubtask())} 
+                />
+                <button type="button" onClick={addSubtask} className="w-14 h-14 bg-[#1E1E1E] text-white rounded-2xl flex items-center justify-center hover:opacity-90 shadow-lg transition-all">
+                  <IoAdd size={28} />
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                {form.subtasks.map((st, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-slate-100 group shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm(f => ({
+                          ...f,
+                          subtasks: f.subtasks.map((s, idx) => idx === i ? { ...s, isDone: !s.isDone } : s)
+                        }));
+                      }}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${st.isDone ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white border-2 border-slate-100 text-transparent'}`}
+                    >
+                      {st.isDone && <span className="text-xs">✓</span>}
+                    </button>
+                    <span className={`flex-1 text-sm font-bold ${st.isDone ? 'line-through text-slate-300' : 'text-slate-600'}`}>
+                      {st.title}
+                    </span>
+                    <button type="button" onClick={() => removeSubtask(i)} className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">
+                      <IoTrashOutline size={20} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Deadline & Waktu */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Deadline & Waktu</label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(true)}
+                  className="flex-1 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-primary transition-all bg-[#F8FAFC]/50"
+                >
+                  <span className={form.deadline ? 'text-slate-800' : 'text-slate-300'}>{form.deadline || 'Pilih Tanggal'}</span>
+                  <IoCalendarOutline className="text-slate-300" size={20} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowTimePicker(true)}
+                  className="w-36 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-primary transition-all bg-[#F8FAFC]/50"
+                >
+                  <span className="text-slate-800">{form.time}</span>
+                  <IoTimeOutline className="text-slate-300" size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Reminder Section */}
+            <div>
+              <label className="text-[12px] font-semibold text-slate-500 mb-3 block ml-1 tracking-wide">Ingatkan saya</label>
+              <div className="flex flex-wrap gap-2.5">
+                {REMINDERS.map(r => (
                   <button
-                    type="button"
-                    onClick={() => {
-                      setForm(f => ({
-                        ...f,
-                        subtasks: f.subtasks.map((s, idx) => idx === i ? { ...s, isDone: !s.isDone } : s)
-                      }));
-                    }}
-                    className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${st.isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}`}
+                    key={r} type="button" onClick={() => setForm(f => ({...f, reminder: r}))}
+                    className={`px-5 py-2.5 text-[13px] font-bold rounded-full border transition-all ${
+                      form.reminder === r ? 'border-primary bg-primary text-white shadow-md' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                    }`}
                   >
-                    {st.isDone && <span className="text-[10px]">✓</span>}
+                    {r}
                   </button>
-                  <span className={`flex-1 text-sm font-medium ${st.isDone ? 'line-through text-slate-400' : 'text-slate-600'}`}>
-                    {st.title}
-                  </span>
-                  <button type="button" onClick={() => removeSubtask(i)} className="text-slate-400 hover:text-red-500 transition-all">
-                    <MdDelete size={18} />
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2">
-              <input className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:border-[#15152b] outline-none" placeholder="Contoh: Beli susu, Kerjakan bab 1..." value={newSubtask} onChange={e => setNewSubtask(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addSubtask())} />
-              <button type="button" onClick={addSubtask} className="w-12 h-12 bg-[#15152b] text-white rounded-xl flex items-center justify-center hover:bg-[#15152b]/90 transition-all">
-                <MdAdd size={24} />
-              </button>
+            {/* Kategori */}
+            <div className="pb-8">
+              <label className="text-[12px] font-semibold text-slate-500 mb-3 block ml-1 tracking-wide">Kategori</label>
+              <div className="flex flex-wrap gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, categoryId: '' }))}
+                  className={`px-5 py-2.5 text-[13px] font-bold rounded-full border transition-all ${
+                    !form.categoryId ? 'bg-slate-800 text-white border-slate-800 shadow-md' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'
+                  }`}
+                >
+                  Semua
+                </button>
+                {categories.map(c => {
+                  const isActive = form.categoryId === String(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, categoryId: String(c.id) }))}
+                      className="px-5 py-2.5 text-[13px] font-bold rounded-full border transition-all flex items-center gap-2"
+                      style={{
+                        backgroundColor: isActive ? `${c.color}15` : 'white',
+                        borderColor: isActive ? c.color : '#f1f5f9',
+                        color: isActive ? c.color : '#94a3b8'
+                      }}
+                    >
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.color }} />
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Kategori (Optional) */}
-          <div className="mb-6">
-            <label className="text-xs font-bold text-slate-500 mb-2 block">Kategori</label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setForm(f => ({ ...f, categoryId: '' }))}
-                className={`px-4 py-2 text-xs font-medium rounded-full border transition-all ${
-                  !form.categoryId ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                }`}
-              >
-                Tanpa Kategori
-              </button>
-              {categories.map(c => {
-                const isActive = form.categoryId === String(c.id);
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, categoryId: String(c.id) }))}
-                    className="px-4 py-2 text-xs font-medium rounded-full border transition-all"
-                    style={{
-                      backgroundColor: isActive ? `${c.color}22` : 'white',
-                      borderColor: isActive ? c.color : '#e2e8f0',
-                      color: isActive ? c.color : '#64748b'
-                    }}
-                  >
-                    {c.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          </form>
+        </div>
 
-        </form>
+        {showDatePicker && (
+          <DatePicker
+            value={form.deadline}
+            onSelect={(d) => { setForm(f => ({ ...f, deadline: d })); setShowDatePicker(false); }}
+            onClose={() => setShowDatePicker(false)}
+          />
+        )}
+
+        {showTimePicker && (
+          <TimePicker
+            value={form.time}
+            onSelect={(t) => setForm(f => ({ ...f, time: t }))}
+            onClose={() => setShowTimePicker(false)}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,141 @@
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { StatusBar, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { taskAPI } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { setTabBarVisible, resetTabBarVisible } from '../utils/tabBarControl';
+import { rescheduleAllNotifications } from '../utils/notifications';
+import { isToday, isOverdue, isNearDeadline } from '../utils/helpers';
+
+export const useDashboard = (navigation) => {
+  const qc = useQueryClient();
+  const { user, lastAvatar } = useAuth();
+  
+  // Data Fetching
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn:  () => taskAPI.getDashboard().then(r => r.data.data),
+  });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetch(),
+      qc.invalidateQueries({ queryKey: ['tasks'] })
+    ]);
+    setRefreshing(false);
+  }, [refetch, qc]);
+
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ['tasks', {}],
+    queryFn:  () => taskAPI.getAll({}).then(r => r.data.data),
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+    }, [refetch, qc])
+  );
+
+  useEffect(() => {
+    if (allTasks.length > 0) {
+      rescheduleAllNotifications(allTasks).catch(() => {});
+    }
+  }, [allTasks]);
+
+  // Derived Data - Pastikan logika sama dengan TaskListScreen
+  const stats = data?.stats || {};
+
+  // Tugas Terlewat (Hanya yang belum SELESAI, sudah lewat, dan dalam 24 jam terakhir)
+  const tugasTerlewat = allTasks.filter(t => {
+    if (t.status === 'SELESAI' || !t.deadline || !isOverdue(t.deadline)) return false;
+    const deadlineDate = new Date(t.deadline);
+    const diffInHours = (new Date() - deadlineDate) / (1000 * 60 * 60);
+    return diffInHours <= 24;
+  });
+
+  // Mendekati Deadline (Hanya yang belum SELESAI dan dalam rentang 3 hari)
+  const tugasDeadline = allTasks.filter(t => t.status !== 'SELESAI' && t.deadline && !isOverdue(t.deadline) && isNearDeadline(t.deadline));
+
+  // Agenda Hari Ini (Hanya yang belum SELESAI, jatuh tempo hari ini, dan BELUM terlewat)
+  const tugasHariIni = allTasks.filter(t => 
+    t.status !== 'SELESAI' && 
+    t.deadline && 
+    isToday(new Date(t.deadline)) && 
+    !isOverdue(t.deadline)
+  );
+
+  // Filter logic untuk statistik Minggu Ini
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  const tugasMingguIni = allTasks.filter(t => {
+    if (!t.deadline) return false;
+    const dl = new Date(t.deadline);
+    return dl >= startOfWeek && dl <= endOfWeek;
+  });
+
+  // Navigation helpers
+  const goToTasks = (filter = {}) => navigation.navigate('Tugas', { initialFilter: filter });
+
+  // Scroll logic
+  const scrollOffset = useRef(0);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+
+  const handleScroll = (event) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const currentOffset = contentOffset.y;
+    const layoutHeight = layoutMeasurement.height;
+    const contentHeight = contentSize.height;
+    
+    const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+    const isAtBottom = currentOffset + layoutHeight >= contentHeight - 20;
+
+    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
+      setIsNavbarVisible(false);
+      setTabBarVisible(false);
+    } else if (direction === 'up' && !isNavbarVisible && !isAtBottom) {
+      // Hanya munculkan kembali jika TIDAK sedang di mentok bawah
+      setIsNavbarVisible(true);
+      setTabBarVisible(true);
+    }
+    scrollOffset.current = currentOffset;
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsNavbarVisible(true);
+      resetTabBarVisible();
+
+      StatusBar.setBarStyle('dark-content');
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
+  return {
+    user,
+    lastAvatar,
+    stats,
+    tugasDeadline,
+    tugasTerlewat,
+    tugasMingguIni,
+    tugasHariIni,
+    isLoading,
+    refreshing,
+    handleRefresh,
+    handleScroll,
+    goToTasks
+  };
+};

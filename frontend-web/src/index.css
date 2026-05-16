@@ -1,11 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-yellow: #FACC15;
+  --brand-dark: #0F172A;
+  --app-bg: #f5f5f0;
+}
+
 @layer base {
   * { box-sizing: border-box; }
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-[var(--app-bg)] text-[#1E1E1E] antialiased;
     font-family: 'Poppins', sans-serif;
   }
   /* Hide scrollbar completely to prevent layout gaps */
@@ -49,32 +57,36 @@
   }
   .label { @apply block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide; }
 
-  .card { @apply bg-white rounded-[2rem] border border-slate-100 shadow-[0_10px_30px_-10px_rgba(15,23,42,0.1)]; }
-  .card-hover { @apply card hover:shadow-[0_20px_40px_-15px_rgba(15,23,42,0.15)] hover:border-primary/5 transition-all duration-300 cursor-pointer hover:-translate-y-1; }
+  .card { @apply bg-white rounded-xl border border-slate-100 shadow-premium; }
+  .card-hover { @apply card hover:shadow-premium-hover hover:border-primary/5 transition-all duration-300 cursor-pointer hover:-translate-y-1; }
   .glass { @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]; }
   .glass-dark { @apply bg-slate-900/80 backdrop-blur-lg border border-slate-700/50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]; }
 
-  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold; }
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider; }
   .badge-belum   { @apply badge bg-slate-100 text-slate-500; }
-  .badge-sedang  { @apply badge bg-[#15152b]/10 text-[#15152b]; }
-  .badge-selesai { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-sedang  { @apply badge bg-blue-50 text-blue-600; }
+  .badge-selesai { @apply badge bg-emerald-50 text-emerald-600; }
+  .badge-terlewat { @apply badge bg-red-50 text-red-600; }
   .badge-rendah  { @apply badge bg-slate-100 text-slate-500; }
-  .badge-normal  { @apply badge bg-amber-50 text-amber-700; }
+  .badge-normal  { @apply badge bg-amber-50 text-amber-600; }
   .badge-tinggi  { @apply badge bg-red-50 text-red-600; }
+  .badge-deadline { @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight; }
+
+  .divider { @apply h-[1px] bg-slate-100 w-full; }
 
   .nav-item {
-    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
            text-slate-500 cursor-pointer transition-all duration-200
            hover:bg-slate-50 hover:text-slate-800;
   }
-  .nav-item.active { @apply bg-primary text-white font-bold shadow-lg shadow-primary/20 scale-[1.02]; }
+  .nav-item.active { @apply bg-primary text-white font-black shadow-premium scale-[1.02]; }
 
   .filter-chip {
-    @apply px-3.5 py-1.5 rounded-full text-xs font-semibold border border-slate-200
-           bg-white text-slate-500 cursor-pointer transition-all duration-150
+    @apply px-4 py-2 rounded-xl text-xs font-bold border border-slate-200
+           bg-white text-slate-400 cursor-pointer transition-all duration-150
            hover:border-slate-300 whitespace-nowrap;
   }
-  .filter-chip.active { @apply bg-[#15152b] border-[#15152b] text-white; }
+  .filter-chip.active { @apply bg-primary border-primary text-white shadow-lg shadow-primary/10; }
 
   .skeleton { @apply animate-pulse bg-slate-100 rounded-xl; }
   .deadline-alert { @apply bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 mb-5; }
@@ -82,8 +94,33 @@
   .progress-bar-fill { @apply h-full bg-emerald-400 rounded-full transition-all duration-700; }
 
   .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm;
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20;
   }
+
+  /* Stat Card Variants (Mobile Parity) */
+  .stat-card-berjalan  { @apply bg-black text-[#FACC15]; }
+  .stat-card-selesai   { @apply bg-white text-black border-slate-100; }
+  .stat-card-terlewat  { @apply bg-white text-red-500 border-slate-100; }
+  .stat-card-total     { @apply bg-[#FACC15] text-black; }
+
+  /* Milestone Progress */
+  .milestone-line { @apply absolute top-1/2 -translate-y-1/2 h-1 bg-slate-100 rounded-full w-full; }
+  .milestone-fill { @apply absolute top-1/2 -translate-y-1/2 h-1 bg-[#FACC15] rounded-full transition-all duration-1000; }
+  .milestone-node { @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full border-4 border-white bg-white shadow-sm flex items-center justify-center transition-all duration-500; }
+  .milestone-node-active { @apply bg-[#FACC15] border-[#FACC15] shadow-lg shadow-[#FACC15]/30; }
+  .milestone-node-future { @apply border-slate-100 bg-slate-50; }
+
+  /* Pulse Highlight for Parity */
+  .pulse-highlight {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    @apply border-[#FACC15] ring-4 ring-[#FACC15]/20 shadow-xl scale-[1.02];
+    z-index: 20;
+  }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1.02); box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 15px rgba(250, 204, 21, 0); }
 }
 
 @keyframes fade-in {

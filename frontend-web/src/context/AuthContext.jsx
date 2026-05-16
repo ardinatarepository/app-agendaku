@@ -9,7 +9,14 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('agendaku_user');
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      let parsed = JSON.parse(saved);
+      // Data Sanitization: Jika data terbungkus (bug sebelumnya), ambil isi dalamnya
+      if (parsed && parsed.user && !parsed.name) {
+        parsed = parsed.user;
+        localStorage.setItem('agendaku_user', JSON.stringify(parsed));
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -41,8 +48,25 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const res = await authAPI.getMe();
+      const userData = res.data.data.user;
+      localStorage.setItem('agendaku_user', JSON.stringify(userData));
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      console.error('Refresh user failed:', err);
+    }
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    await authAPI.deleteAccount();
+    logout();
+  }, [logout]);
+
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, register, logout, refreshUser, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,16 +1,20 @@
 // CalendarScreen - Tampilan tugas berdasarkan tanggal
 // Tab baru pengganti Filter di bottom navigation
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, FlatList, RefreshControl, StatusBar,
+  StyleSheet, FlatList, RefreshControl, StatusBar, Platform,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import Logo from '../../components/Logo';
 import { taskAPI } from '../../api';
 import { Card, EmptyState, Badge, Skeleton, CalendarTaskSkeleton, CategorySkeleton } from '../../components/ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../../utils/theme';
+import { setTabBarVisible, resetTabBarVisible } from '../../utils/tabBarControl';
 import { formatDate } from '../../utils/helpers';
 
 const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -90,6 +94,8 @@ function MiniCalendar({ year, month, selectedDate, onSelectDate, taskDates }) {
 function TaskMiniCard({ task, onPress }) {
   const sc = STATUS_CONFIG[task.status] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
   const pc = PRIORITY_CONFIG[task.priority];
+  const prioritySymbol = { TINGGI: 'T', NORMAL: 'N', RENDAH: 'R' }[task.priority || 'NORMAL'];
+  
   return (
     <TouchableOpacity style={tcard.wrap} onPress={() => onPress(task)} activeOpacity={0.85}>
       <View style={[tcard.bar, { backgroundColor: sc.dot }]} />
@@ -97,9 +103,17 @@ function TaskMiniCard({ task, onPress }) {
         <Text style={tcard.title} numberOfLines={1}>{task.title}</Text>
         <View style={tcard.row}>
           <Badge label={sc.label} bg={sc.bg} color={sc.text} />
-          <Badge label={pc.label} bg={pc.bg} color={pc.text} />
+          
+          <View style={[tcard.badgeSymbol, { backgroundColor: pc.bg }]}>
+            <Text style={[tcard.badgeSymbolText, { color: pc.text }]}>{prioritySymbol}</Text>
+          </View>
+
           {task.category && (
-            <Badge label={task.category.name} bg={task.category.color + '22'} color={task.category.color} />
+            <View style={[tcard.badgeSymbol, { backgroundColor: task.category.color + '22' }]}>
+              <Text style={[tcard.badgeSymbolText, { color: task.category.color }]}>
+                {task.category.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
           )}
         </View>
       </View>
@@ -109,6 +123,7 @@ function TaskMiniCard({ task, onPress }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function CalendarScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -168,17 +183,46 @@ export default function CalendarScreen({ navigation }) {
     });
   };
 
+  const scrollOffset = useRef(0);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+
+  const handleScroll = (event) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
+    
+    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
+      setIsNavbarVisible(false);
+      setTabBarVisible(false);
+    } else if (direction === 'up' && !isNavbarVisible) {
+      setIsNavbarVisible(true);
+      setTabBarVisible(true);
+    }
+    scrollOffset.current = currentOffset;
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsNavbarVisible(true);
+      resetTabBarVisible();
+
+      StatusBar.setBarStyle('dark-content');
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar style="dark" backgroundColor="transparent" translucent={true} />
 
-      {/* Header Bar */}
-      <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>Kalender Tugas</Text>
-      </View>
+      {/* Header removed for minimalist look */}
 
-      <ScrollView
+      <ScrollView 
         style={styles.container}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={COLORS.primary} />}
       >
@@ -263,8 +307,19 @@ export default function CalendarScreen({ navigation }) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  headerBar: { backgroundColor: COLORS.primary, paddingHorizontal: 20, paddingTop: 60, paddingBottom: 25, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', ...SHADOW.md },
-  headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFF' },
+  headerBar: { 
+    backgroundColor: COLORS.primary, 
+    paddingHorizontal: 20, 
+    paddingTop: 60, 
+    paddingBottom: 25, 
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    flexDirection: 'row', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    ...SHADOW.md,
+  },
+  headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
   monthNav: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, marginTop: 10 },
   navBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: RADIUS.md, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border },
   monthWrap: { flex: 1, alignItems: 'center' },
@@ -293,12 +348,12 @@ const cal = StyleSheet.create({
   dayLabel: { flex: 1, textAlign: 'center', fontSize: 11, ...FONT.semibold, color: COLORS.textMuted },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
-  cellCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  cellSelected: { backgroundColor: COLORS.primary },
-  cellToday: { backgroundColor: COLORS.primaryLight },
-  dayNum: { fontSize: 13, color: COLORS.text, ...FONT.medium, textAlign: 'center' },
-  dayNumSelected: { color: '#fff', ...FONT.bold, textAlign: 'center' },
-  dayNumToday: { color: COLORS.primary, ...FONT.bold, textAlign: 'center' },
+  cellCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  cellSelected: { backgroundColor: COLORS.primary, borderRadius: 17 },
+  cellToday: { backgroundColor: COLORS.primaryLight, borderRadius: 17 },
+  dayNum: { fontSize: 13, color: COLORS.text, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  dayNumSelected: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  dayNumToday: { color: '#000000', ...FONT.bold, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
   dot: { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
 });
 
@@ -307,5 +362,7 @@ const tcard = StyleSheet.create({
   bar: { width: 4, flexShrink: 0 },
   body: { flex: 1, padding: 12 },
   title: { fontSize: 14, ...FONT.bold, color: COLORS.text, marginBottom: 6 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, alignItems: 'center' },
+  badgeSymbol: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  badgeSymbolText: { fontSize: 10, ...FONT.bold, includeFontPadding: false, textAlignVertical: 'center' },
 });

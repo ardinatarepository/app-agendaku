@@ -1,60 +1,112 @@
 import { 
-  MdAssignment, 
-  MdFlashOn, 
-  MdCheckCircle, 
-  MdError, 
-  MdTimeline,
-  MdChevronRight
-} from 'react-icons/md';
-import { useDashboard, useTasks, useUpdateTask, useToggleSubtask, useCreateSubtask } from '../hooks';
+  IoPlayOutline, 
+  IoCheckmarkCircleOutline, 
+  IoTimeOutline, 
+  IoListOutline, 
+  IoChevronForward,
+  IoCalendarOutline,
+  IoCheckmark
+} from 'react-icons/io5';
+import { useDashboard, useTasks } from '../hooks';
+import { AVATAR_BASE_URL } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import TaskCard from '../components/tasks/TaskCard';
+import { format } from 'date-fns';
 
-// ── Bold & Solid Stat Card ──────────────────────────────────────────────────
-const StatCard = ({ label, value, color, icon, onClick }) => (
+const StatCard = ({ label, value, onClick, variant, icon }) => (
   <button
     onClick={onClick}
-    className="bg-white p-8 rounded-[2rem] flex items-center gap-6 shadow-premium border border-slate-100 hover:shadow-premium-hover hover:-translate-y-1 transition-all duration-300 active:scale-95 text-left group"
+    className={`p-5 rounded-[18px] flex flex-col justify-center h-[100px] shadow-sm border border-slate-100/50 hover:shadow-md transition-all duration-300 active:scale-95 text-left relative group w-full ${variant}`}
   >
-    <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-500 group-hover:rotate-12" style={{ backgroundColor: `${color}10`, color }}>
+    <div className="absolute top-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity">
       {icon}
     </div>
-    <div>
-      <p className="text-4xl font-medium text-slate-800 leading-none">{value}</p>
-      <p className="text-xs font-normal text-slate-400 uppercase tracking-[0.2em] mt-2">{label}</p>
-    </div>
+    <p className="text-3xl font-bold leading-tight">{value}</p>
+    <p className="text-[11px] font-bold uppercase tracking-[0.15em] opacity-60 mt-1">{label}</p>
   </button>
 );
+
+const MilestoneProgress = ({ stats }) => {
+  const total = stats.total || 0;
+  const selesai = stats.selesai || 0;
+  const percent = total > 0 ? Math.round((selesai / total) * 100) : 0;
+
+  const steps = [
+    { id: 1, label: 'BAGUS', threshold: 25 },
+    { id: 2, label: 'KEREN', threshold: 50 },
+    { id: 3, label: 'RAJIN', threshold: 100 },
+  ];
+
+  const getLatestCompletedId = (p) => {
+    if (p >= 100) return 3;
+    if (p >= 50) return 2;
+    if (p >= 25) return 1;
+    return null;
+  };
+
+  const latestId = getLatestCompletedId(percent);
+
+  return (
+    <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
+      <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
+        <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Progres Belajar</h2>
+        <div className="bg-slate-50 px-3 py-1 rounded-full">
+          <span className="text-[12px] font-bold text-slate-400">{selesai}/{total}</span>
+        </div>
+      </div>
+      
+      <div className="px-8 pt-20 pb-10 flex flex-col items-center">
+        <div className="relative w-full max-w-[400px] h-1 flex items-center">
+          <div className="milestone-line" />
+          <div className="milestone-fill" style={{ width: `${percent}%` }} />
+
+          {steps.map((step) => {
+            const isDone = percent >= step.threshold;
+            const isLatest = latestId === step.id;
+
+            return (
+              <div key={step.id} className="absolute top-0" style={{ left: `${step.threshold}%` }}>
+                {isLatest && (
+                  <div className="absolute bottom-10 -translate-x-1/2 flex flex-col items-center animate-fade-in">
+                    <div className="bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-lg tracking-widest">
+                      {step.label}
+                    </div>
+                    <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 mt-[-1px]" />
+                  </div>
+                )}
+                <div className={`milestone-node ${isDone ? 'milestone-node-active' : 'milestone-node-future'}`}>
+                  {isDone ? <IoCheckmark size={14} className="text-black" /> : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-10 text-[13px] font-bold text-slate-400">
+          {percent}% selesai — {total - selesai} tugas tersisa
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const updateTask = useUpdateTask();
   const { data, isLoading } = useDashboard();
-  const toggleSubtask = useToggleSubtask();
-  const createSubtask = useCreateSubtask();
-
-  const handleStatusChange = async (id, status) => {
-    await updateTask.mutateAsync({ id, data: { status } });
-  };
-  
-  const handleToggleSubtask = (taskId, subtaskId) => toggleSubtask.mutateAsync({ taskId, subtaskId });
-  const handleAddSubtask = (taskId, title) => createSubtask.mutateAsync({ taskId, data: { title } });
-
   const { data: allTasks = [] } = useTasks({});
 
   const stats = data?.stats || { total: 0, sedangDikerjakan: 0, selesai: 0, terlewat: 0 };
-  const completionRate = stats.total > 0 ? Math.round((stats.selesai / stats.total) * 100) : 0;
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const tugasHariIni = allTasks.filter(t => {
+  const tasks = allTasks || [];
+  
+  const tugasHariIni = tasks.filter(t => {
     if (t.status === 'SELESAI' || !t.deadline) return false;
     const dl = new Date(t.deadline); dl.setHours(0, 0, 0, 0);
     return dl.getTime() === today.getTime();
   });
 
-  const tugasDeadline = (allTasks || []).filter(t => {
+  const tugasDeadline = tasks.filter(t => {
     if (t.status === 'SELESAI' || !t.deadline) return false;
     const dl = new Date(t.deadline);
     const now = new Date();
@@ -62,145 +114,168 @@ export default function DashboardPage() {
     return dl >= now && dl <= threeDays;
   }).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
-  const tugasTerlewat = (allTasks || []).filter(t => {
+  const tugasTerlewat = tasks.filter(t => {
     if (t.status === 'SELESAI' || !t.deadline) return false;
-    return new Date(t.deadline) < new Date();
+    const dl = new Date(t.deadline);
+    return dl < new Date();
   }).sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
 
-  if (isLoading) return <div className="p-20 text-center font-bold text-slate-400 animate-pulse uppercase tracking-[0.5em]">SISTEM MEMUAT...</div>;
+  if (isLoading) return <div className="p-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-[0.5em] text-xs">SISTEM MEMUAT...</div>;
+
+  const goToTasks = (filter = {}) => {
+    const params = new URLSearchParams(filter).toString();
+    navigate(`/tasks?${params}`);
+  };
 
   return (
-    <div className="min-h-screen bg-[#fbfcfd] pb-24">
+    <div className="min-h-screen bg-[var(--app-bg)] pb-24 font-poppins">
       
-      {/* Header — Solid & Professional */}
-      <div className="bg-[#15152b] text-white px-8 py-12 sm:px-12 lg:px-16 border-b border-white/5 relative overflow-hidden">
-        <div className="max-w-[1600px] mx-auto relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Halo, {user?.name}</h1>
-          <p className="text-white/40 text-base font-medium">Selamat datang kembali di AgendaKu. Mari selesaikan tugasmu.</p>
+      {/* Header (Top Bar) — EXACT MOBILE PARITY */}
+      <div className="bg-white px-8 pt-16 pb-8 sm:px-12 lg:px-16 shadow-sm relative z-30 flex items-center justify-between">
+        <div className="max-w-[1200px] mx-auto flex-1 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 tracking-[0.15em] mb-1">SELAMAT DATANG</p>
+            <h1 className="text-4xl font-bold text-black tracking-tighter">Halo, {user?.name?.split(' ')[0]}</h1>
+          </div>
+          <button 
+            onClick={() => navigate('/profile')}
+            className="w-12 h-12 rounded-full bg-slate-50 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-primary text-lg font-bold"
+          >
+            {user?.avatar ? (
+              <img src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+            ) : user?.name?.[0]?.toUpperCase()}
+          </button>
         </div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[120px] -mr-32 -mt-32" />
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 mt-10 relative z-20">
+      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 mt-8 space-y-8">
         
-        {/* Stats Grid — Filling the Width with Bold Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <StatCard label="Total Tugas"   value={stats.total}            color="#1e293b" icon={<MdAssignment size={32} />} onClick={() => navigate('/tasks')} />
-          <StatCard label="Berjalan"      value={stats.sedangDikerjakan} color="#3b82f6" icon={<MdFlashOn size={32} />}    onClick={() => navigate('/tasks?status=SEDANG_DIKERJAKAN')} />
-          <StatCard label="Selesai"       value={stats.selesai}          color="#10b981" icon={<MdCheckCircle size={32} />} onClick={() => navigate('/tasks?status=SELESAI')} />
-          <StatCard label="Terlewat"      value={stats.terlewat}         color="#ef4444" icon={<MdError size={32} />}       onClick={() => navigate('/tasks?status=TERLEWAT')} />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            label="BERJALAN" 
+            value={stats.sedangDikerjakan} 
+            variant="stat-card-berjalan" 
+            icon={<IoPlayOutline size={22} />} 
+            onClick={() => goToTasks({ status: 'SEDANG_DIKERJAKAN' })} 
+          />
+          <StatCard 
+            label="SELESAI" 
+            value={stats.selesai} 
+            variant="stat-card-selesai" 
+            icon={<IoCheckmarkCircleOutline size={22} />} 
+            onClick={() => goToTasks({ status: 'SELESAI' })} 
+          />
+          <StatCard 
+            label="TERLEWAT" 
+            value={stats.terlewat} 
+            variant="stat-card-terlewat" 
+            icon={<IoTimeOutline size={22} />} 
+            onClick={() => goToTasks({ status: 'TERLEWAT' })} 
+          />
+          <StatCard 
+            label="TOTAL" 
+            value={stats.total} 
+            variant="stat-card-total" 
+            icon={<IoListOutline size={22} />} 
+            onClick={() => goToTasks({})} 
+          />
         </div>
 
-        {/* Productivity Bar — Thick & Solid Widget */}
-        <div className="bg-white rounded-[2.5rem] p-10 shadow-premium border border-slate-100 mb-16">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-[0.3em] flex items-center gap-4">
-              <MdTimeline size={28} className="text-primary" /> Progress Produktivitas
-            </h3>
-            <div className="flex items-baseline gap-1 text-primary">
-              <span className="text-4xl font-semibold">{completionRate}</span>
-              <span className="text-xl font-semibold">%</span>
-            </div>
-          </div>
-          <div className="border-b border-slate-100 mb-8" />
-          <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5">
-            <div 
-              className="h-full bg-[#15152b] rounded-full transition-all duration-1000 ease-out shadow-lg"
-              style={{ width: `${completionRate}%` }}
-            />
-          </div>
-          <p className="text-center text-sm font-normal text-slate-400 mt-8 italic">
-             {stats.total > 0 
-               ? `Fokus! Anda telah menyelesaikan ${stats.selesai} dari ${stats.total} tugas. Teruskan perjuanganmu!`
-               : 'Mulai langkah pertamamu hari ini dengan membuat agenda tugas baru.'}
-          </p>
-        </div>
-
-        {/* Overdue Warning — Consistent with Mobile Urgency */}
-        {tugasTerlewat.length > 0 && (
-          <div className="mb-12 animate-pulse-subtle">
-            <div className="bg-red-50 border-2 border-red-100 rounded-[2.5rem] p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-red-600 flex items-center gap-3">
-                  <MdError size={28} /> Peringatan: Tugas Terlewat
-                </h2>
-                <span className="bg-red-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
-                  {tugasTerlewat.length} Urgent
-                </span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-8">
+            {/* Tugas Terlewat */}
+            {tugasTerlewat.length > 0 && (
+              <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
+                <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
+                  <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Tugas Terlewat</h2>
+                  <IoChevronForward size={18} className="text-slate-400" />
+                </div>
+                <div className="divide-y divide-slate-50">
+                  {tugasTerlewat.slice(0, 3).map(task => (
+                    <button key={task.id} onClick={() => navigate(`/tasks?status=TERLEWAT&highlightId=${task.id}`)} className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-50/30 transition-colors text-left group">
+                      <div className="w-1 h-8 bg-red-500 rounded-full shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-red-600 transition-colors">{task.title}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <IoCalendarOutline size={12} className="text-slate-400" />
+                          <p className="text-[12px] font-medium text-slate-400">
+                            {format(new Date(task.deadline), 'dd MMM yyyy, HH:mm')}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {tugasTerlewat.slice(0, 4).map(task => (
-                  <div key={task.id} className="bg-white/60 p-4 rounded-2xl flex items-center gap-4 border border-red-50">
-                    <div className="w-2 h-2 rounded-full bg-red-600 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-slate-800 text-sm truncate">{task.title}</p>
-                      <p className="text-[10px] text-red-500 font-bold uppercase mt-1">
-                        Terlambat sejak: {new Date(task.deadline).toLocaleDateString()}
-                      </p>
-                    </div>
+            )}
+
+            {/* Mendekati Deadline */}
+            <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
+                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Mendekati Deadline</h2>
+                <IoChevronForward size={18} className="text-slate-400" />
+              </div>
+              <div className="divide-y divide-slate-50">
+                {tugasDeadline.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-slate-400">
+                    <IoCheckmarkCircleOutline size={32} className="mb-2 opacity-20" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Semua deadline aman</p>
                   </div>
-                ))}
+                ) : (
+                  tugasDeadline.slice(0, 3).map(task => (
+                    <button key={task.id} onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
+                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="bg-[#FACC15] px-3 py-1.5 rounded-lg">
+                          <p className="text-[11px] font-black text-black">Segera</p>
+                        </div>
+                        <p className="text-[14px] font-black text-slate-400">
+                          {format(new Date(task.deadline), 'HH:mm')}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
-        )}
 
-        {/* Task Sections — Robust Full-Width Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          
-          {/* Tugas Hari Ini */}
-          <section className="bg-white rounded-[2.5rem] p-8 shadow-premium border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-4">
-                <div className="w-1.5 h-6 bg-[#15152b] rounded-full" /> Tugas Hari Ini
-              </h2>
-              <button onClick={() => navigate('/tasks')} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">
-                Lihat Semua
-              </button>
+          <div className="space-y-8">
+            {/* Agenda Hari Ini */}
+            <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
+              <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
+                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Agenda Hari Ini</h2>
+                <IoChevronForward size={18} className="text-slate-400" />
+              </div>
+              <div className="divide-y divide-slate-50">
+                {tugasHariIni.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-slate-400">
+                    <IoCalendarOutline size={32} className="mb-2 opacity-20" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Tidak ada agenda</p>
+                  </div>
+                ) : (
+                  tugasHariIni.slice(0, 3).map(task => (
+                    <button key={task.id} onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition-colors group">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
+                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
+                      </div>
+                      <p className="text-[14px] font-black text-red-500">Hari ini</p>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
-            <div className="border-b border-slate-100 mb-8" />
 
-            {tugasHariIni.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] py-28 text-center shadow-sm">
-                <MdAssignment size={64} className="text-slate-100 mx-auto mb-6" />
-                <p className="text-lg font-medium text-slate-300 uppercase tracking-widest">Tidak ada tugas hari ini</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {tugasHariIni.map(task => (
-                  <TaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onToggleSubtask={handleToggleSubtask} onAddSubtask={handleAddSubtask} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Mendekati Deadline */}
-          <section className="bg-white rounded-[2.5rem] p-8 shadow-premium border border-slate-100">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-4">
-                <div className="w-1.5 h-6 bg-amber-500 rounded-full" /> Mendekati Deadline
-              </h2>
-              <button onClick={() => navigate('/tasks')} className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">
-                Lihat Semua
-              </button>
-            </div>
-            <div className="border-b border-slate-100 mb-8" />
-
-            {tugasDeadline.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-100 rounded-[3rem] py-28 text-center shadow-sm">
-                <MdCheckCircle size={64} className="text-slate-100 mx-auto mb-6" />
-                <p className="text-lg font-bold text-slate-300 uppercase tracking-widest">Semua deadline aman</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {tugasDeadline.map(task => (
-                  <TaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onToggleSubtask={handleToggleSubtask} onAddSubtask={handleAddSubtask} />
-                ))}
-              </div>
-            )}
-          </section>
-
+            {/* Progress Belajar */}
+            <MilestoneProgress stats={stats} />
+          </div>
         </div>
+
       </div>
     </div>
   );

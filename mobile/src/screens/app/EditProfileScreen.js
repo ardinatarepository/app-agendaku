@@ -118,7 +118,7 @@ export default function EditProfileScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Pick Image Error:', error);
-      Alert.alert('Error', 'Gagal membuka galeri: ' + error.message);
+      setToast({ visible: true, message: 'Gagal membuka galeri: ' + error.message, type: 'danger' });
     }
   };
 

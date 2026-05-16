@@ -56,7 +56,11 @@ export default function FilterSheet({ visible, filters, sortKey, onSortChange, c
                     onPress={() => setLocalSort(opt.key)}
                     style={[fStyle.chip, active && fStyle.chipActive]}
                   >
-                    <MaterialIcons name={opt.icon} size={16} color={active ? COLORS.primary : COLORS.textMuted} />
+                    <MaterialIcons 
+                      name={opt.icon} 
+                      size={16} 
+                      color={active ? '#000000' : '#64748B'} 
+                    />
                     <Text style={[fStyle.chipText, active && fStyle.chipTextActive]}>{opt.label}</Text>
                   </TouchableOpacity>
                 );
@@ -69,8 +73,14 @@ export default function FilterSheet({ visible, filters, sortKey, onSortChange, c
                 const cfg = statusConfig[s] || statusConfig['SEDANG_DIKERJAKAN'];
                 const active = local.status === s;
                 return (
-                  <TouchableOpacity key={s} onPress={() => set('status', s)}
-                    style={[fStyle.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.dot, ...SHADOW.sm }]}>
+                  <TouchableOpacity 
+                    key={s} 
+                    onPress={() => set('status', s)}
+                    style={[
+                      fStyle.chip, 
+                      active && { backgroundColor: cfg.bg, borderColor: cfg.dot, borderWidth: 2 }
+                    ]}
+                  >
                     {active && <MaterialIcons name="check-circle" size={16} color={cfg.text} />}
                     <Text style={[fStyle.chipText, active && { color: cfg.text, ...FONT.bold }]}>{cfg.label}</Text>
                   </TouchableOpacity>
@@ -84,8 +94,14 @@ export default function FilterSheet({ visible, filters, sortKey, onSortChange, c
                 const cfg = priorityConfig[p];
                 const active = local.priority === p;
                 return (
-                  <TouchableOpacity key={p} onPress={() => set('priority', p)}
-                    style={[fStyle.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.text + '80', ...SHADOW.sm }]}>
+                  <TouchableOpacity 
+                    key={p} 
+                    onPress={() => set('priority', p)}
+                    style={[
+                      fStyle.chip, 
+                      active && { backgroundColor: cfg.bg, borderColor: cfg.text, borderWidth: 2 }
+                    ]}
+                  >
                     {active && <MaterialIcons name="check-circle" size={16} color={cfg.text} />}
                     <Text style={[fStyle.chipText, active && { color: cfg.text, ...FONT.bold }]}>{PRIORITY_LBL[p]}</Text>
                   </TouchableOpacity>
@@ -118,18 +134,37 @@ export default function FilterSheet({ visible, filters, sortKey, onSortChange, c
 }
 
 const fStyle = StyleSheet.create({
-  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 32 },
-  handle: { width: 40, height: 5, backgroundColor: COLORS.borderLight, borderRadius: 3, alignSelf: 'center', marginBottom: 16, marginTop: -8 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 16, ...FONT.bold, color: COLORS.text },
-  reset: { fontSize: 13, color: COLORS.primary, ...FONT.medium },
-  secLabel: { fontSize: 12, ...FONT.semibold, color: COLORS.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 24, borderWidth: 1.2, borderColor: '#E2E8F0', backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 },
-  chipActive: { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary, ...SHADOW.sm },
-  chipText: { fontSize: 13, ...FONT.medium, color: COLORS.textMuted, textAlign: 'center' },
-  chipTextActive: { color: COLORS.primary, ...FONT.bold },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40 },
+  handle: { width: 40, height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, alignSelf: 'center', marginBottom: 24, marginTop: -8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  title: { fontSize: 20, ...FONT.bold, color: '#0F172A' },
+  reset: { fontSize: 13, color: '#94A3B8', ...FONT.bold },
+  secLabel: { fontSize: 13, ...FONT.bold, color: '#475569', marginBottom: 12 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  chip: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 14, 
+    borderWidth: 1.5, 
+    borderColor: '#E2E8F0', 
+    backgroundColor: '#F8FAFC', 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 8,
+  },
+  chipActive: { 
+    backgroundColor: '#FACC15', 
+    borderColor: '#FACC15', 
+    elevation: 3,
+    shadowColor: '#FACC15',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  chipText: { fontSize: 14, ...FONT.bold, color: '#475569', textAlign: 'center' },
+  chipTextActive: { color: '#000000', ...FONT.bold },
   catDot: { width: 8, height: 8, borderRadius: 4 },
-  footer: { marginTop: 12 },
+  footer: { marginTop: 8 },
 });
