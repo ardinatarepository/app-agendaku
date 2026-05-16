@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "AgendaKu",
+    "name": "Agendaku",
     "slug": "agendaku",
     "privacy": "public",
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/agendaku_logo_kuning.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
@@ -19,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/agendaku_logo_kuning.png",
         "backgroundColor": "#1E1E1E"
       },
       "package": "com.agendaku.app"
