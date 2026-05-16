@@ -4,9 +4,10 @@ import {
   Modal, StyleSheet, Platform, Animated, PanResponder, Dimensions, Keyboard, StatusBar, Alert,
   KeyboardAvoidingView
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Button, Input, Toast } from './ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
+import { parseNaturalLanguage, cleanTitle, classifyWord } from '../utils/smartParser';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -14,19 +15,14 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function PrioritySelector({ value, onChange }) {
   const PRIORITIES = ['RENDAH', 'NORMAL', 'TINGGI'];
-  const configs = {
-    RENDAH: { label: 'Rendah', active: { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' } },
-    NORMAL: { label: 'Normal', active: { bg: '#fef3c7', border: '#f59e0b', text: '#b45309' } },
-    TINGGI: { label: 'Tinggi', active: { bg: '#fee2e2', border: '#ef4444', text: '#dc2626' } },
-  };
   return (
     <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
       {PRIORITIES.map(p => {
-        const cfg = configs[p];
+        const cfg = PRIORITY_CONFIG[p];
         const isActive = value === p;
         return (
-          <TouchableOpacity key={p} onPress={() => onChange(p)} style={[prioStyle.btn, isActive && { backgroundColor: cfg.active.bg, borderColor: cfg.active.border }]}>
-            <Text style={[prioStyle.label, isActive && { color: cfg.active.text }]}>{cfg.label}</Text>
+          <TouchableOpacity key={p} onPress={() => onChange(p)} style={[prioStyle.btn, isActive && { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
+            <Text style={[prioStyle.label, isActive && { color: cfg.text }]}>{cfg.label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -208,6 +204,7 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'danger' });
   const [titleError, setTitleError] = useState('');
+  const [titleFocused, setTitleFocused] = useState(false);
 
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isMounted = useRef(false);
@@ -271,7 +268,28 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
       const dateObj = new Date(y, m - 1, d, hh, mm, 0);
       finalDeadline = dateObj.toISOString();
     }
-    onSubmit({ ...form, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
+    // Auto-clean judul sebelum submit (hapus kata kunci jadwal)
+    const result = parseNaturalLanguage(form.title, categories);
+    const finalTitle = result ? cleanTitle(form.title, result.wordsToRemove) : form.title;
+    onSubmit({ ...form, title: finalTitle, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
+  };
+
+  const handleSmartInput = (text, shouldClean = false) => {
+    const result = parseNaturalLanguage(text, categories);
+    if (!result) return null;
+
+    setForm(prev => ({
+      ...prev,
+      title: shouldClean ? cleanTitle(prev.title, result.wordsToRemove) : prev.title,
+      smartDetected: shouldClean ? null : result.summary,
+      deadline: result.deadline || prev.deadline,
+      time: result.time || prev.time,
+      priority: result.priority || prev.priority,
+      categoryId: result.categoryId || prev.categoryId,
+      isRecurring: result.isRecurring ?? prev.isRecurring,
+      recurrence: result.recurrence || prev.recurrence,
+    }));
+    return result.summary;
   };
 
   const addSubtask = () => {
@@ -327,16 +345,83 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
               keyboardShouldPersistTaps="handled" 
               showsVerticalScrollIndicator={false}
             >
-              <Input 
-                label="Nama Tugas *" 
-                placeholder="Masukan Nama Tugas" 
-                value={form.title} 
-                onChangeText={(v) => {
-                  set('title')(v);
-                  if (titleError) setTitleError('');
-                }} 
-                error={titleError}
-              />
+              {/* Smart Suggestion Bubble */}
+              {form.smartDetected && (
+                <View style={mStyle.smartBubble}>
+                  <View style={mStyle.smartBubbleContent}>
+                    <View style={mStyle.smartIconCircle}>
+                      <Ionicons name="flash" size={12} color="#EAB308" />
+                    </View>
+                    <Text style={mStyle.smartBubbleText}>
+                      Jadwal: {form.smartDetected}
+                    </Text>
+                    <TouchableOpacity 
+                      style={[mStyle.smartIconAction, { backgroundColor: '#22C55E' }]}
+                      onPress={() => handleSmartInput(form.title, true)}
+                    >
+                      <Ionicons name="checkmark" size={12} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[mStyle.smartIconAction, { backgroundColor: '#DC2626' }]}
+                      onPress={() => setForm(p => ({ ...p, smartDetected: null }))}
+                    >
+                      <Ionicons name="close" size={12} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View style={mStyle.inputGroup}>
+                <Text style={mStyle.label}>Nama Tugas *</Text>
+                <View style={mStyle.richInputContainer}>
+                  {/* Layer Input (di bawah, teks putih = tak terlihat) */}
+                  <TextInput
+                    style={mStyle.hiddenTextInput}
+                    placeholder="Cth: Beli susu besok urgent"
+                    placeholderTextColor={COLORS.textLight}
+                    value={form.title}
+                    onChangeText={(v) => {
+                      const result = parseNaturalLanguage(v, categories);
+                      setForm(prev => ({
+                        ...prev,
+                        title: v,
+                        smartDetected: result ? result.summary : null,
+                        deadline: result?.deadline || prev.deadline,
+                        time: result?.time || prev.time,
+                        priority: result?.priority || prev.priority,
+                        categoryId: result?.categoryId || prev.categoryId,
+                        isRecurring: result?.isRecurring ?? prev.isRecurring,
+                        recurrence: result?.recurrence || prev.recurrence,
+                      }));
+                      if (titleError) setTitleError('');
+                    }}
+                    multiline={true}
+                    selectionColor={COLORS.primary}
+                  />
+
+                  {/* Layer Warna (di atas, sentuhan tembus) */}
+                  <View style={mStyle.colorLayer} pointerEvents="none">
+                    <Text style={mStyle.colorText}>
+                      {form.title ? form.title.split(' ').map((word, i) => {
+                        const type = classifyWord(word);
+                        let color = COLORS.text;
+                        if (type === 'date') color = '#D97706';
+                        if (type === 'time') color = '#EA580C';
+                        if (type === 'priority') color = '#DC2626';
+                        return <Text key={i} style={{ color }}>{word}{' '}</Text>;
+                      }) : null}
+                    </Text>
+                  </View>
+                </View>
+                {titleError ? <Text style={mStyle.errorText}>{titleError}</Text> : null}
+              </View>
+              <View style={{ height: 4 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Ionicons name="flash" size={14} color="#EAB308" />
+                <Text style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: 'italic' }}>
+                  Smart Detect: Ketik "besok", "senin", atau "jam 2" untuk atur otomatis.
+                </Text>
+              </View>
               <View style={{ height: 12 }} />
               <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
               
@@ -459,9 +544,73 @@ const mStyle = StyleSheet.create({
   cancel: { fontSize: 14, color: COLORS.danger, ...FONT.bold },
   save: { fontSize: 14, color: '#000000', ...FONT.bold, textAlign: 'center' },
   body: { padding: 20, paddingBottom: 100 },
+  richInputContainer: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    minHeight: 48,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  colorLayer: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    zIndex: 3,
+  },
+  colorText: {
+    fontSize: 15,
+    color: COLORS.text,
+  },
+  hiddenTextInput: {
+    fontSize: 15,
+    color: COLORS.surface,
+    paddingHorizontal: 14,
+    minHeight: 48,
+    backgroundColor: 'transparent',
+    ...(Platform.OS === 'web' && { outlineStyle: 'none', color: 'transparent' }),
+  },
+  errorText: { color: COLORS.danger, fontSize: 12, marginTop: 4 },
+  datePickerText: { fontSize: 14, ...FONT.medium, color: COLORS.text },
+  inputGroup: { marginBottom: 4 },
+  smartBubble: {
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  smartBubbleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+    ...SHADOW.sm,
+  },
+  smartIconCircle: {
+    backgroundColor: '#fff',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.sm,
+  },
+  smartBubbleText: { fontSize: 12, ...FONT.bold, color: '#000', flexShrink: 1 },
+  smartIconAction: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  section: { marginBottom: 20 },
   label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, marginTop: 12, marginBottom: 8 },
   datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
-  datePickerText: { fontSize: 15, color: COLORS.text },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border, marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
   chipText: { fontSize: 13, ...FONT.medium, color: COLORS.textMuted, textAlign: 'center' },
   input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
@@ -472,8 +621,24 @@ const mStyle = StyleSheet.create({
 });
 
 const prioStyle = StyleSheet.create({
-  btn: { flex: 1, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', backgroundColor: COLORS.surface },
-  label: { fontSize: 13, ...FONT.semibold, color: COLORS.textMuted },
+  btn: { 
+    flex: 1, 
+    paddingVertical: 10, 
+    borderRadius: RADIUS.md, 
+    borderWidth: 1.5, 
+    borderColor: COLORS.border, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  label: { 
+    fontSize: 13, 
+    ...FONT.semibold, 
+    color: COLORS.textMuted,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 18,
+  },
 });
 
 const dpStyle = StyleSheet.create({

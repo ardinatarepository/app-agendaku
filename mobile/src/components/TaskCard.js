@@ -196,9 +196,9 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
 
           {/* BADGES & PROGRESS ROW */}
           <View style={[styles.badgeContainer, { marginBottom: 8 }]}>
-            <View style={[styles.badgeStatus, isFinished && { backgroundColor: '#DCFCE7' }]}>
-              <Text style={[styles.badgeStatusText, isFinished && { color: '#14532D' }]}>
-                {statusConfig.label.toUpperCase()}
+            <View style={[styles.badgeStatus, { backgroundColor: statusConfig?.bg || '#DCFCE7' }]}>
+              <Text style={[styles.badgeStatusText, { color: statusConfig?.color || '#14532D' }]}>
+                {statusConfig?.label?.toUpperCase()}
               </Text>
             </View>
 
@@ -339,8 +339,8 @@ const styles = StyleSheet.create({
   titleText: { fontSize: 15, ...FONT.bold, color: '#000000' }, // Slightly smaller from 16
   titleDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
   badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  badgeStatus: { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }, // More compact
-  badgeStatusText: { fontSize: 9, ...FONT.bold, color: '#14532D' },
+  badgeStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  badgeStatusText: { fontSize: 9, ...FONT.bold },
   badgePriority: { backgroundColor: '#E0E7FF', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   badgePriorityText: { fontSize: 9, ...FONT.bold, color: '#3730A3' },
   badgeCategory: { backgroundColor: '#FCE7F3', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
