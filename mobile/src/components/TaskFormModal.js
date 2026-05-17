@@ -188,6 +188,36 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
   );
 }
 
+const AnimatedWord = ({ word, targetColor }) => {
+  const colorAnim = useRef(new Animated.Value(0)).current;
+  const [prevColor, setPrevColor] = useState(targetColor);
+  const [currColor, setCurrColor] = useState(targetColor);
+
+  useEffect(() => {
+    if (currColor !== targetColor) {
+      setPrevColor(currColor);
+      setCurrColor(targetColor);
+      colorAnim.setValue(0);
+      Animated.timing(colorAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [targetColor]);
+
+  const interpolatedColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [prevColor, currColor],
+  });
+
+  return (
+    <Animated.Text style={{ color: interpolatedColor }}>
+      {word}{' '}
+    </Animated.Text>
+  );
+};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories, initialDate, headerHeight = 60 }) {
@@ -285,9 +315,12 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
       deadline: result.deadline || prev.deadline,
       time: result.time || prev.time,
       priority: result.priority || prev.priority,
+      status: result.status || prev.status,
       categoryId: result.categoryId || prev.categoryId,
       isRecurring: result.isRecurring ?? prev.isRecurring,
       recurrence: result.recurrence || prev.recurrence,
+      reminderHours: result.reminderHours || prev.reminderHours,
+      subtasks: result.subtasks ? [...prev.subtasks, ...result.subtasks.filter(nst => !prev.subtasks.some(pst => pst.title === nst.title))] : prev.subtasks,
     }));
     return result.summary;
   };
@@ -345,27 +378,33 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
               keyboardShouldPersistTaps="handled" 
               showsVerticalScrollIndicator={false}
             >
-              {/* Smart Suggestion Bubble */}
+              {/* Smart Suggestion Banner */}
               {form.smartDetected && (
-                <View style={mStyle.smartBubble}>
-                  <View style={mStyle.smartBubbleContent}>
+                <View style={mStyle.smartBanner}>
+                  <View style={mStyle.smartBannerLeft}>
                     <View style={mStyle.smartIconCircle}>
-                      <Ionicons name="flash" size={12} color="#EAB308" />
+                      <Ionicons name="flash" size={13} color="#EAB308" />
                     </View>
-                    <Text style={mStyle.smartBubbleText}>
-                      Jadwal: {form.smartDetected}
+                    <Text style={mStyle.smartBannerText} numberOfLines={2}>
+                      Jadwal terdeteksi: <Text style={mStyle.smartBannerHighlight}>{form.smartDetected}</Text>
                     </Text>
+                  </View>
+                  <View style={mStyle.smartBannerRight}>
                     <TouchableOpacity 
-                      style={[mStyle.smartIconAction, { backgroundColor: '#22C55E' }]}
+                      style={mStyle.smartApplyBtn}
                       onPress={() => handleSmartInput(form.title, true)}
+                      activeOpacity={0.7}
                     >
-                      <Ionicons name="checkmark" size={12} color="#fff" />
+                      <Ionicons name="checkmark-sharp" size={14} color="#FFFFFF" />
+                      <Text style={mStyle.smartApplyText}>Terapkan</Text>
                     </TouchableOpacity>
+                    
                     <TouchableOpacity 
-                      style={[mStyle.smartIconAction, { backgroundColor: '#DC2626' }]}
+                      style={mStyle.smartDismissBtn}
                       onPress={() => setForm(p => ({ ...p, smartDetected: null }))}
+                      activeOpacity={0.7}
                     >
-                      <Ionicons name="close" size={12} color="#fff" />
+                      <Ionicons name="close" size={16} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -377,7 +416,7 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                   {/* Layer Input (di bawah, teks putih = tak terlihat) */}
                   <TextInput
                     style={mStyle.hiddenTextInput}
-                    placeholder="Cth: Beli susu besok urgent"
+                    placeholder="Cth: Buat makalah besok urgent"
                     placeholderTextColor={COLORS.textLight}
                     value={form.title}
                     onChangeText={(v) => {
@@ -389,14 +428,21 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                         deadline: result?.deadline || prev.deadline,
                         time: result?.time || prev.time,
                         priority: result?.priority || prev.priority,
+                        status: result?.status || prev.status,
                         categoryId: result?.categoryId || prev.categoryId,
                         isRecurring: result?.isRecurring ?? prev.isRecurring,
                         recurrence: result?.recurrence || prev.recurrence,
+                        reminderHours: result?.reminderHours || prev.reminderHours,
                       }));
                       if (titleError) setTitleError('');
                     }}
                     multiline={true}
                     selectionColor={COLORS.primary}
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoComplete="off"
+                    textContentType="none"
+                    keyboardType={Platform.OS === 'android' ? 'visible-password' : 'default'}
                   />
 
                   {/* Layer Warna (di atas, sentuhan tembus) */}
@@ -407,8 +453,13 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                         let color = COLORS.text;
                         if (type === 'date') color = '#D97706';
                         if (type === 'time') color = '#EA580C';
-                        if (type === 'priority') color = '#DC2626';
-                        return <Text key={i} style={{ color }}>{word}{' '}</Text>;
+                        if (type === 'priority_high') color = '#DC2626'; // Red
+                        if (type === 'priority_normal') color = '#F59E0B'; // Amber
+                        if (type === 'priority_low') color = '#64748B'; // Slate Grey
+                        if (type === 'recurrence') color = '#3B82F6';
+                        if (type === 'status') color = '#10B981';
+                        if (type === 'reminder') color = '#8B5CF6';
+                        return <AnimatedWord key={i} word={word} targetColor={color} />;
                       }) : null}
                     </Text>
                   </View>
@@ -547,75 +598,120 @@ const mStyle = StyleSheet.create({
   richInputContainer: {
     backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#94A3B8',
     borderRadius: RADIUS.md,
     minHeight: 48,
-    justifyContent: 'center',
     position: 'relative',
   },
   colorLayer: {
     position: 'absolute',
-    left: 14,
-    right: 14,
+    left: Platform.OS === 'ios' ? 19 : 14,
+    right: Platform.OS === 'ios' ? 19 : 14,
     top: 0,
     bottom: 0,
-    justifyContent: 'center',
+    paddingTop: Platform.OS === 'ios' ? 20 : 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
     zIndex: 3,
   },
   colorText: {
     fontSize: 15,
+    lineHeight: 22,
     color: COLORS.text,
+    fontFamily: 'Poppins_400Regular',
   },
   hiddenTextInput: {
     fontSize: 15,
+    lineHeight: 22,
     color: COLORS.surface,
     paddingHorizontal: 14,
+    paddingVertical: 12,
     minHeight: 48,
     backgroundColor: 'transparent',
-    ...(Platform.OS === 'web' && { outlineStyle: 'none', color: 'transparent' }),
+    fontFamily: 'Poppins_400Regular',
+    textAlignVertical: 'top',
+    ...(Platform.OS === 'web' && { outlineStyle: 'none' }),
   },
   errorText: { color: COLORS.danger, fontSize: 12, marginTop: 4 },
   datePickerText: { fontSize: 14, ...FONT.medium, color: COLORS.text },
   inputGroup: { marginBottom: 4 },
-  smartBubble: {
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  smartBubbleContent: {
+  smartBanner: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#EAB308',
     ...SHADOW.sm,
+  },
+  smartBannerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
   },
   smartIconCircle: {
-    backgroundColor: '#fff',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.sm,
+    marginRight: 8,
+    flexShrink: 0,
+    ...SHADOW.xs,
   },
-  smartBubbleText: { fontSize: 12, ...FONT.bold, color: '#000', flexShrink: 1 },
-  smartIconAction: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+  smartBannerText: {
+    fontSize: 12,
+    ...FONT.medium,
+    color: '#1E293B',
+    flex: 1,
+    lineHeight: 16,
+  },
+  smartBannerHighlight: {
+    ...FONT.bold,
+    color: '#0F172A',
+  },
+  smartBannerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  smartApplyBtn: {
+    backgroundColor: '#16A34A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 32,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 4,
+    ...SHADOW.xs,
+  },
+  smartApplyText: {
+    fontSize: 11,
+    ...FONT.bold,
+    color: '#FFFFFF',
+    includeFontPadding: false,
+  },
+  smartDismissBtn: {
+    backgroundColor: '#EF4444',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   section: { marginBottom: 20 },
-  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, marginTop: 12, marginBottom: 8 },
-  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border, marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  chipText: { fontSize: 13, ...FONT.medium, color: COLORS.textMuted, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
+  label: { fontSize: 13, ...FONT.bold, color: '#334155', marginTop: 12, marginBottom: 8 },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: '#CBD5E1', marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+  chipText: { fontSize: 13, ...FONT.medium, color: '#475569', textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
   addBtn: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  subTaskItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: COLORS.surface, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.borderLight },
+  subTaskItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: COLORS.surface, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#CBD5E1' },
   subTaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginRight: 10 },
   subTaskText: { flex: 1, fontSize: 14, color: COLORS.text },
 });
@@ -626,7 +722,7 @@ const prioStyle = StyleSheet.create({
     paddingVertical: 10, 
     borderRadius: RADIUS.md, 
     borderWidth: 1.5, 
-    borderColor: COLORS.border, 
+    borderColor: '#CBD5E1', 
     alignItems: 'center', 
     justifyContent: 'center',
     backgroundColor: COLORS.surface,
@@ -634,7 +730,7 @@ const prioStyle = StyleSheet.create({
   label: { 
     fontSize: 13, 
     ...FONT.semibold, 
-    color: COLORS.textMuted,
+    color: '#475569',
     includeFontPadding: false,
     textAlignVertical: 'center',
     lineHeight: 18,

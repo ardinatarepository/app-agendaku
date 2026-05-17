@@ -6,31 +6,42 @@ import { AVATAR_URL } from '../../../config';
 import { Skeleton } from '../../../components/ui';
 import { format } from 'date-fns';
 import { formatDateTime } from '../../../utils/helpers';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
+const truncateByWords = (text, maxWords = 4) => {
+  if (!text) return '';
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '...';
+};
+
 // ─── Header ──────────────────────────────────────────────────────────────────
-export const DashboardHeader = ({ user, lastAvatar, onProfilePress }) => (
-  <View style={styles.topBar}>
-    <View>
-      <Text style={styles.greetingLabel}>SELAMAT DATANG</Text>
-      <Text style={styles.greeting}>Halo, {user?.name?.split(' ')[0] || 'User'}</Text>
+export const DashboardHeader = ({ user, lastAvatar, onProfilePress }) => {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.topBar, { paddingTop: insets.top + 10, paddingBottom: 14 }]}>
+      <View>
+        <Text style={styles.greetingLabel}>SELAMAT DATANG</Text>
+        <Text style={styles.greeting}>Halo, {user?.name?.split(' ')[0] || 'User'}</Text>
+      </View>
+      <TouchableOpacity 
+        style={styles.avatarBox} 
+        onPress={onProfilePress}
+        activeOpacity={0.7}
+      >
+        {lastAvatar ? (
+          <Image source={{ uri: `${AVATAR_URL}/${lastAvatar}` }} style={styles.avatarImage} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarInitial}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
     </View>
-    <TouchableOpacity 
-      style={styles.avatarBox} 
-      onPress={onProfilePress}
-      activeOpacity={0.7}
-    >
-      {lastAvatar ? (
-        <Image source={{ uri: `${AVATAR_URL}/${lastAvatar}` }} style={styles.avatarImage} />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarInitial}>{user?.name?.charAt(0).toUpperCase() || 'U'}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  </View>
-);
+  );
+};
 
 // ─── Statistics ──────────────────────────────────────────────────────────────
 export const DashboardStats = ({ stats, tugasMingguIniCount, isLoading, onStatPress }) => {
@@ -81,7 +92,7 @@ export const DashboardStats = ({ stats, tugasMingguIniCount, isLoading, onStatPr
 export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, onTaskPress, onSectionPress, isLoading }) => {
   if (isLoading) {
     return (
-      <View style={{ gap: 20, paddingBottom: 10 }}>
+      <View style={{ paddingBottom: 0 }}>
         {[1, 2].map(i => (
           <View key={i} style={styles.dashboardSection}>
             <View style={styles.sectionHead}>
@@ -101,7 +112,7 @@ export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, 
   }
 
   return (
-    <View style={{ gap: 20, paddingBottom: 10 }}>
+    <View style={{ paddingBottom: 0 }}>
       {tugasTerlewat.length > 0 && (
         <View style={styles.dashboardSection}>
           <TouchableOpacity style={styles.sectionHead} onPress={() => onSectionPress({ status: 'TERLEWAT' })}>
@@ -113,7 +124,7 @@ export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, 
               <TouchableOpacity key={item.id} style={[styles.itemRow, { backgroundColor: '#FEF2F2' }, index === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={() => onTaskPress(item.id, item.status)}>
                 <View style={styles.overdueBar} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                  <Text style={styles.itemTitle} numberOfLines={1}>{truncateByWords(item.title, 4)}</Text>
                   <View style={styles.itemMeta}>
                     <Ionicons name="calendar-outline" size={12} color="#94A3B8" />
                     <Text style={styles.itemDate}>{formatDateTime(item.deadline)}</Text>
@@ -137,7 +148,7 @@ export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, 
             tugasDeadline.slice(0, 3).map((item, index, arr) => (
               <TouchableOpacity key={item.id} style={[styles.itemRow, index === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={() => onTaskPress(item.id, item.status)}>
                 <View style={styles.yellowDot} />
-                <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.itemTitle} numberOfLines={1}>{truncateByWords(item.title, 4)}</Text>
                 <View style={styles.rightContent}>
                   <View style={styles.segeraBadge}><Text style={styles.segeraText}>Segera</Text></View>
                   <Text style={styles.timeText}>{format(new Date(item.deadline), 'HH:mm')}</Text>
@@ -160,7 +171,7 @@ export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, 
             tugasHariIni.slice(0, 3).map((item, index, arr) => (
               <TouchableOpacity key={item.id} style={[styles.itemRow, index === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={() => onTaskPress(item.id, item.status)}>
                 <View style={styles.yellowDot} />
-                <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.itemTitle} numberOfLines={1}>{truncateByWords(item.title, 4)}</Text>
                 <View style={styles.rightContent}>
                   <Text style={styles.todayText}>Hari ini</Text>
                 </View>
@@ -267,8 +278,6 @@ export const DashboardProgress = ({ stats, isLoading }) => {
 const styles = StyleSheet.create({
   topBar:          { 
     paddingHorizontal: 20, 
-    paddingTop: Platform.OS === 'ios' ? 60 : 50, 
-    paddingBottom: 20, 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
@@ -287,8 +296,8 @@ const styles = StyleSheet.create({
   avatarInitial:   { fontSize: 24, ...FONT.bold, color: '#000000' },
   avatarImage:     { width: '100%', height: '100%' },
   
-  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 16 },
-  statCard:        { width: '48%', height: 88, borderRadius: 18, paddingHorizontal: 18, marginBottom: 15, ...SHADOW.sm, elevation: 3, position: 'relative', justifyContent: 'center' },
+  statsGrid:       { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 8, marginBottom: 20 },
+  statCard:        { width: '48%', height: 88, borderRadius: 18, paddingHorizontal: 18, marginBottom: 12, ...SHADOW.sm, elevation: 3, position: 'relative', justifyContent: 'center' },
   statIconFloating: { position: 'absolute', top: 12, right: 12 },
   statValue:       { fontSize: 30, ...FONT.heading, lineHeight: 36 },
   statLabel:       { fontSize: 11, ...FONT.heading, color: '#64748B', letterSpacing: 1.5, marginTop: 2 },
@@ -297,18 +306,18 @@ const styles = StyleSheet.create({
   sectionHead:     { paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle:    { fontSize: 17, ...FONT.bold, color: '#000000', letterSpacing: -0.5 },
   sectionBody:     { paddingVertical: 0 },
-  itemRow:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
-  overdueBar:      { width: 4, height: 36, backgroundColor: '#EF4444', borderRadius: 2, marginRight: 14 },
-  yellowDot:       { width: 10, height: 10, borderRadius: 5, backgroundColor: '#FACC15', marginRight: 14 },
-  itemTitle:       { flex: 1, fontSize: 15, ...FONT.semibold, color: '#0F172A' },
-  itemMeta:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  itemDate:        { fontSize: 13, color: '#64748B', ...FONT.medium },
-  rightContent:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  segeraBadge:     { backgroundColor: '#FACC15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
-  countText:       { fontSize: 12, ...FONT.bold, color: '#64748B', includeFontPadding: false, textAlignVertical: 'center' },
-  segeraText:      { fontSize: 11, ...FONT.bold, color: '#000000' },
-  timeText:        { fontSize: 14, color: '#64748B', ...FONT.bold, minWidth: 45, textAlign: 'right' },
-  todayText:       { fontSize: 14, color: '#EF4444', ...FONT.bold },
+  itemRow:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  overdueBar:      { width: 3, height: 26, backgroundColor: '#EF4444', borderRadius: 1.5, marginRight: 12 },
+  yellowDot:       { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FACC15', marginRight: 12 },
+  itemTitle:       { flex: 1, fontSize: 13.5, ...FONT.medium, color: '#0F172A' },
+  itemMeta:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+  itemDate:        { fontSize: 11.5, color: '#64748B', ...FONT.medium },
+  rightContent:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  segeraBadge:     { backgroundColor: '#FACC15', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  countText:       { fontSize: 11, ...FONT.bold, color: '#64748B', includeFontPadding: false, textAlignVertical: 'center' },
+  segeraText:      { fontSize: 9.5, ...FONT.bold, color: '#000000', includeFontPadding: false },
+  timeText:        { fontSize: 12, color: '#64748B', ...FONT.semibold, minWidth: 38, textAlign: 'right' },
+  todayText:       { fontSize: 12, color: '#EF4444', ...FONT.bold },
   
   milestoneWrapper: { width: '85%', height: 4, position: 'relative', justifyContent: 'center' },
   milestoneLineBg:  { position: 'absolute', width: '100%', height: 4, backgroundColor: '#F1F5F9', borderRadius: 2 },

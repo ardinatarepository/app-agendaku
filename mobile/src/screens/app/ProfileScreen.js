@@ -123,7 +123,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const scrollOffset = useRef(0);
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const isNavbarVisible = useRef(true);
 
   const handleScroll = (event) => {
     const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
@@ -134,11 +134,16 @@ export default function ProfileScreen({ navigation }) {
     const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
     const isAtBottom = currentOffset + layoutHeight >= contentHeight - 20;
     
-    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
-      setIsNavbarVisible(false);
+    if (currentOffset <= 150) {
+      if (!isNavbarVisible.current) {
+        isNavbarVisible.current = true;
+        setTabBarVisible(true);
+      }
+    } else if (direction === 'down' && isNavbarVisible.current) {
+      isNavbarVisible.current = false;
       setTabBarVisible(false);
-    } else if (direction === 'up' && !isNavbarVisible && !isAtBottom) {
-      setIsNavbarVisible(true);
+    } else if (direction === 'up' && !isNavbarVisible.current && !isAtBottom) {
+      isNavbarVisible.current = true;
       setTabBarVisible(true);
     }
     scrollOffset.current = currentOffset;
@@ -146,7 +151,7 @@ export default function ProfileScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      setIsNavbarVisible(true);
+      isNavbarVisible.current = true;
       resetTabBarVisible();
 
       StatusBar.setBarStyle('dark-content');

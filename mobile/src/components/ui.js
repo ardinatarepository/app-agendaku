@@ -45,13 +45,13 @@ export const Button = ({ title, onPress, variant = 'primary', loading = false, d
 // ─── Input ───────────────────────────────────────────────────────────────────
 export const Input = ({ label, error, multiline = false, style, containerStyle, rightElement, ...props }) => (
   <View style={[{ marginBottom: 4 }, containerStyle]}>
-    {label && <Text style={{ fontSize: 13, ...FONT.medium, color: COLORS.textMuted, marginBottom: 6 }}>{label}</Text>}
+    {label && <Text style={{ fontSize: 13, ...FONT.bold, color: '#334155', marginBottom: 6 }}>{label}</Text>}
     <View style={{
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: COLORS.surface,
       borderWidth: 1,
-      borderColor: error ? COLORS.danger : COLORS.border,
+      borderColor: error ? COLORS.danger : '#94A3B8',
       borderRadius: RADIUS.md,
       height: multiline ? 96 : 48,
       paddingHorizontal: 14,
