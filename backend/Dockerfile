@@ -15,8 +15,8 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Buat user non-root dengan UID khusus (antara 10000 - 20000) untuk memenuhi kebijakan keamanan Choreo
-RUN adduser --disabled-password --gecos "" --home "/nonexistent" --shell "/sbin/nologin" --no-create-home --uid 10014 choreo \
+# Buat user non-root dengan UID khusus (antara 10000 - 20000) untuk memenuhi kebijakan keamanan Choreo (menggunakan sintaks BusyBox Alpine)
+RUN adduser -D -H -s /sbin/nologin -u 10014 choreo \
     && chown -R 10014:10014 /app
 
 # Pindah ke user non-root secara numerik
