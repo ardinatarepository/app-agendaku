@@ -53,14 +53,14 @@ export default function DatePicker({ value, onSelect, onClose }) {
               <button
                 key={dateStr}
                 onClick={() => onSelect(dateStr)}
-                className={`relative aspect-square flex items-center justify-center text-sm font-bold rounded-full transition-all group
-                  ${isSelected ? 'bg-[#15152b] text-white shadow-lg scale-110' : 
-                    isToday ? 'text-primary' : 'text-slate-700 hover:bg-slate-50'}
+                className={`relative aspect-square flex items-center justify-center text-sm rounded-full transition-all group
+                  ${isSelected ? 'bg-black text-[#FACC15] shadow-lg scale-110 font-black' : 
+                    isToday ? 'bg-[#FEF9C3] text-black font-bold' : 'text-slate-700 hover:bg-slate-50 font-bold'}
                 `}
               >
                 {day}
                 {isToday && !isSelected && (
-                  <div className="absolute bottom-1 w-1 h-1 bg-primary rounded-full" />
+                  <div className="absolute bottom-1 w-1 h-1 bg-[#FACC15] rounded-full" />
                 )}
               </button>
             );

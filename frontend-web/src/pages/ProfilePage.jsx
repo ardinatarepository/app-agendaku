@@ -20,6 +20,7 @@ import {
   IoCameraOutline
 } from 'react-icons/io5';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 const PRESET_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'];
 const HARI_OPTIONS = [1, 2, 3];
@@ -39,6 +40,8 @@ export default function ProfilePage() {
   const [notifJam, setNotifJam] = useState(() => localStorage.getItem('notif_jam') || '07');
   const [notifSaved, setNotifSaved] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: categories = [], isLoading: catLoading } = useCategories();
@@ -73,8 +76,13 @@ export default function ProfilePage() {
   };
 
   const handleDeleteCat = async (id, name) => {
-    if (window.confirm(`Hapus kategori "${name}"? Tugas terkait tidak akan dihapus.`)) {
-      await deleteCat.mutateAsync(id);
+    setConfirmDeleteCat({ id, name });
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (confirmDeleteCat) {
+      await deleteCat.mutateAsync(confirmDeleteCat.id);
+      setConfirmDeleteCat(null);
     }
   };
 
@@ -99,17 +107,29 @@ export default function ProfilePage() {
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 text-center">
               <div className="relative inline-block mb-6">
-                <div className="w-28 h-28 rounded-full bg-slate-50 border-4 border-white shadow-xl flex items-center justify-center text-4xl font-bold text-black overflow-hidden mx-auto">
+                <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] border-4 border-white shadow-xl flex items-center justify-center text-4xl font-black text-black overflow-hidden mx-auto">
                   {user?.avatar ? (
-                    <img src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+                    <img 
+                      src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
+                          const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
+                          if (filename) {
+                            e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
+                          }
+                        }
+                      }}
+                    />
                   ) : user?.name?.[0]?.toUpperCase()}
                 </div>
-                <button onClick={() => navigate('/edit-profile')} className="absolute bottom-0 right-0 w-10 h-10 bg-[#FACC15] text-black rounded-full shadow-lg border-4 border-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"><MdEdit size={18} /></button>
+                <button onClick={() => navigate('/edit-profile')} className="absolute -bottom-2 -right-2 w-10 h-10 bg-black text-[#FACC15] rounded-full shadow-lg border-4 border-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"><MdEdit size={18} /></button>
               </div>
               <h2 className="text-[18px] font-bold text-black tracking-tight leading-tight">{user?.name}</h2>
               <p className="text-[13px] font-medium text-slate-400 mt-2 mb-8">{user?.email}</p>
               <div className="space-y-3">
-                <button onClick={logout} className="w-full py-4 bg-white border border-slate-200 rounded-2xl text-[14px] font-semibold text-slate-500 hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"><IoLogOutOutline size={20} />Keluar Akun</button>
+                <button onClick={() => setShowLogoutModal(true)} className="w-full py-4 bg-white border border-slate-200 rounded-2xl text-[14px] font-semibold text-slate-500 hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"><IoLogOutOutline size={20} />Keluar Akun</button>
                 <button onClick={() => setShowDeleteModal(true)} className="w-full py-4 bg-white border border-red-50 rounded-2xl text-[14px] font-semibold text-red-400 hover:bg-red-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"><IoTrashOutline size={18} />Hapus Akun</button>
               </div>
             </div>
@@ -258,7 +278,7 @@ export default function ProfilePage() {
               </button>
               <button 
                 onClick={() => setShowDeleteModal(false)} 
-                className="w-full h-14 bg-white text-slate-400 rounded-2xl text-[14px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
+                className="w-full h-14 bg-white text-slate-400 rounded-2xl text-[14px] font-bold uppercase tracking-widest hover:bg-slate-50 transition-all border-none"
               >
                 Batal
               </button>
@@ -266,6 +286,34 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation */}
+      <ConfirmModal
+        visible={showLogoutModal}
+        title="Keluar Akun?"
+        message="Apakah Anda yakin ingin keluar dari akun Anda?"
+        confirmText="Keluar"
+        cancelText="Batal"
+        variant="primary"
+        onConfirm={() => {
+          setShowLogoutModal(false);
+          logout();
+          navigate('/login');
+        }}
+        onCancel={() => setShowLogoutModal(false)}
+      />
+
+      {/* Delete Category Confirmation */}
+      <ConfirmModal
+        visible={!!confirmDeleteCat}
+        title="Hapus Kategori?"
+        message={`Apakah Anda yakin ingin menghapus kategori "${confirmDeleteCat?.name}"? Tugas terkait tidak akan dihapus.`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="danger"
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => setConfirmDeleteCat(null)}
+      />
     </div>
   );
 }

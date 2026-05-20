@@ -13,6 +13,7 @@ export const authAPI = {
   getMe:         ()     => api.get('/auth/me'),
   updateProfile: (data) => api.post('/auth/profile', data),
   changePassword: (data) => api.put('/auth/password', data),
+  deleteAvatar:   ()     => api.delete('/auth/avatar'),
   deleteAccount: ()     => api.delete('/auth/me'),
 };
 

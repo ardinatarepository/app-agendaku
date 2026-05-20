@@ -99,7 +99,7 @@ export default function FilterSheet({ visible, filters, sortKey, onSortChange, c
                     onPress={() => set('priority', p)}
                     style={[
                       fStyle.chip, 
-                      active && { backgroundColor: cfg.bg, borderColor: cfg.text, borderWidth: 2 }
+                      active && { backgroundColor: cfg.bg, borderColor: cfg.border || cfg.text, borderWidth: 2 }
                     ]}
                   >
                     {active && <MaterialIcons name="check-circle" size={16} color={cfg.text} />}

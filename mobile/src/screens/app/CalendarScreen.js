@@ -185,17 +185,22 @@ export default function CalendarScreen({ navigation }) {
   };
 
   const scrollOffset = useRef(0);
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const isNavbarVisible = useRef(true);
 
   const handleScroll = (event) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
     const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
     
-    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
-      setIsNavbarVisible(false);
+    if (currentOffset <= 150) {
+      if (!isNavbarVisible.current) {
+        isNavbarVisible.current = true;
+        setTabBarVisible(true);
+      }
+    } else if (direction === 'down' && isNavbarVisible.current) {
+      isNavbarVisible.current = false;
       setTabBarVisible(false);
-    } else if (direction === 'up' && !isNavbarVisible) {
-      setIsNavbarVisible(true);
+    } else if (direction === 'up' && !isNavbarVisible.current) {
+      isNavbarVisible.current = true;
       setTabBarVisible(true);
     }
     scrollOffset.current = currentOffset;
@@ -203,7 +208,7 @@ export default function CalendarScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      setIsNavbarVisible(true);
+      isNavbarVisible.current = true;
       resetTabBarVisible();
 
       StatusBar.setBarStyle('dark-content');

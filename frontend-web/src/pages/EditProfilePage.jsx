@@ -103,12 +103,24 @@ export default function EditProfilePage() {
         {/* Avatar Section */}
         <div className="flex flex-col items-center mt-4 mb-8">
           <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <div className="w-28 h-28 rounded-full bg-slate-50 flex items-center justify-center text-primary text-4xl font-black border border-slate-100 overflow-hidden shadow-premium">
+            <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] flex items-center justify-center text-black text-4xl font-black border border-slate-100 overflow-hidden shadow-premium">
               {getAvatarUrl() ? (
-                <img src={getAvatarUrl()} alt="Avatar" className="w-full h-full object-cover" />
+                <img 
+                  src={getAvatarUrl()} 
+                  alt="Avatar" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
+                      const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
+                      if (filename) {
+                        e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
+                      }
+                    }
+                  }}
+                />
               ) : user?.name?.[0]?.toUpperCase()}
             </div>
-            <div className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full border-2 border-white flex items-center justify-center shadow-premium">
+            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-black text-[#FACC15] rounded-full border-2 border-white flex items-center justify-center shadow-premium">
               <MdPhotoCamera size={18} />
             </div>
           </div>
@@ -149,7 +161,7 @@ export default function EditProfilePage() {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full py-4 bg-primary text-white text-xs font-black rounded-xl shadow-premium active:scale-95 transition-all disabled:opacity-70 mt-4 uppercase tracking-[0.2em]"
+            className="w-full py-4 bg-[#FACC15] text-black text-xs font-black rounded-xl shadow-premium active:scale-95 transition-all disabled:opacity-70 mt-4 uppercase tracking-[0.2em]"
           >
             {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
           </button>

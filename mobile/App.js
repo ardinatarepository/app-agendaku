@@ -34,6 +34,7 @@ import { registerTabBarAnimator } from './src/utils/tabBarControl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { 
@@ -106,11 +107,11 @@ function CustomTabBar({ state, descriptors, navigation }) {
     );
   }, []);
 
-  const ICONS = {
-    Dashboard: 'home',
-    Tugas:     'assignment',
-    Kalender:  'event',
-    Profil:    'person',
+  const NAV_IMAGES = {
+    Dashboard: { uri: 'https://cdn-icons-png.flaticon.com/512/9440/9440315.png' },
+    Tugas:     { uri: 'https://cdn-icons-png.flaticon.com/512/6831/6831818.png' },
+    Kalender:  { uri: 'https://cdn-icons-png.flaticon.com/512/10156/10156100.png' },
+    Profil:    { uri: 'https://cdn-icons-png.flaticon.com/512/9131/9131549.png' },
   };
 
   return (
@@ -145,10 +146,14 @@ function CustomTabBar({ state, descriptors, navigation }) {
             activeOpacity={0.8}
           >
             <View style={tabStyles.iconContainer}>
-              <MaterialIcons
-                name={ICONS[route.name] || 'help-outline'}
-                size={28}
-                color={isFocused ? '#000000' : '#94A3B8'}
+              <Image
+                source={NAV_IMAGES[route.name]}
+                style={{
+                  width: 26,
+                  height: 26,
+                  tintColor: isFocused ? '#1E293B' : '#94A3B8'
+                }}
+                resizeMode="contain"
               />
             </View>
             <Text 
@@ -193,16 +198,20 @@ const tabStyles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   iconContainer: {
+    width: 50,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
   iconContainerActive: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.primary, // Kuning cerah AgendaKu
   },
   tabLabel: {
-    fontSize: 11,
-    ...FONT.medium,
-    marginTop: 4,
+    fontSize: 10,
+    ...FONT.bold,
+    letterSpacing: 0.2,
   },
 });
 

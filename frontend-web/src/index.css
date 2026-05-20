@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -23,7 +23,7 @@
 @layer components {
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-sm
-           font-bold rounded-2xl bg-primary text-white cursor-pointer
+           font-bold rounded-2xl bg-primary text-black cursor-pointer
            shadow-lg shadow-primary/20 hover:shadow-primary/40
            hover:-translate-y-0.5 active:scale-95 transition-all duration-200
            disabled:opacity-50 disabled:cursor-not-allowed border-none;
@@ -79,19 +79,29 @@
            text-slate-500 cursor-pointer transition-all duration-200
            hover:bg-slate-50 hover:text-slate-800;
   }
-  .nav-item.active { @apply bg-primary text-white font-black shadow-premium scale-[1.02]; }
+  .nav-item.active { @apply bg-primary text-black font-black shadow-premium scale-[1.02]; }
 
   .filter-chip {
     @apply px-4 py-2 rounded-xl text-xs font-bold border border-slate-200
            bg-white text-slate-400 cursor-pointer transition-all duration-150
            hover:border-slate-300 whitespace-nowrap;
   }
-  .filter-chip.active { @apply bg-primary border-primary text-white shadow-lg shadow-primary/10; }
+  .filter-chip.active { @apply bg-primary border-primary text-black shadow-lg shadow-primary/10; }
 
   .skeleton { @apply animate-pulse bg-slate-100 rounded-xl; }
   .deadline-alert { @apply bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 mb-5; }
   .progress-bar-bg   { @apply h-2 bg-slate-100 rounded-full overflow-hidden; }
   .progress-bar-fill { @apply h-full bg-emerald-400 rounded-full transition-all duration-700; }
+
+  .mask-icon {
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    display: inline-block;
+  }
 
   .modal-overlay {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20;
@@ -150,3 +160,7 @@
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.font-archivo {
+  font-family: 'Archivo Black', sans-serif;
+}

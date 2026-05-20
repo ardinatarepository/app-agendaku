@@ -256,7 +256,7 @@ export default function TaskListScreen({ route, navigation }) {
   };
 
   const scrollOffset = useRef(0);
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const isNavbarVisible = useRef(true);
 
   const handleScroll = (event) => {
     const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
@@ -267,11 +267,16 @@ export default function TaskListScreen({ route, navigation }) {
     const direction = currentOffset > scrollOffset.current ? 'down' : 'up';
     const isAtBottom = currentOffset + layoutHeight >= contentHeight - 20;
 
-    if (direction === 'down' && currentOffset > 50 && isNavbarVisible) {
-      setIsNavbarVisible(false);
+    if (currentOffset <= 150) {
+      if (!isNavbarVisible.current) {
+        isNavbarVisible.current = true;
+        setTabBarVisible(true);
+      }
+    } else if (direction === 'down' && isNavbarVisible.current) {
+      isNavbarVisible.current = false;
       setTabBarVisible(false);
-    } else if (direction === 'up' && !isNavbarVisible && !isAtBottom) {
-      setIsNavbarVisible(true);
+    } else if (direction === 'up' && !isNavbarVisible.current && !isAtBottom) {
+      isNavbarVisible.current = true;
       setTabBarVisible(true);
     }
     scrollOffset.current = currentOffset;
@@ -279,7 +284,7 @@ export default function TaskListScreen({ route, navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      setIsNavbarVisible(true);
+      isNavbarVisible.current = true;
       resetTabBarVisible();
 
       StatusBar.setBarStyle('dark-content');
@@ -296,72 +301,75 @@ export default function TaskListScreen({ route, navigation }) {
 
       {/* Header removed for minimalist look */}
 
-      {/* Search & Filter Bar */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchBox}>
-          <Ionicons name="search-outline" size={20} color="#4B5563" />
-          <TextInput
-            placeholder="Cari tugas..."
-            placeholderTextColor="#9CA3AF"
-            value={search}
-            onChangeText={setSearch}
-            style={styles.searchInput}
+      {/* Top Header Area (Solid background clips task card shadows and prevents flickering) */}
+      <View style={styles.topHeaderContainer}>
+        {/* Search & Filter Bar */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={20} color="#4B5563" />
+            <TextInput
+              placeholder="Cari tugas..."
+              placeholderTextColor="#9CA3AF"
+              value={search}
+              onChangeText={setSearch}
+              style={styles.searchInput}
+            />
+          </View>
+          <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilter(true)}>
+            <Ionicons name="options-outline" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Status Chips */}
+        <View style={{ height: 42, marginBottom: 2 }}>
+          <FlatList
+            ref={statusRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={CHIP_DATA}
+            keyExtractor={item => item.id || 'ALL'}
+            onScrollToIndexFailed={info => {
+              const wait = new Promise(resolve => setTimeout(resolve, 500));
+              wait.then(() => {
+                statusRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });
+              });
+            }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 2, gap: 8 }}
+            renderItem={({ item }) => {
+              const active = filters.status === item.id;
+              const config = STATUS_CONFIG[item.id] || { bg: COLORS.primary, text: '#000', dot: COLORS.primary };
+              
+              // Warna khusus untuk tab "Semua" agar tetap kontras
+              const activeBg = item.id === '' ? COLORS.primary : config.bg;
+              const activeText = item.id === '' ? '#000000' : config.text;
+              const activeBorder = item.id === '' ? COLORS.primary : config.text;
+
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setFilters(f => ({ ...f, status: item.id }));
+                  }}
+                  style={[
+                    styles.chip, 
+                    active && { 
+                      backgroundColor: activeBg, 
+                      borderColor: activeBorder,
+                      borderWidth: item.id === '' ? 1 : 1.5 
+                    }
+                  ]}
+                >
+                  <Text style={[
+                    styles.chipText, 
+                    active && { color: activeText, ...FONT.bold }
+                  ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
           />
         </View>
-        <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilter(true)}>
-          <Ionicons name="options-outline" size={22} color={COLORS.text} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Status Chips */}
-      <View style={{ height: 50, marginBottom: 4 }}>
-        <FlatList
-          ref={statusRef}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={CHIP_DATA}
-          keyExtractor={item => item.id || 'ALL'}
-          onScrollToIndexFailed={info => {
-            const wait = new Promise(resolve => setTimeout(resolve, 500));
-            wait.then(() => {
-              statusRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });
-            });
-          }}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 4, gap: 8 }}
-          renderItem={({ item }) => {
-            const active = filters.status === item.id;
-            const config = STATUS_CONFIG[item.id] || { bg: COLORS.primary, text: '#000', dot: COLORS.primary };
-            
-            // Warna khusus untuk tab "Semua" agar tetap kontras
-            const activeBg = item.id === '' ? COLORS.primary : config.bg;
-            const activeText = item.id === '' ? '#000000' : config.text;
-            const activeBorder = item.id === '' ? COLORS.primary : config.text;
-
-            return (
-              <TouchableOpacity
-                onPress={() => {
-                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                  setFilters(f => ({ ...f, status: item.id }));
-                }}
-                style={[
-                  styles.chip, 
-                  active && { 
-                    backgroundColor: activeBg, 
-                    borderColor: activeBorder,
-                    borderWidth: item.id === '' ? 1 : 1.5 
-                  }
-                ]}
-              >
-                <Text style={[
-                  styles.chipText, 
-                  active && { color: activeText, ...FONT.bold }
-                ]}>
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
       </View>
 
       {/* Task List */}
@@ -477,6 +485,11 @@ export default function TaskListScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
+  topHeaderContainer: {
+    backgroundColor: COLORS.bg,
+    zIndex: 10,
+    paddingBottom: 4,
+  },
   headerBar: { 
     backgroundColor: COLORS.primary, 
     paddingHorizontal: 20, 
@@ -490,17 +503,17 @@ const styles = StyleSheet.create({
     ...SHADOW.md,
   },
   headerTitle: { fontSize: 20, ...FONT.bold, color: '#FFFFFF' },
-  searchRow: { flexDirection: 'row', gap: 10, padding: 16, marginTop: 10, zIndex: 10 },
-  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor: '#D1D5DB', height: 52, ...SHADOW.sm },
+  searchRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingVertical: 14, marginTop: 10, zIndex: 10 },
+  searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 24, paddingHorizontal: 16, borderWidth: 1, borderColor: '#D1D5DB', height: 48, ...SHADOW.sm },
   searchInput: { flex: 1, fontSize: 15, color: COLORS.text, ...FONT.medium },
-  filterBtn: { width: 52, height: 52, backgroundColor: '#FFFFFF', borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB', ...SHADOW.sm },
+  filterBtn: { width: 48, height: 48, backgroundColor: '#FFFFFF', borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#D1D5DB', ...SHADOW.sm },
   filterBtnActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight },
   filterBadge: { position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
   filterBadgeText: { fontSize: 9, color: '#fff', ...FONT.bold },
-  chip: { paddingHorizontal: 16, height: 36, borderRadius: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  chip: { paddingHorizontal: 16, height: 34, borderRadius: 17, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   chipText: { fontSize: 13, color: COLORS.textMuted, ...FONT.medium, textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
-  list: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 150 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 28, marginBottom: 16, marginLeft: 4 },
+  list: { paddingHorizontal: 16, paddingTop: 2, paddingBottom: 150 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 10, marginLeft: 4 },
   sectionTitle: { fontSize: 15, ...FONT.bold, color: '#1E293B', textTransform: 'capitalize', letterSpacing: 0 },
   sectionCountBadge: { backgroundColor: '#F1F5F9', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 8, marginLeft: 6 },
   sectionCountText: { fontSize: 12, ...FONT.bold, color: '#64748B' },
@@ -514,6 +527,8 @@ const styles = StyleSheet.create({
     borderRadius: 18, 
     alignItems: 'center', 
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#000000',
     elevation: 8,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },

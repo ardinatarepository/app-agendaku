@@ -21,8 +21,8 @@ const StatCard = ({ label, value, onClick, variant, icon }) => (
     <div className="absolute top-3 right-3 opacity-60 group-hover:opacity-100 transition-opacity">
       {icon}
     </div>
-    <p className="text-3xl font-bold leading-tight">{value}</p>
-    <p className="text-[11px] font-bold uppercase tracking-[0.15em] opacity-60 mt-1">{label}</p>
+    <p className="text-[30px] font-archivo leading-none">{value}</p>
+    <p className="text-[10px] font-archivo uppercase tracking-[0.1em] opacity-60 mt-2">{label}</p>
   </button>
 );
 
@@ -134,15 +134,27 @@ export default function DashboardPage() {
       <div className="bg-white px-8 pt-16 pb-8 sm:px-12 lg:px-16 shadow-sm relative z-30 flex items-center justify-between">
         <div className="max-w-[1200px] mx-auto flex-1 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 tracking-[0.15em] mb-1">SELAMAT DATANG</p>
-            <h1 className="text-4xl font-bold text-black tracking-tighter">Halo, {user?.name?.split(' ')[0]}</h1>
+            <p className="text-[11px] font-archivo text-slate-400 tracking-[0.15em] mb-1">SELAMAT DATANG</p>
+            <h1 className="text-[32px] font-archivo text-black tracking-tighter mt-1.5 leading-none">Halo, {user?.name?.split(' ')[0]}</h1>
           </div>
           <button 
             onClick={() => navigate('/profile')}
-            className="w-12 h-12 rounded-full bg-slate-50 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-primary text-lg font-bold"
+            className="w-[60px] h-[60px] rounded-[18px] bg-[#FACC15] border-2 border-white shadow-premium overflow-hidden flex items-center justify-center text-black text-2xl font-black transition-all hover:scale-105 active:scale-95"
           >
             {user?.avatar ? (
-              <img src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} alt="Avatar" className="w-full h-full object-cover" />
+              <img 
+                src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} 
+                alt="Avatar" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
+                    const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
+                    if (filename) {
+                      e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
+                    }
+                  }
+                }}
+              />
             ) : user?.name?.[0]?.toUpperCase()}
           </button>
         </div>
@@ -193,10 +205,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="divide-y divide-slate-50">
                   {tugasTerlewat.slice(0, 3).map(task => (
-                    <button key={task.id} onClick={() => navigate(`/tasks?status=TERLEWAT&highlightId=${task.id}`)} className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-50/30 transition-colors text-left group">
+                    <div key={task.id} role="button" onClick={() => navigate(`/tasks?status=TERLEWAT&highlightId=${task.id}`)} className="w-full flex items-center gap-4 px-6 py-5 hover:bg-red-50/30 transition-colors text-left group cursor-pointer">
                       <div className="w-1 h-8 bg-red-500 rounded-full shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-red-600 transition-colors">{task.title}</p>
+                        <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-red-600 transition-colors">{task.title}</p>
                         <div className="flex items-center gap-1.5 mt-1">
                           <IoCalendarOutline size={12} className="text-slate-400" />
                           <p className="text-[12px] font-medium text-slate-400">
@@ -204,7 +216,7 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -224,10 +236,10 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   tugasDeadline.slice(0, 3).map(task => (
-                    <button key={task.id} onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div key={task.id} role="button" onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <div className="flex items-center gap-3 flex-1 min-w-0 pr-8">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
-                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
+                        <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="bg-[#FACC15] px-3 py-1.5 rounded-lg">
@@ -237,7 +249,7 @@ export default function DashboardPage() {
                           {format(new Date(task.deadline), 'HH:mm')}
                         </p>
                       </div>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -259,13 +271,13 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   tugasHariIni.slice(0, 3).map(task => (
-                    <button key={task.id} onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-slate-50 transition-colors group">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div key={task.id} role="button" onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <div className="flex items-center gap-3 flex-1 min-w-0 pr-8">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
-                        <p className="font-bold text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
+                        <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
                       </div>
                       <p className="text-[14px] font-black text-red-500">Hari ini</p>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>

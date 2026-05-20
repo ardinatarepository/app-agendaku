@@ -194,9 +194,9 @@ export default function CalendarPage() {
                         <span className={`text-[13px] ${isSel || isToday ? 'font-black' : 'font-bold'}`}>{d}</span>
                       </div>
                       
-                      {taskInfo && (
-                        <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${taskInfo.hasTinggi ? 'bg-red-500' : 'bg-[#FACC15]'}`} />
-                      )}
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${
+                        taskInfo ? (taskInfo.hasTinggi ? 'bg-red-500' : 'bg-[#FACC15]') : 'bg-transparent'
+                      }`} />
                     </button>
                   );
                 })}

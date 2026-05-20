@@ -54,7 +54,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // ─── Start Server ─────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n🚀 AgendaKu API berjalan di http://localhost:${PORT}`);
-  console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}\n`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 AgendaKu API berjalan di http://localhost:${PORT}`);
+    console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}\n`);
+  });
+}
+
+module.exports = app;

@@ -4,9 +4,10 @@ import {
   Modal, StyleSheet, Platform, Animated, PanResponder, Dimensions, Keyboard, StatusBar, Alert,
   KeyboardAvoidingView
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Button, Input, Toast } from './ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
+import { parseNaturalLanguage, cleanTitle, classifyWord } from '../utils/smartParser';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -14,19 +15,14 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function PrioritySelector({ value, onChange }) {
   const PRIORITIES = ['RENDAH', 'NORMAL', 'TINGGI'];
-  const configs = {
-    RENDAH: { label: 'Rendah', active: { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' } },
-    NORMAL: { label: 'Normal', active: { bg: '#fef3c7', border: '#f59e0b', text: '#b45309' } },
-    TINGGI: { label: 'Tinggi', active: { bg: '#fee2e2', border: '#ef4444', text: '#dc2626' } },
-  };
   return (
     <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
       {PRIORITIES.map(p => {
-        const cfg = configs[p];
+        const cfg = PRIORITY_CONFIG[p];
         const isActive = value === p;
         return (
-          <TouchableOpacity key={p} onPress={() => onChange(p)} style={[prioStyle.btn, isActive && { backgroundColor: cfg.active.bg, borderColor: cfg.active.border }]}>
-            <Text style={[prioStyle.label, isActive && { color: cfg.active.text }]}>{cfg.label}</Text>
+          <TouchableOpacity key={p} onPress={() => onChange(p)} style={[prioStyle.btn, isActive && { backgroundColor: cfg.bg, borderColor: cfg.border }]}>
+            <Text style={[prioStyle.label, isActive && { color: cfg.text }]}>{cfg.label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -192,6 +188,36 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
   );
 }
 
+const AnimatedWord = ({ word, targetColor }) => {
+  const colorAnim = useRef(new Animated.Value(0)).current;
+  const [prevColor, setPrevColor] = useState(targetColor);
+  const [currColor, setCurrColor] = useState(targetColor);
+
+  useEffect(() => {
+    if (currColor !== targetColor) {
+      setPrevColor(currColor);
+      setCurrColor(targetColor);
+      colorAnim.setValue(0);
+      Animated.timing(colorAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [targetColor]);
+
+  const interpolatedColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [prevColor, currColor],
+  });
+
+  return (
+    <Animated.Text style={{ color: interpolatedColor }}>
+      {word}{' '}
+    </Animated.Text>
+  );
+};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoading, categories, initialDate, headerHeight = 60 }) {
@@ -208,6 +234,7 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'danger' });
   const [titleError, setTitleError] = useState('');
+  const [titleFocused, setTitleFocused] = useState(false);
 
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isMounted = useRef(false);
@@ -271,7 +298,31 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
       const dateObj = new Date(y, m - 1, d, hh, mm, 0);
       finalDeadline = dateObj.toISOString();
     }
-    onSubmit({ ...form, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
+    // Auto-clean judul sebelum submit (hapus kata kunci jadwal)
+    const result = parseNaturalLanguage(form.title, categories);
+    const finalTitle = result ? cleanTitle(form.title, result.wordsToRemove) : form.title;
+    onSubmit({ ...form, title: finalTitle, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
+  };
+
+  const handleSmartInput = (text, shouldClean = false) => {
+    const result = parseNaturalLanguage(text, categories);
+    if (!result) return null;
+
+    setForm(prev => ({
+      ...prev,
+      title: shouldClean ? cleanTitle(prev.title, result.wordsToRemove) : prev.title,
+      smartDetected: shouldClean ? null : result.summary,
+      deadline: result.deadline || prev.deadline,
+      time: result.time || prev.time,
+      priority: result.priority || prev.priority,
+      status: result.status || prev.status,
+      categoryId: result.categoryId || prev.categoryId,
+      isRecurring: result.isRecurring ?? prev.isRecurring,
+      recurrence: result.recurrence || prev.recurrence,
+      reminderHours: result.reminderHours || prev.reminderHours,
+      subtasks: result.subtasks ? [...prev.subtasks, ...result.subtasks.filter(nst => !prev.subtasks.some(pst => pst.title === nst.title))] : prev.subtasks,
+    }));
+    return result.summary;
   };
 
   const addSubtask = () => {
@@ -327,16 +378,101 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
               keyboardShouldPersistTaps="handled" 
               showsVerticalScrollIndicator={false}
             >
-              <Input 
-                label="Nama Tugas *" 
-                placeholder="Masukan Nama Tugas" 
-                value={form.title} 
-                onChangeText={(v) => {
-                  set('title')(v);
-                  if (titleError) setTitleError('');
-                }} 
-                error={titleError}
-              />
+              {/* Smart Suggestion Banner */}
+              {form.smartDetected && (
+                <View style={mStyle.smartBanner}>
+                  <View style={mStyle.smartBannerLeft}>
+                    <View style={mStyle.smartIconCircle}>
+                      <Ionicons name="flash" size={13} color="#EAB308" />
+                    </View>
+                    <Text style={mStyle.smartBannerText} numberOfLines={2}>
+                      Jadwal terdeteksi: <Text style={mStyle.smartBannerHighlight}>{form.smartDetected}</Text>
+                    </Text>
+                  </View>
+                  <View style={mStyle.smartBannerRight}>
+                    <TouchableOpacity 
+                      style={mStyle.smartApplyBtn}
+                      onPress={() => handleSmartInput(form.title, true)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="checkmark-sharp" size={14} color="#FFFFFF" />
+                      <Text style={mStyle.smartApplyText}>Terapkan</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={mStyle.smartDismissBtn}
+                      onPress={() => setForm(p => ({ ...p, smartDetected: null }))}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close" size={16} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              <View style={mStyle.inputGroup}>
+                <Text style={mStyle.label}>Nama Tugas *</Text>
+                <View style={mStyle.richInputContainer}>
+                  {/* Layer Input (di bawah, teks putih = tak terlihat) */}
+                  <TextInput
+                    style={mStyle.hiddenTextInput}
+                    placeholder="Cth: Buat makalah besok urgent"
+                    placeholderTextColor={COLORS.textLight}
+                    value={form.title}
+                    onChangeText={(v) => {
+                      const result = parseNaturalLanguage(v, categories);
+                      setForm(prev => ({
+                        ...prev,
+                        title: v,
+                        smartDetected: result ? result.summary : null,
+                        deadline: result?.deadline || prev.deadline,
+                        time: result?.time || prev.time,
+                        priority: result?.priority || prev.priority,
+                        status: result?.status || prev.status,
+                        categoryId: result?.categoryId || prev.categoryId,
+                        isRecurring: result?.isRecurring ?? prev.isRecurring,
+                        recurrence: result?.recurrence || prev.recurrence,
+                        reminderHours: result?.reminderHours || prev.reminderHours,
+                      }));
+                      if (titleError) setTitleError('');
+                    }}
+                    multiline={true}
+                    selectionColor={COLORS.primary}
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoComplete="off"
+                    textContentType="none"
+                    keyboardType={Platform.OS === 'android' ? 'visible-password' : 'default'}
+                  />
+
+                  {/* Layer Warna (di atas, sentuhan tembus) */}
+                  <View style={mStyle.colorLayer} pointerEvents="none">
+                    <Text style={mStyle.colorText}>
+                      {form.title ? form.title.split(' ').map((word, i) => {
+                        const type = classifyWord(word);
+                        let color = COLORS.text;
+                        if (type === 'date') color = '#D97706';
+                        if (type === 'time') color = '#EA580C';
+                        if (type === 'priority_high') color = '#DC2626'; // Red
+                        if (type === 'priority_normal') color = '#F59E0B'; // Amber
+                        if (type === 'priority_low') color = '#64748B'; // Slate Grey
+                        if (type === 'recurrence') color = '#3B82F6';
+                        if (type === 'status') color = '#10B981';
+                        if (type === 'reminder') color = '#8B5CF6';
+                        return <AnimatedWord key={i} word={word} targetColor={color} />;
+                      }) : null}
+                    </Text>
+                  </View>
+                </View>
+                {titleError ? <Text style={mStyle.errorText}>{titleError}</Text> : null}
+              </View>
+              <View style={{ height: 4 }} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Ionicons name="flash" size={14} color="#EAB308" />
+                <Text style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: 'italic' }}>
+                  Smart Detect: Ketik "besok", "senin", atau "jam 2" untuk atur otomatis.
+                </Text>
+              </View>
               <View style={{ height: 12 }} />
               <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
               
@@ -459,21 +595,146 @@ const mStyle = StyleSheet.create({
   cancel: { fontSize: 14, color: COLORS.danger, ...FONT.bold },
   save: { fontSize: 14, color: '#000000', ...FONT.bold, textAlign: 'center' },
   body: { padding: 20, paddingBottom: 100 },
-  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, marginTop: 12, marginBottom: 8 },
-  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
-  datePickerText: { fontSize: 15, color: COLORS.text },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: COLORS.border, marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  chipText: { fontSize: 13, ...FONT.medium, color: COLORS.textMuted, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
+  richInputContainer: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: '#94A3B8',
+    borderRadius: RADIUS.md,
+    minHeight: 48,
+    position: 'relative',
+  },
+  colorLayer: {
+    position: 'absolute',
+    left: Platform.OS === 'ios' ? 19 : 14,
+    right: Platform.OS === 'ios' ? 19 : 14,
+    top: 0,
+    bottom: 0,
+    paddingTop: Platform.OS === 'ios' ? 20 : 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+    zIndex: 3,
+  },
+  colorText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: COLORS.text,
+    fontFamily: 'Poppins_400Regular',
+  },
+  hiddenTextInput: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: COLORS.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 48,
+    backgroundColor: 'transparent',
+    fontFamily: 'Poppins_400Regular',
+    textAlignVertical: 'top',
+    ...(Platform.OS === 'web' && { outlineStyle: 'none' }),
+  },
+  errorText: { color: COLORS.danger, fontSize: 12, marginTop: 4 },
+  datePickerText: { fontSize: 14, ...FONT.medium, color: COLORS.text },
+  inputGroup: { marginBottom: 4 },
+  smartBanner: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#EAB308',
+    ...SHADOW.sm,
+  },
+  smartBannerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  smartIconCircle: {
+    backgroundColor: '#FFFFFF',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    flexShrink: 0,
+    ...SHADOW.xs,
+  },
+  smartBannerText: {
+    fontSize: 12,
+    ...FONT.medium,
+    color: '#1E293B',
+    flex: 1,
+    lineHeight: 16,
+  },
+  smartBannerHighlight: {
+    ...FONT.bold,
+    color: '#0F172A',
+  },
+  smartBannerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  smartApplyBtn: {
+    backgroundColor: '#16A34A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 32,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 4,
+    ...SHADOW.xs,
+  },
+  smartApplyText: {
+    fontSize: 11,
+    ...FONT.bold,
+    color: '#FFFFFF',
+    includeFontPadding: false,
+  },
+  smartDismissBtn: {
+    backgroundColor: '#EF4444',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  section: { marginBottom: 20 },
+  label: { fontSize: 13, ...FONT.bold, color: '#334155', marginTop: 12, marginBottom: 8 },
+  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: '#CBD5E1', marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
+  chipText: { fontSize: 13, ...FONT.medium, color: '#475569', textAlign: 'center' },
+  input: { borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
   addBtn: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  subTaskItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: COLORS.surface, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.borderLight },
+  subTaskItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: COLORS.surface, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#CBD5E1' },
   subTaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginRight: 10 },
   subTaskText: { flex: 1, fontSize: 14, color: COLORS.text },
 });
 
 const prioStyle = StyleSheet.create({
-  btn: { flex: 1, paddingVertical: 10, borderRadius: RADIUS.md, borderWidth: 1.5, borderColor: COLORS.border, alignItems: 'center', backgroundColor: COLORS.surface },
-  label: { fontSize: 13, ...FONT.semibold, color: COLORS.textMuted },
+  btn: { 
+    flex: 1, 
+    paddingVertical: 10, 
+    borderRadius: RADIUS.md, 
+    borderWidth: 1.5, 
+    borderColor: '#CBD5E1', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  label: { 
+    fontSize: 13, 
+    ...FONT.semibold, 
+    color: '#475569',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 18,
+  },
 });
 
 const dpStyle = StyleSheet.create({

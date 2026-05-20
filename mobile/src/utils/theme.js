@@ -67,7 +67,7 @@ export const STATUS_CONFIG = {
 };
 
 export const PRIORITY_CONFIG = {
-  'RENDAH': { label: 'Rendah', bg: '#F1F5F9', text: '#475569' },
-  'NORMAL': { label: 'Normal', bg: 'rgba(128, 128, 128, 0.1)', text: '#808080' },
-  'TINGGI': { label: 'Tinggi', bg: '#FEF2F2', text: '#DC2626' },
+  'RENDAH': { label: 'Rendah', bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
+  'NORMAL': { label: 'Normal', bg: '#fef3c7', border: '#f59e0b', text: '#b45309' },
+  'TINGGI': { label: 'Tinggi', bg: '#fee2e2', border: '#ef4444', text: '#dc2626' },
 };

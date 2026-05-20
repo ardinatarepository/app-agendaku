@@ -138,7 +138,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
             <div>
               <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Nama Tugas *</label>
               <input 
-                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
+                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-[#FACC15] focus:ring-4 focus:ring-[#FACC15]/20 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
                 value={form.title} 
                 onChange={set('title')} 
                 placeholder="Masukan Nama Tugas" 
@@ -152,7 +152,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
             <div>
               <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Deskripsi (opsional)</label>
               <textarea 
-                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium h-32 resize-none focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
+                className="w-full border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium h-32 resize-none focus:border-[#FACC15] focus:ring-4 focus:ring-[#FACC15]/20 outline-none transition-all placeholder:text-slate-300 bg-[#F8FAFC]/50" 
                 value={form.description} 
                 onChange={set('description')} 
                 placeholder="Deskripsi Tugas (Opsional)" 
@@ -208,7 +208,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
               <label className="text-[12px] font-semibold text-slate-500 mb-2.5 block ml-1 tracking-wide">Sub-Tugas</label>
               <div className="flex gap-3 mb-4">
                 <input 
-                  className="flex-1 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-primary outline-none transition-all placeholder:text-slate-300 shadow-sm bg-[#F8FAFC]/50" 
+                  className="flex-1 border border-slate-100 rounded-2xl px-5 py-4 text-sm font-medium focus:border-[#FACC15] outline-none transition-all placeholder:text-slate-300 shadow-sm bg-[#F8FAFC]/50" 
                   placeholder="Tambah sub-tugas..." 
                   value={newSubtask} 
                   onChange={e => setNewSubtask(e.target.value)} 
@@ -252,7 +252,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
                 <button
                   type="button"
                   onClick={() => setShowDatePicker(true)}
-                  className="flex-1 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-primary transition-all bg-[#F8FAFC]/50"
+                  className="flex-1 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-[#FACC15] transition-all bg-[#F8FAFC]/50"
                 >
                   <span className={form.deadline ? 'text-slate-800' : 'text-slate-300'}>{form.deadline || 'Pilih Tanggal'}</span>
                   <IoCalendarOutline className="text-slate-300" size={20} />
@@ -261,7 +261,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
                 <button
                   type="button"
                   onClick={() => setShowTimePicker(true)}
-                  className="w-36 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-primary transition-all bg-[#F8FAFC]/50"
+                  className="w-36 flex items-center justify-between border border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 hover:border-[#FACC15] transition-all bg-[#F8FAFC]/50"
                 >
                   <span className="text-slate-800">{form.time}</span>
                   <IoTimeOutline className="text-slate-300" size={20} />
@@ -277,7 +277,7 @@ export default function TaskForm({ task, onSubmit, onClose, isLoading }) {
                   <button
                     key={r} type="button" onClick={() => setForm(f => ({...f, reminder: r}))}
                     className={`px-5 py-2.5 text-[13px] font-bold rounded-full border transition-all ${
-                      form.reminder === r ? 'border-primary bg-primary text-white shadow-md' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
+                      form.reminder === r ? 'border-[#FACC15] bg-[#FACC15] text-black shadow-md' : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
                     }`}
                   >
                     {r}

@@ -7,10 +7,12 @@ import {
   useDeleteTask, 
   useCategories, 
   useToggleSubtask, 
-  useCreateSubtask 
+  useCreateSubtask,
+  useDeleteSubtask
 } from '../hooks';
 import TaskCard from '../components/tasks/TaskCard';
 import TaskForm from '../components/tasks/TaskForm';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import { 
   IoSearchOutline, 
   IoOptionsOutline, 
@@ -64,6 +66,8 @@ export default function TasksPage() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   const [highlightedId, setHighlightedId] = useState(null);
+  const [confirmDeleteTask, setConfirmDeleteTask] = useState(null);
+  const [confirmUndoTask, setConfirmUndoTask] = useState(null);
 
   // Sync state with URL params if they change
   useEffect(() => {
@@ -112,6 +116,7 @@ export default function TasksPage() {
   const deleteTask = useDeleteTask();
   const toggleSubtask = useToggleSubtask();
   const createSubtask = useCreateSubtask();
+  const deleteSubtask = useDeleteSubtask();
 
   const setFilter = (k) => (v) => setFilters(f => ({ ...f, [k]: v }));
 
@@ -122,18 +127,42 @@ export default function TasksPage() {
   };
 
   const handleEdit = (task) => { setEditTask(task); setShowForm(true); };
-  const handleDelete = async (id) => {
-    if (window.confirm('Hapus tugas ini?')) {
-      await deleteTask.mutateAsync(id);
+  const handleDelete = (id) => {
+    setConfirmDeleteTask(id);
+  };
+
+  const confirmDelete = async () => {
+    if (confirmDeleteTask) {
+      await deleteTask.mutateAsync(confirmDeleteTask);
+      setConfirmDeleteTask(null);
     }
   };
 
   const handleStatus = async (id, status) => {
-    await updateTask.mutateAsync({ id, data: { status } });
+    const task = tasks.find(t => t.id === id);
+    if (task && task.status === 'SELESAI' && status === 'SEDANG_DIKERJAKAN') {
+      setConfirmUndoTask(id);
+    } else {
+      await updateTask.mutateAsync({ id, data: { status } });
+      // If task is completed, automatically redirect filter status tab to Selesai
+      if (status === 'SELESAI') {
+        setFilters(prev => ({ ...prev, status: 'SELESAI' }));
+      }
+    }
+  };
+
+  const confirmUndo = async () => {
+    if (confirmUndoTask) {
+      await updateTask.mutateAsync({ id: confirmUndoTask, data: { status: 'SEDANG_DIKERJAKAN' } });
+      setConfirmUndoTask(null);
+      // Auto focus on running status tab
+      setFilters(prev => ({ ...prev, status: 'SEDANG_DIKERJAKAN' }));
+    }
   };
   
   const handleToggleSubtask = (taskId, subtaskId) => toggleSubtask.mutateAsync({ taskId, subtaskId });
   const handleAddSubtask = (taskId, title) => createSubtask.mutateAsync({ taskId, data: { title } });
+  const handleDeleteSubtask = (taskId, subtaskId) => deleteSubtask.mutateAsync({ taskId, subtaskId });
 
   // Grouping Logic
   const groupedTasks = useMemo(() => {
@@ -330,6 +359,30 @@ export default function TasksPage() {
       {showForm && (
         <TaskForm task={editTask} onSubmit={handleSubmit} onClose={() => { setShowForm(false); setEditTask(null); }} isLoading={createTask.isPending || updateTask.isPending} />
       )}
+
+      {/* Delete Task Confirmation */}
+      <ConfirmModal
+        visible={!!confirmDeleteTask}
+        title="Hapus Tugas?"
+        message="Apakah Anda yakin ingin menghapus tugas ini secara permanen dari daftar Anda?"
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteTask(null)}
+      />
+
+      {/* Undo Task Confirmation */}
+      <ConfirmModal
+        visible={!!confirmUndoTask}
+        title="Batalkan Selesai?"
+        message="Apakah Anda yakin ingin mengembalikan tugas ini ke status 'Berjalan'?"
+        confirmText="Ya"
+        cancelText="Batal"
+        variant="primary"
+        onConfirm={confirmUndo}
+        onCancel={() => setConfirmUndoTask(null)}
+      />
     </div>
   );
 }
