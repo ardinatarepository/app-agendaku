@@ -3,6 +3,7 @@ import { useCategories, useCreateCategory, useDeleteCategory } from '../hooks';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryAPI } from '../api';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ui/ConfirmModal';
 import { 
   MdAdd, 
   MdClose, 
@@ -53,6 +54,7 @@ export default function CategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm]   = useState({ name: '', color: '' });
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => categoryAPI.update(id, data),
@@ -73,8 +75,14 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = (id, name, count) => {
-    if (!window.confirm(`Hapus kategori "${name}"? ${count > 0 ? `${count} tugas terkait tidak akan dihapus.` : ''}`)) return;
-    deleteCat.mutate(id);
+    setConfirmDeleteCat({ id, name, count });
+  };
+
+  const confirmDelete = () => {
+    if (confirmDeleteCat) {
+      deleteCat.mutate(confirmDeleteCat.id);
+      setConfirmDeleteCat(null);
+    }
   };
 
   const startEdit = (cat) => {
@@ -88,38 +96,40 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Header — Solid Primary matching mobile */}
-      <div className="bg-[#1E1E1E] px-6 pt-16 pb-14 rounded-b-xl shadow-premium text-center">
-        <h1 className="text-xl font-black text-white uppercase tracking-widest">Manajemen Kategori</h1>
+    <div className="bg-white min-h-screen">
+      {/* Header — White sticky header matching EditProfilePage */}
+      <div className="bg-white border-b border-slate-50 sticky top-0 z-20">
+        <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+          <h1 className="text-[15px] font-black text-slate-800 uppercase tracking-widest">Manajemen Kategori</h1>
+          <button 
+            onClick={() => setShowForm(s => !s)} 
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-premium transition-all active:scale-95 ${
+              showForm ? 'bg-slate-100 text-slate-400' : 'bg-[#FACC15] text-black'
+            }`}
+          >
+            {showForm ? <MdClose size={22} /> : <MdAdd size={22} />}
+          </button>
+        </div>
       </div>
 
       <div className="p-6 max-w-[1200px] mx-auto space-y-8">
         
         {/* Header Action Row */}
-        <div className="flex items-center justify-between -mt-10 relative z-10 px-2">
-          <div className="bg-white px-6 py-4 rounded-xl shadow-premium flex items-center gap-3">
+        <div className="flex items-center justify-between mt-2 relative z-10 px-2">
+          <div className="bg-white px-6 py-4 rounded-xl shadow-premium border border-slate-50 flex items-center gap-3">
              <MdLabelOutline size={24} className="text-slate-400" />
              <div>
                <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-widest leading-none">{categories.length} Kategori</h2>
                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Organisir tugas Anda</p>
              </div>
           </div>
-          <button 
-            onClick={() => setShowForm(s => !s)} 
-            className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-premium transition-all active:scale-95 ${
-              showForm ? 'bg-white text-slate-400' : 'bg-[#1E1E1E] text-white'
-            }`}
-          >
-            {showForm ? <MdClose size={28} /> : <MdAdd size={28} />}
-          </button>
         </div>
 
         {/* Form tambah */}
         {showForm && (
           <div className="bg-white rounded-xl p-8 shadow-premium border border-slate-100 animate-fade-in">
             <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-6 flex items-center gap-2">
-               <div className="w-1 h-4 bg-primary rounded-full" /> Tambah Kategori Baru
+               <div className="w-1 h-4 bg-[#FACC15] rounded-full" /> Tambah Kategori Baru
             </h3>
             <form onSubmit={handleCreate} className="space-y-6">
               <div>
@@ -138,7 +148,7 @@ export default function CategoriesPage() {
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 text-[10px] font-black rounded-xl uppercase tracking-widest">Batal</button>
-                <button type="submit" className="flex-1 py-4 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium active:scale-95 transition-all disabled:opacity-50" disabled={createCat.isPending || !form.name.trim()}>
+                <button type="submit" className="flex-1 py-4 bg-[#FACC15] text-black text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium active:scale-95 transition-all disabled:opacity-50" disabled={createCat.isPending || !form.name.trim()}>
                   {createCat.isPending ? 'Menyimpan...' : 'Simpan Kategori'}
                 </button>
               </div>
@@ -167,7 +177,7 @@ export default function CategoriesPage() {
                     <ColorPicker value={editForm.color} onChange={(c) => setEditForm(f => ({ ...f, color: c }))} />
                     <div className="flex gap-2 pt-2">
                       <button onClick={() => setEditingId(null)} className="flex-1 py-2 text-slate-500 text-[10px] font-black rounded-xl border border-slate-100 uppercase tracking-widest">Batal</button>
-                      <button onClick={saveEdit} className="flex-1 py-2 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium" disabled={updateMut.isPending}>
+                      <button onClick={saveEdit} className="flex-1 py-2 bg-[#FACC15] text-black text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium" disabled={updateMut.isPending}>
                         {updateMut.isPending ? 'Simpan...' : 'Simpan'}
                       </button>
                     </div>
@@ -198,6 +208,18 @@ export default function CategoriesPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Category Confirmation */}
+      <ConfirmModal
+        visible={!!confirmDeleteCat}
+        title="Hapus Kategori?"
+        message={`Apakah Anda yakin ingin menghapus kategori "${confirmDeleteCat?.name}"? ${confirmDeleteCat?.count > 0 ? `${confirmDeleteCat.count} tugas terkait tidak akan dihapus.` : ''}`}
+        confirmText="Hapus"
+        cancelText="Batal"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteCat(null)}
+      />
     </div>
   );
 }

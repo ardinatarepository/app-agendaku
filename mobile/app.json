@@ -2,7 +2,6 @@
   "expo": {
     "name": "Agendaku",
     "slug": "agendaku",
-    "privacy": "public",
     "version": "1.0.0",
     "newArchEnabled": true,
     "orientation": "portrait",

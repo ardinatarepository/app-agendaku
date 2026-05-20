@@ -74,23 +74,25 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen">
-      {/* Header — Solid Primary matching mobile */}
-      <div className="bg-[#1E1E1E] px-6 pt-16 pb-14 rounded-b-xl shadow-premium text-center flex items-center justify-between">
-        <button onClick={() => navigate('/profile')} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white hover:bg-white/10 transition-colors">
-          <MdArrowBack size={24} />
-        </button>
-        <h1 className="text-xl font-black text-white uppercase tracking-widest">Ubah Password</h1>
-        <div className="w-10" />
+    <div className="bg-white min-h-screen">
+      {/* Header — White with border bottom to match EditProfilePage */}
+      <div className="bg-white border-b border-slate-50 sticky top-0 z-10">
+        <div className="max-w-[600px] mx-auto px-4 h-16 flex items-center justify-between">
+          <button onClick={() => navigate('/profile')} className="p-2 -ml-2 text-slate-800">
+            <MdArrowBack size={24} />
+          </button>
+          <h1 className="text-[15px] font-black text-slate-800 uppercase tracking-widest">Ubah Password</h1>
+          <div className="w-10" />
+        </div>
       </div>
 
-      <div className="p-6 max-w-[600px] mx-auto space-y-6">
-        <div className="bg-white rounded-xl p-8 shadow-premium border border-slate-100 relative overflow-hidden mt-[-2rem] z-10">
-          {/* Decorative Accessnt */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#1E1E1E]/5 rounded-full -mr-16 -mt-16" />
+      <div className="max-w-[600px] mx-auto p-6 space-y-6">
+        <div className="bg-white rounded-xl p-8 shadow-premium border border-slate-100 relative overflow-hidden z-10">
+          {/* Decorative Accent */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#FACC15]/5 rounded-full -mr-16 -mt-16" />
           
           <div className="relative">
-            <div className="w-16 h-16 bg-[#1E1E1E]/5 text-[#1E1E1E] rounded-2xl flex items-center justify-center mb-8 shadow-sm">
+            <div className="w-16 h-16 bg-[#FACC15]/10 text-black rounded-2xl flex items-center justify-center mb-8 shadow-sm">
               <MdLockOutline size={32} />
             </div>
 
@@ -165,7 +167,7 @@ export default function ChangePasswordPage() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-4 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-[0.2em] shadow-premium active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
+                className="w-full py-4 bg-[#FACC15] text-black text-[10px] font-black rounded-xl uppercase tracking-[0.2em] shadow-premium active:scale-95 transition-all flex items-center justify-center gap-3 mt-4"
               >
                 {loading ? 'Memproses...' : 'Simpan Password Baru'}
               </button>

@@ -2,30 +2,34 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  MdHome, 
-  MdAssignment, 
-  MdEvent, 
-  MdPerson,
   MdLogout,
   MdNotificationsNone
 } from 'react-icons/md';
 
 import Logo from '../common/Logo';
+import ConfirmModal from '../ui/ConfirmModal';
 
 const NAV = [
-  { to: '/',           icon: <MdHome size={28} />,       label: 'Dashboard' },
-  { to: '/tasks',      icon: <MdAssignment size={28} />, label: 'Tugas'     },
-  { to: '/calendar',   icon: <MdEvent size={28} />,      label: 'Kalender'  },
-  { to: '/profile',    icon: <MdPerson size={28} />,     label: 'Profil'    },
+  { to: '/',           icon: 'https://cdn-icons-png.flaticon.com/512/9440/9440315.png',   label: 'Dashboard' },
+  { to: '/tasks',      icon: 'https://cdn-icons-png.flaticon.com/512/6831/6831818.png',   label: 'Tugas'     },
+  { to: '/calendar',   icon: 'https://cdn-icons-png.flaticon.com/512/10156/10156100.png', label: 'Kalender'  },
+  { to: '/profile',    icon: 'https://cdn-icons-png.flaticon.com/512/9131/9131549.png',   label: 'Profil'    },
 ];
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate         = useNavigate();
   const location         = useLocation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
-    if (window.confirm('Yakin ingin keluar?')) { logout(); navigate('/login'); }
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -33,11 +37,11 @@ export default function AppLayout() {
 
       {/* ══ SIDEBAR (Desktop) ══ */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 relative z-20">
-        <div className="px-8 py-10">
+        <div className="pl-6 pr-8 pt-[74px] pb-10">
           <Logo size="sm" />
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 pt-24">
+        <nav className="flex-1 px-4 space-y-2 pt-10">
           {NAV.map(({ to, icon, label }) => (
             <NavLink
               key={to}
@@ -53,7 +57,13 @@ export default function AppLayout() {
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
                     isActive ? 'bg-white shadow-sm text-[#1E1E1E]' : 'text-slate-300 group-hover:text-slate-400'
                   }`}>
-                    {icon}
+                    <div 
+                      style={{ 
+                        maskImage: `url(${icon})`, 
+                        WebkitMaskImage: `url(${icon})` 
+                      }}
+                      className="w-[26px] h-[26px] mask-icon bg-current"
+                    />
                   </div>
                   <span className={`text-base font-bold tracking-tight flex-1 ${isActive ? 'text-[#1E1E1E]' : 'text-slate-300'}`}>
                     {label}
@@ -110,8 +120,14 @@ export default function AppLayout() {
             >
               {({ isActive }) => (
                 <>
-                  <span className={`text-2xl transition-transform duration-150 ${isActive ? 'scale-110' : ''}`}>
-                    {icon}
+                  <span className={`transition-transform duration-150 ${isActive ? 'scale-110' : ''}`}>
+                    <div 
+                      style={{ 
+                        maskImage: `url(${icon})`, 
+                        WebkitMaskImage: `url(${icon})` 
+                      }}
+                      className="w-[26px] h-[26px] mask-icon bg-current"
+                    />
                   </span>
                   <span className={`text-[11px] font-bold ${isActive ? 'text-[#1E1E1E]' : 'text-slate-300'}`}>
                     {label}
@@ -123,6 +139,17 @@ export default function AppLayout() {
           ))}
         </nav>
       </div>
+
+      <ConfirmModal
+        visible={showLogoutConfirm}
+        title="Keluar Akun?"
+        message="Apakah Anda yakin ingin keluar dari akun Anda?"
+        confirmText="Keluar"
+        cancelText="Batal"
+        variant="primary"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }
