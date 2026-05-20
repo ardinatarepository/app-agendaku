@@ -9,17 +9,15 @@ COPY package*.json ./
 # Install seluruh dependensi (termasuk devDependencies untuk Prisma CLI)
 RUN npm install
 
-# Salin folder prisma untuk melakukan generate client
-COPY prisma ./prisma/
+# Salin seluruh file kode program backend
+COPY . .
 
 # Generate Prisma Client
 RUN npx prisma generate
-
-# Salin seluruh file kode program backend
-COPY . .
 
 # Ekspos port default aplikasi
 EXPOSE 5000
 
 # Jalankan server
 CMD ["npm", "start"]
+
