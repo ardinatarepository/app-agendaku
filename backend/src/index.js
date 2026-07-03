@@ -16,13 +16,21 @@ const app  = express();
 const PORT = process.env.PORT || 5000;
 
 // ─── Middleware ────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://127.0.0.1:8081',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+// Add production origins from CORS_ORIGIN env var (comma-separated)
+if (process.env.CORS_ORIGIN) {
+  process.env.CORS_ORIGIN.split(',').forEach(o => {
+    const trimmed = o.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) allowedOrigins.push(trimmed);
+  });
+}
 app.use(cors({
-  origin: [
-    'http://localhost:8081',
-    'http://127.0.0.1:8081',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173'
-  ],
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
