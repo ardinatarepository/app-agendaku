@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useToggleSubtask, useCreateSubtask, useCategories } from '../hooks';
-import { 
-  IoChevronBack, 
-  IoChevronForward, 
+import {
+  IoChevronBack,
+  IoChevronForward,
   IoAdd,
-  IoFileTrayOutline
+  IoFileTray
 } from 'react-icons/io5';
 import TaskForm from '../components/tasks/TaskForm';
 
@@ -27,7 +27,7 @@ const TaskMiniCard = ({ task, onClick }) => {
   const priorityText = { TINGGI: '#dc2626', NORMAL: '#b45309', RENDAH: '#475569' };
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-white rounded-[24px] border border-slate-100 shadow-sm overflow-hidden flex cursor-pointer hover:border-[#FACC15] transition-all group active:scale-[0.98]"
     >
@@ -35,14 +35,14 @@ const TaskMiniCard = ({ task, onClick }) => {
       <div className="p-5 flex-1">
         <h4 className="text-[16px] font-bold text-black line-clamp-1 mb-2.5 tracking-tight">{task.title}</h4>
         <div className="flex items-center gap-2">
-          <div 
+          <div
             className="px-3 py-1 rounded-md text-[10px] font-bold tracking-wider"
             style={{ backgroundColor: statusCfg.bg, color: statusCfg.color }}
           >
             {statusCfg.label}
           </div>
-          
-          <div 
+
+          <div
             className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold"
             style={{ backgroundColor: priorityColor[task.priority || 'NORMAL'], color: priorityText[task.priority || 'NORMAL'] }}
           >
@@ -50,7 +50,7 @@ const TaskMiniCard = ({ task, onClick }) => {
           </div>
 
           {task.category && (
-            <div 
+            <div
               className="w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold"
               style={{ backgroundColor: `${task.category.color}15`, color: task.category.color }}
             >
@@ -103,7 +103,7 @@ export default function CalendarPage() {
     setSelectedDate(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
   };
 
-  const year  = curr.getFullYear();
+  const year = curr.getFullYear();
   const month = curr.getMonth();
 
   const taskDates = useMemo(() => {
@@ -123,8 +123,8 @@ export default function CalendarPage() {
   }, [tasks, selectedDate]);
 
   const daysInMonth = getDaysInMonth(year, month);
-  const firstDay    = getFirstDayOfMonth(year, month);
-  const cells       = [];
+  const firstDay = getFirstDayOfMonth(year, month);
+  const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
@@ -143,121 +143,124 @@ export default function CalendarPage() {
 
   return (
     <div className="w-full min-h-screen bg-[var(--app-bg)] pb-24 pt-4 font-poppins animate-fade-in">
-      <div className="max-w-[1000px] mx-auto p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          
+      <div className="max-w-[1650px] 2xl:max-w-[1850px] mx-auto p-4 sm:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+
           {/* Calendar Section */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-6 space-y-4 sm:space-y-6">
             {/* Month Nav */}
             <div className="flex items-center justify-between px-2 mt-2">
-              <button onClick={prevMonth} className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-black hover:bg-slate-50 transition-all shadow-sm active:scale-90">
-                <IoChevronBack size={20} />
+              <button onClick={prevMonth} className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-black hover:bg-slate-50 transition-all shadow-sm active:scale-90">
+                <IoChevronBack size={16} sm:size={20} />
               </button>
-              
+
               <div className="text-center cursor-pointer group" onClick={goToday}>
-                <h2 className="text-[17px] font-black text-black leading-tight">{MONTHS[month]} {year}</h2>
-                <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest group-hover:text-[#FACC15] transition-colors">Ketuk untuk hari ini</p>
+                <h2 className="text-[14px] sm:text-[17px] font-black text-black leading-tight">{MONTHS[month]} {year}</h2>
+                <p className="text-[9px] sm:text-[10px] font-normal text-slate-400 mt-1 tracking-wide group-hover:text-[#FACC15] transition-colors">Ketuk untuk hari ini</p>
               </div>
 
-              <button onClick={nextMonth} className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-black hover:bg-slate-50 transition-all shadow-sm active:scale-90">
-                <IoChevronForward size={20} />
+              <button onClick={nextMonth} className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-black hover:bg-slate-50 transition-all shadow-sm active:scale-90">
+                <IoChevronForward size={16} sm:size={20} />
               </button>
             </div>
 
             {/* Calendar Grid */}
-            <div className="bg-white rounded-[28px] p-8 shadow-sm border border-slate-100">
-              <div className="grid grid-cols-7 gap-1 text-center mb-6">
+            <div className="bg-white rounded-[20px] sm:rounded-[28px] p-4 sm:p-8 shadow-sm border border-slate-100">
+              <div className="grid grid-cols-7 gap-1 text-center mb-4 sm:mb-6">
                 {DAYS.map(d => (
-                  <div key={d} className="py-2 text-[11px] font-black text-slate-300 uppercase tracking-widest">{d}</div>
+                  <div key={d} className="py-1 sm:py-2 text-[9px] sm:text-[11px] font-semibold text-slate-500 tracking-wide">{d}</div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-y-3">
-                {cells.map((d, i) => {
-                  if (!d) return <div key={`empty-${i}`} className="aspect-square" />;
-                  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                  const isToday = dateStr === todayStr;
-                  const isSel   = dateStr === selectedDate;
-                  const taskInfo = taskDates[dateStr];
+              <div className="flex flex-col divide-y divide-slate-100">
+                {Array.from({ length: Math.ceil(cells.length / 7) }).map((_, rowIdx) => (
+                  <div key={rowIdx} className="grid grid-cols-7 py-1 sm:py-1.5">
+                    {cells.slice(rowIdx * 7, (rowIdx + 1) * 7).map((d, colIdx) => {
+                      if (!d) return <div key={`empty-${rowIdx}-${colIdx}`} />;
+                      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                      const isToday = dateStr === todayStr;
+                      const isSel = dateStr === selectedDate;
+                      const taskInfo = taskDates[dateStr];
 
-                  return (
-                    <button
-                      key={d}
-                      onClick={() => setSelectedDate(dateStr)}
-                      className="relative aspect-square flex flex-col items-center justify-center group"
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                        isSel ? 'bg-[#FACC15] text-black shadow-lg shadow-[#FACC15]/20 scale-110' : 
-                        isToday ? 'bg-[#FEF9C3] text-black font-black' : 
-                        'text-slate-700 hover:bg-slate-50'
-                      }`}>
-                        <span className={`text-[13px] ${isSel || isToday ? 'font-black' : 'font-bold'}`}>{d}</span>
-                      </div>
-                      
-                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 ${
-                        taskInfo ? (taskInfo.hasTinggi ? 'bg-red-500' : 'bg-[#FACC15]') : 'bg-transparent'
-                      }`} />
-                    </button>
-                  );
-                })}
+                      return (
+                        <button
+                          key={d}
+                          onClick={() => setSelectedDate(dateStr)}
+                          className="relative py-2 sm:py-2.5 flex flex-col items-center justify-center group"
+                        >
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200 ${isSel ? 'bg-[#FACC15] text-black shadow-lg shadow-[#FACC15]/20 scale-110' :
+                            isToday ? 'bg-[#FACC15] text-black font-black' :
+                              'text-slate-700 hover:bg-slate-50'
+                            }`}>
+                            <span className={`text-[11px] sm:text-[13px] ${isSel || isToday ? 'font-bold' : 'font-normal'}`}>{d}</span>
+                          </div>
+
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1 sm:mt-1.5 ${taskInfo ? (taskInfo.hasTinggi ? 'bg-red-500' : 'bg-[#FACC15]') : 'bg-transparent'
+                            }`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
 
               {/* Legend */}
-              <div className="mt-10 pt-8 border-t border-slate-50 flex justify-center gap-8">
-                <div className="flex items-center gap-2.5">
+              <div className="mt-6 sm:mt-10 pt-4 sm:pt-8 border-t border-slate-50 flex justify-center gap-4 sm:gap-8">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm shadow-red-500/20" />
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Prioritas tinggi</span>
+                  <span className="text-[9px] sm:text-[11px] font-normal text-slate-400 tracking-tight">Prioritas tinggi</span>
                 </div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   <div className="w-2 h-2 rounded-full bg-[#FACC15] shadow-sm shadow-[#FACC15]/20" />
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Ada tugas</span>
+                  <span className="text-[9px] sm:text-[11px] font-normal text-slate-400 tracking-tight">Ada tugas</span>
                 </div>
+              </div>
+
+              {/* Action Button at the bottom of Calendar */}
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-slate-50 flex justify-center">
+                <button
+                  onClick={() => { setEditTask({ deadline: selectedDate }); setShowForm(true); }}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl border-2 border-black text-black font-bold text-[12px] hover:bg-[#FACC15] transition-all group w-fit"
+                >
+                  <div className="w-4 h-4 bg-[#FACC15] rounded-full flex items-center justify-center text-black group-hover:scale-110 transition-transform">
+                    <IoAdd size={12} />
+                  </div>
+                  <span>Tambah Tugas di tanggal ini</span>
+                </button>
               </div>
             </div>
           </div>
 
           {/* Agenda Section */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="lg:col-span-6 space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between px-2">
               <div>
-                <h3 className="text-[15px] font-black text-black tracking-tight uppercase">Tugas — {selectedLabel}</h3>
-                <p className="text-[12px] font-bold text-slate-400 tracking-tight">{selectedTasks.length} tugas ditemukan</p>
+                <h3 className="text-[13px] sm:text-[15px] font-black text-black tracking-tight">Tugas — {selectedLabel}</h3>
+                <p className="text-[11px] sm:text-[12px] font-normal text-slate-400 tracking-tight">{selectedTasks.length} tugas ditemukan</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {isLoading ? (
-                <div className="space-y-4">
-                  {[1,2,3,4].map(i => <TaskMiniSkeleton key={i} />)}
+                <div className="space-y-3 sm:space-y-4">
+                  {[1, 2, 3, 4].map(i => <TaskMiniSkeleton key={i} />)}
                 </div>
               ) : selectedTasks.length === 0 ? (
-                <div className="bg-white rounded-[28px] p-24 text-center border border-slate-100 shadow-sm flex flex-col items-center animate-fade-in">
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                    <IoFileTrayOutline size={42} className="text-slate-200" />
-                  </div>
-                  <p className="text-[14px] font-black text-black uppercase tracking-widest">Tidak ada tugas</p>
-                  <p className="text-[12px] font-bold text-slate-400 mt-2 max-w-[200px] mx-auto">Anda belum memiliki agenda tugas pada tanggal ini.</p>
-                  <button 
+                <div className="bg-white rounded-[20px] sm:rounded-[28px] p-12 sm:p-24 text-center border border-slate-100 shadow-sm flex flex-col items-center animate-fade-in">
+                  <p className="text-[12px] sm:text-[14px] font-black text-black tracking-wide">Tidak ada tugas</p>
+                  <p className="text-[11px] sm:text-[12px] font-normal text-slate-400 mt-2 max-w-[200px] mx-auto">Anda belum memiliki agenda tugas pada tanggal ini.</p>
+                  <button
                     onClick={() => { setEditTask({ deadline: selectedDate }); setShowForm(true); }}
-                    className="mt-8 px-8 py-3 bg-[#FACC15] text-black text-[13px] font-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-[#FACC15]/20"
+                    className="mt-6 sm:mt-8 px-6 sm:px-8 py-3 bg-[#FACC15] text-black text-[12px] sm:text-[13px] font-black rounded-xl border-2 border-black hover:scale-105 transition-all shadow-lg shadow-[#FACC15]/20"
                   >
                     + Tambah Tugas
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3 animate-fade-in">
+                <div className="space-y-2 sm:space-y-3 animate-fade-in">
                   {selectedTasks.map(task => (
                     <TaskMiniCard key={task.id} task={task} onClick={() => handleEdit(task)} />
                   ))}
-                  <button 
-                    onClick={() => { setEditTask({ deadline: selectedDate }); setShowForm(true); }}
-                    className="w-full py-4 rounded-2xl border-[1.5px] border-dashed border-[#FACC15] text-[#FACC15] font-black text-[13px] hover:bg-[#FACC15]/5 transition-all flex items-center justify-center gap-2 group"
-                  >
-                    <div className="w-5 h-5 bg-[#FACC15] rounded-full flex items-center justify-center text-black group-hover:scale-110 transition-transform">
-                      <IoAdd size={16} />
-                    </div>
-                    <span>Tambah Tugas di tanggal ini</span>
-                  </button>
                 </div>
               )}
             </div>

@@ -35,7 +35,7 @@ export default function ProfileScreen({ navigation }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState(null); // { id, name, taskCount }
   const [toast,           setToast]           = useState({ visible: false, message: '', type: 'success' });
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const qc = useQueryClient();
 
   // Kategori state
@@ -108,9 +108,13 @@ export default function ProfileScreen({ navigation }) {
 
   const handleDeleteAccount = () => setShowDeleteModal(true);
 
-  const confirmDeleteAccount = () => {
+  const confirmDeleteAccount = async () => {
     setShowDeleteModal(false);
-    setToast({ visible: true, message: 'Fitur hapus akun akan segera tersedia.', type: 'info' });
+    try {
+      await deleteAccount();
+    } catch (e) {
+      setToast({ visible: true, message: 'Gagal menghapus akun.', type: 'danger' });
+    }
   };
 
   const handleSync = async () => {
@@ -472,7 +476,7 @@ const s = StyleSheet.create({
   userName:       { fontSize: 17, ...FONT.bold, color: COLORS.text },
   userEmail:      { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
   editProfileBtn: { paddingHorizontal: 14, paddingVertical: 8, backgroundColor: COLORS.primaryLight, borderRadius: RADIUS.full },
-  sectionLabel:   { fontSize: 11, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.7, marginBottom: 10, marginTop: 28 },
+  sectionLabel:   { fontSize: 12, ...FONT.bold, color: COLORS.textMuted, letterSpacing: 0.2, marginBottom: 10, marginTop: 28 },
   sectionHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 28 },
   addLink:        { fontSize: 13, color: '#000000', ...FONT.semibold },
   card:           { marginBottom: 10, padding: 16 },

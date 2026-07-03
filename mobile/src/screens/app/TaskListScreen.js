@@ -82,7 +82,8 @@ export default function TaskListScreen({ route, navigation }) {
         highlightId: undefined, 
         initialFilter: undefined, 
         openAddModal: undefined,
-        initialDate: undefined 
+        initialDate: undefined,
+        timestamp: undefined
       });
     }
   }, [route?.params, navigation]);
@@ -96,6 +97,22 @@ export default function TaskListScreen({ route, navigation }) {
   }, [highlightedId]);
 
   const CHIP_DATA = [{ id: '', label: 'Semua' }, ...STATUSES.map(s => ({ id: s, label: (STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN']).label }))];
+
+  const currentSort = SORT_OPTIONS.find(s => s.key === sortKey) || SORT_OPTIONS[0];
+  const activeFilters = Object.fromEntries(Object.entries({ ...filters, search, sort: currentSort.sort, order: currentSort.order }).filter(([, v]) => v));
+  const filterCount = Object.values(filters).filter(Boolean).length;
+
+  // ─── Queries ───────────────────────────────────────────────────────────────
+  const { data: tasks = [], isLoading, refetch } = useQuery({
+    queryKey: ['tasks', activeFilters],
+    queryFn: () => taskAPI.getAll(activeFilters).then(r => {
+      let list = r.data.data || [];
+      if (!filters.status) {
+        list = list.filter(t => t.status !== 'TERLEWAT');
+      }
+      return list;
+    }),
+  });
 
   useEffect(() => {
     const idx = CHIP_DATA.findIndex(c => c.id === filters.status);
@@ -138,23 +155,6 @@ export default function TaskListScreen({ route, navigation }) {
       }
     }
   }, [highlightedId, tasks, isLoading]);
-
-  const currentSort = SORT_OPTIONS.find(s => s.key === sortKey) || SORT_OPTIONS[0];
-  const activeFilters = Object.fromEntries(Object.entries({ ...filters, search, sort: currentSort.sort, order: currentSort.order }).filter(([, v]) => v));
-  const filterCount = Object.values(filters).filter(Boolean).length;
-
-  // ─── Queries ───────────────────────────────────────────────────────────────
-  const { data: tasks = [], isLoading, refetch } = useQuery({
-    queryKey: ['tasks', activeFilters],
-    queryFn: () => taskAPI.getAll(activeFilters).then(r => {
-      let list = r.data.data;
-      // Jika filter status kosong (Semua), hilangkan yang TERLEWAT
-      if (!filters.status) {
-        list = list.filter(t => t.status !== 'TERLEWAT');
-      }
-      return list;
-    }),
-  });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
@@ -216,6 +216,35 @@ export default function TaskListScreen({ route, navigation }) {
     onError: () => setToast({ visible: true, message: 'Gagal menghapus tugas.', type: 'danger' })
   });
 
+  // ─── Auto-delete: hapus tugas SELESAI & TERLEWAT > 1 minggu ──────────────
+  const autoCleanup = useCallback(async () => {
+    try {
+      const allRes = await taskAPI.getAll({ status: '', sort: 'createdAt', order: 'asc' });
+      const allTasks = allRes.data.data || [];
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const toDelete = allTasks.filter(t => {
+        if (t.status !== 'SELESAI' && t.status !== 'TERLEWAT') return false;
+        // Gunakan updatedAt atau createdAt sebagai referensi waktu
+        const refDate = new Date(t.updatedAt || t.createdAt);
+        return refDate < oneWeekAgo;
+      });
+
+      if (toDelete.length > 0) {
+        await Promise.all(toDelete.map(t => taskAPI.delete(t.id).catch(() => {})));
+        invalidate();
+        setToast({ 
+          visible: true, 
+          message: `${toDelete.length} tugas lama otomatis dihapus.`, 
+          type: 'success' 
+        });
+      }
+    } catch (e) {
+      // Cleanup gagal = biarkan saja, tidak perlu error ke user
+    }
+  }, []);
+
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleSubmit = (data) => {
     if (editTask) updateMut.mutate({ id: editTask.id, data });
@@ -247,6 +276,10 @@ export default function TaskListScreen({ route, navigation }) {
 
   const handleAddSubtask = (taskId, title) => {
     subtaskAPI.create(taskId, { title }).then(invalidate).catch(() => setToast({ visible: true, message: 'Gagal menambah sub-tugas.', type: 'danger' }));
+  };
+
+  const handleSubtaskDelete = (taskId, subtaskId) => {
+    subtaskAPI.delete(taskId, subtaskId).then(invalidate).catch(() => setToast({ visible: true, message: 'Gagal menghapus sub-tugas.', type: 'danger' }));
   };
 
   const handleResetFilters = () => {
@@ -292,7 +325,10 @@ export default function TaskListScreen({ route, navigation }) {
         StatusBar.setBackgroundColor('transparent');
         StatusBar.setTranslucent(true);
       }
-    }, [])
+
+      // Jalankan auto-cleanup setiap kali layar difokus
+      autoCleanup();
+    }, [autoCleanup])
   );
 
   return (
@@ -383,24 +419,28 @@ export default function TaskListScreen({ route, navigation }) {
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={COLORS.primary} />}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Ionicons 
-              name={
-                section.icon === 'today' ? 'sunny-outline' : 
-                section.icon === 'event' ? 'calendar-outline' : 
-                section.icon === 'upcoming' ? 'calendar-clear-outline' : 
-                'document-text-outline'
-              } 
-              size={16} 
-              color="#808080" 
-            />
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <View style={styles.sectionCountBadge}>
-              <Text style={styles.sectionCountText}>{section.data.length}</Text>
+        renderSectionHeader={({ section }) => {
+          const isTerlewat = section.title === 'Terlewat';
+          return (
+            <View style={styles.sectionHeader}>
+              <Ionicons 
+                name={
+                  isTerlewat ? 'alert-circle-outline' :
+                  section.icon === 'today' ? 'sunny-outline' : 
+                  section.icon === 'event' ? 'calendar-outline' : 
+                  section.icon === 'upcoming' ? 'calendar-clear-outline' : 
+                  'document-text-outline'
+                } 
+                size={16} 
+                color={isTerlewat ? '#EF4444' : '#808080'} 
+              />
+              <Text style={[styles.sectionTitle, isTerlewat && { color: '#EF4444' }]}>{section.title}</Text>
+              <View style={[styles.sectionCountBadge, isTerlewat && { backgroundColor: '#FEE2E2' }]}>
+                <Text style={[styles.sectionCountText, isTerlewat && { color: '#EF4444' }]}>{section.data.length}</Text>
+              </View>
             </View>
-          </View>
-        )}
+          );
+        }}
         renderItem={({ item }) => (
           <TaskCard
             task={item}
@@ -410,6 +450,7 @@ export default function TaskListScreen({ route, navigation }) {
             onStatusChange={handleStatus}
             onSubtaskToggle={handleSubtaskToggle}
             onAddSubtask={handleAddSubtask}
+            onSubtaskDelete={handleSubtaskDelete}
           />
         )}
         ListEmptyComponent={isLoading ? (

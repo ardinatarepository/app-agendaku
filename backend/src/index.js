@@ -20,7 +20,8 @@ app.use(cors({
   origin: [
     'http://localhost:8081',
     'http://127.0.0.1:8081',
-    'https://app-agendaku-production.up.railway.app'
+    'http://localhost:5173',
+    'http://127.0.0.1:5173'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

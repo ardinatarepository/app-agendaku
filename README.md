@@ -159,18 +159,24 @@ npx expo start
 
 ---
 
-## Fitur
+## Fitur Utama
 
-- [x] Autentikasi JWT (register, login, logout)
-- [x] CRUD Tugas — tambah, lihat, edit, hapus
-- [x] Status tugas: Belum Mulai → Sedang Dikerjakan → Selesai
-- [x] Prioritas: Rendah, Normal, Tinggi
-- [x] Kategorisasi tugas dengan warna kustom
-- [x] Dashboard statistik & tugas mendekati deadline
-- [x] Filter tugas: status, prioritas, kategori, pencarian
-- [x] Notifikasi lokal H-1 dan H-0 sebelum deadline (mobile)
-- [x] Validasi input di sisi klien dan server
-- [x] Responsive di web + mobile
+### Fitur Web
+- [x] Autentikasi pengguna melalui register, login, dan logout
+- [x] Dashboard untuk melihat ringkasan tugas dan statistik penting
+- [x] CRUD tugas lengkap: tambah, lihat, edit, dan hapus
+- [x] Pengelompokan tugas berdasarkan status, prioritas, dan kategori
+- [x] Filter tugas berdasarkan status, prioritas, kategori, dan pencarian
+- [x] Tampilan responsif untuk mendukung penggunaan di desktop maupun layar kecil
+- [x] Pengelolaan kategori dengan warna kustom untuk mempermudah identifikasi
+
+### Fitur Mobile
+- [x] Akses login dan register yang sederhana dan cepat
+- [x] Tampilan task list yang nyaman untuk penggunaan pada perangkat mobile
+- [x] CRUD tugas secara praktis melalui antarmuka mobile
+- [x] Notifikasi lokal sebelum deadline, seperti H-1 dan H-0
+- [x] Dukungan tampilan yang ramah untuk perangkat Android dan iOS
+- [x] Pengelolaan profil pengguna dan pengaturan akun yang mudah diakses
 
 ---
 

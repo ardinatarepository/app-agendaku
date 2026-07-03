@@ -63,13 +63,13 @@
   .glass-dark { @apply bg-slate-900/80 backdrop-blur-lg border border-slate-700/50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]; }
 
   .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider; }
-  .badge-belum   { @apply badge bg-slate-100 text-slate-500; }
-  .badge-sedang  { @apply badge bg-blue-50 text-blue-600; }
-  .badge-selesai { @apply badge bg-emerald-50 text-emerald-600; }
-  .badge-terlewat { @apply badge bg-red-50 text-red-600; }
-  .badge-rendah  { @apply badge bg-slate-100 text-slate-500; }
-  .badge-normal  { @apply badge bg-amber-50 text-amber-600; }
-  .badge-tinggi  { @apply badge bg-red-50 text-red-600; }
+  .badge-belum   { @apply badge bg-[#F3F4F6] text-[#4B5563]; }
+  .badge-sedang  { @apply badge bg-[#E0F2FE] text-[#0284C7]; }
+  .badge-selesai { @apply badge bg-[#ECFDF5] text-[#10B981]; }
+  .badge-terlewat { @apply badge bg-[#FEE2E2] text-[#EF4444]; }
+  .badge-rendah  { @apply badge bg-[#f1f5f9] text-[#475569]; }
+  .badge-normal  { @apply badge bg-[#fef3c7] text-[#b45309]; }
+  .badge-tinggi  { @apply badge bg-[#fee2e2] text-[#dc2626]; }
   .badge-deadline { @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-tight; }
 
   .divider { @apply h-[1px] bg-slate-100 w-full; }
@@ -153,9 +153,15 @@
   50% { opacity: 0.8; }
 }
 
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
 .animate-scale-in { animation: scale-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 .animate-slide-in { animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.animate-slide-in-right { animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .animate-pulse-subtle { animation: pulse-subtle 3s ease-in-out infinite; }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }

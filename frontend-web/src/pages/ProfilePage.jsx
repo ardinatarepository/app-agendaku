@@ -5,18 +5,17 @@ import { AVATAR_BASE_URL } from '../api';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useTasks } from '../hooks';
 import { 
   MdEdit,
-  MdDeleteOutline,
   MdCheck,
   MdChevronRight
 } from 'react-icons/md';
 import { 
-  IoNotificationsOutline, 
-  IoLayersOutline, 
+  IoNotifications, 
+  IoLayers, 
   IoSettingsOutline, 
   IoLockClosedOutline, 
   IoInformationCircleOutline, 
   IoLogOutOutline, 
-  IoTrashOutline,
+  IoTrash,
   IoCameraOutline
 } from 'react-icons/io5';
 import toast from 'react-hot-toast';
@@ -54,13 +53,54 @@ export default function ProfilePage() {
   const [catColor, setCatColor] = useState('#6366f1');
   const [editingCat, setEditingCat] = useState(null);
 
-  const handleSaveNotif = () => {
+  const handleSaveNotif = async () => {
+    if (notifEnabled) {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          toast.error('Izin notifikasi ditolak. Anda tidak akan menerima pemberitahuan desktop.');
+        } else {
+          toast.success('Izin notifikasi disetujui!');
+        }
+      } else {
+        toast.error('Browser Anda tidak mendukung Web Notification API.');
+      }
+    }
     localStorage.setItem('notif_enabled', String(notifEnabled));
     localStorage.setItem('notif_hari', String(notifHari));
     localStorage.setItem('notif_jam', notifJam);
     setNotifSaved(true);
     setTimeout(() => setNotifSaved(false), 2000);
     toast.success('Pengaturan notifikasi disimpan!');
+  };
+
+  const handleTestNotification = () => {
+    if (!('Notification' in window)) {
+      toast.error('Browser Anda tidak mendukung Web Notification API.');
+      return;
+    }
+    
+    if (Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          triggerTestNotif();
+        } else {
+          toast.error('Silakan izinkan notifikasi browser terlebih dahulu.');
+        }
+      });
+    } else {
+      triggerTestNotif();
+    }
+  };
+
+  const triggerTestNotif = () => {
+    toast.success('Notifikasi uji akan muncul dalam 3 detik...');
+    setTimeout(() => {
+      new Notification('AgendaKu Web', {
+        body: 'Halo! Ini adalah notifikasi pengingat tugas uji coba dari AgendaKu.',
+        icon: '/favicon.ico',
+      });
+    }, 3000);
   };
 
   const handleSaveCat = async () => {
@@ -100,46 +140,42 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-[var(--app-bg)] min-h-screen pb-24 pt-16 font-poppins animate-fade-in antialiased">
-      <div className="max-w-[1200px] mx-auto px-8">
+      <div className="max-w-[1650px] 2xl:max-w-[1850px] mx-auto px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           
           {/* LEFT SIDEBAR: ACCOUNT OVERVIEW */}
           <div className="lg:col-span-4 space-y-6">
             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 text-center">
               <div className="relative inline-block mb-6">
-                <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] border-4 border-white shadow-xl flex items-center justify-center text-4xl font-black text-black overflow-hidden mx-auto">
-                  {user?.avatar ? (
+                <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] border-4 border-white shadow-xl flex items-center justify-center text-4xl font-black text-black overflow-hidden mx-auto relative">
+                  <span className="absolute">{user?.name?.[0]?.toUpperCase()}</span>
+                  {user?.avatar && (
                     <img 
                       src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} 
                       alt="Avatar" 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover absolute top-0 left-0 z-10"
                       onError={(e) => {
-                        if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
-                          const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
-                          if (filename) {
-                            e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
-                          }
-                        }
+                        e.target.style.display = 'none';
                       }}
                     />
-                  ) : user?.name?.[0]?.toUpperCase()}
+                  )}
                 </div>
-                <button onClick={() => navigate('/edit-profile')} className="absolute -bottom-2 -right-2 w-10 h-10 bg-black text-[#FACC15] rounded-full shadow-lg border-4 border-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all"><MdEdit size={18} /></button>
+                <button onClick={() => navigate('/dashboard/edit-profile')} className="absolute -bottom-2 -right-2 w-10 h-10 bg-black text-[#FACC15] rounded-full shadow-lg border-4 border-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-20"><MdEdit size={18} /></button>
               </div>
               <h2 className="text-[18px] font-bold text-black tracking-tight leading-tight">{user?.name}</h2>
               <p className="text-[13px] font-medium text-slate-400 mt-2 mb-8">{user?.email}</p>
-              <div className="space-y-3">
-                <button onClick={() => setShowLogoutModal(true)} className="w-full py-4 bg-white border border-slate-200 rounded-2xl text-[14px] font-semibold text-slate-500 hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"><IoLogOutOutline size={20} />Keluar Akun</button>
-                <button onClick={() => setShowDeleteModal(true)} className="w-full py-4 bg-white border border-red-50 rounded-2xl text-[14px] font-semibold text-red-400 hover:bg-red-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"><IoTrashOutline size={18} />Hapus Akun</button>
+              <div className="flex flex-col items-center gap-3">
+                <button onClick={() => setShowLogoutModal(true)} className="w-48 py-3.5 bg-white border border-slate-200 rounded-2xl text-[14px] font-semibold text-slate-500 hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"><IoLogOutOutline size={18} />Keluar Akun</button>
+                <button onClick={() => setShowDeleteModal(true)} className="w-48 py-3.5 bg-white border border-red-200 rounded-2xl text-[14px] font-semibold text-red-500 hover:bg-red-600 hover:text-white hover:border-red-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2"><IoTrash size={18} />Hapus Akun</button>
               </div>
             </div>
 
             <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 overflow-hidden">
-              <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-widest px-3 mb-4">Aplikasi</h3>
+              <h3 className="text-[11px] font-bold text-slate-400 tracking-wider px-3 mb-4">Aplikasi</h3>
               <div className="space-y-1">
-                <button onClick={() => navigate('/profile/password')} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-all group">
+                <button onClick={() => navigate('/dashboard/profile/password')} className="w-full p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-all group">
                   <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#FEF9C3] group-hover:text-black transition-all">
+                    <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-[#FACC15] group-hover:text-black transition-all">
                       <IoLockClosedOutline size={20} />
                     </div>
                     <span className="text-[14px] font-bold text-black tracking-tight">Ubah Password</span>
@@ -164,40 +200,68 @@ export default function ProfilePage() {
             {/* Notification Section */}
             <section className="space-y-6">
               <div className="flex items-center gap-3 px-1">
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-black">
-                  <IoNotificationsOutline size={20} />
+                <div className="w-10 h-10 rounded-xl bg-[#FACC15] shadow-sm flex items-center justify-center text-black">
+                  <IoNotifications size={20} />
                 </div>
                 <h2 className="text-[16px] font-bold text-black tracking-tight uppercase">Pengaturan Notifikasi</h2>
               </div>
               <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-8">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-semibold text-black tracking-tight">Aktifkan Notifikasi Pengingat</p>
-                    <p className="text-[12px] text-slate-400 font-medium mt-1">Dapatkan pemberitahuan sebelum deadline tugas berakhir</p>
+                    <p className="text-[12px] text-slate-400 font-medium mt-1 leading-normal">Dapatkan pemberitahuan sebelum deadline tugas berakhir</p>
                   </div>
-                  <button onClick={() => setNotifEnabled(v => !v)} className={`w-14 h-7 rounded-full p-1.5 transition-colors relative ${notifEnabled ? 'bg-[#FACC15]' : 'bg-slate-200'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${notifEnabled ? 'translate-x-7' : 'translate-x-0'}`} /></button>
+                  <button 
+                    onClick={() => setNotifEnabled(v => !v)} 
+                    className={`w-14 h-7 rounded-full p-1.5 transition-colors relative shrink-0 mt-1 ${notifEnabled ? 'bg-[#FACC15]' : 'bg-slate-200'}`}
+                  >
+                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${notifEnabled ? 'translate-x-7' : 'translate-x-0'}`} />
+                  </button>
                 </div>
                 {notifEnabled && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-4 animate-fade-in">
                     <div className="space-y-4">
-                      <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Waktu Pengingat (H-n)</p>
+                      <p className="text-[12px] font-semibold text-slate-400 tracking-wider ml-1">Waktu Pengingat (H-n)</p>
                       <div className="flex gap-2">
                         {HARI_OPTIONS.map(h => (
-                          <button key={h} onClick={() => setNotifHari(h)} className={`flex-1 py-4 rounded-2xl text-[14px] font-semibold border transition-all ${notifHari === h ? 'bg-[#FEF9C3] text-black border-[#FACC15]' : 'bg-white text-slate-400 border-slate-200'}`}>H-{h}</button>
+                          <button key={h} onClick={() => setNotifHari(h)} className={`flex-1 py-3.5 rounded-xl text-[13px] font-semibold border transition-all ${notifHari === h ? 'bg-[#FACC15] text-black border-[#FACC15]' : 'bg-white text-slate-400 border-slate-200'}`}>H-{h}</button>
                         ))}
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-[12px] font-semibold text-slate-400 uppercase tracking-widest ml-1">Pilih Jam Pengiriman</p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {JAM_OPTIONS.map(j => (
-                          <button key={j.value} onClick={() => setNotifJam(j.value)} className={`p-4 rounded-2xl text-[13px] font-medium border flex items-center justify-between transition-all ${notifJam === j.value ? 'bg-[#FEF9C3] border-[#FACC15] text-black font-semibold' : 'bg-white border-slate-200 text-slate-400'}`}>{j.label}</button>
-                        ))}
+                      <p className="text-[12px] font-semibold text-slate-400 tracking-wider ml-1">Pilih Jam Pengiriman</p>
+                      <div className="flex gap-2">
+                        {JAM_OPTIONS.map(j => {
+                          const parts = j.label.split(' ');
+                          return (
+                            <button 
+                              key={j.value} 
+                              onClick={() => setNotifJam(j.value)} 
+                              className={`flex-1 py-2.5 rounded-xl border transition-all text-center flex flex-col justify-center items-center gap-0.5 ${notifJam === j.value ? 'bg-[#FACC15] text-black border-[#FACC15] font-semibold' : 'bg-white border-slate-200 text-slate-400'}`}
+                            >
+                              <span className="text-[12px] sm:text-[13px] font-bold">{parts[0]}</span>
+                              <span className="text-[10px] opacity-80">{parts[1]}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
                 )}
-                <button onClick={handleSaveNotif} className={`w-full py-4 rounded-2xl font-bold text-[14px] transition-all shadow-lg ${notifSaved ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-[#FACC15] text-black active:scale-95'}`}>{notifSaved ? '✓ Tersimpan' : 'Simpan Pengaturan'}</button>
+                <div className="flex flex-wrap justify-center gap-3 pt-1">
+                  <button onClick={handleSaveNotif} className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-[14px] transition-all shadow-md ${notifSaved ? 'bg-emerald-500 text-white shadow-emerald-200' : 'bg-[#FACC15] text-black active:scale-95'}`}>
+                    {notifSaved ? '✓ Tersimpan' : 'Simpan Pengaturan'}
+                  </button>
+                  {notifEnabled && (
+                    <button
+                      type="button"
+                      onClick={handleTestNotification}
+                      className="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-[14px] transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      Kirim Notifikasi Uji (3s delay)
+                    </button>
+                  )}
+                </div>
               </div>
             </section>
 
@@ -205,8 +269,8 @@ export default function ProfilePage() {
             <section className="space-y-6">
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-black">
-                    <IoLayersOutline size={20} />
+                  <div className="w-10 h-10 rounded-xl bg-[#FACC15] shadow-sm flex items-center justify-center text-black">
+                    <IoLayers size={20} />
                   </div>
                   <h2 className="text-[16px] font-bold text-black tracking-tight uppercase">Kelola Kategori</h2>
                 </div>
@@ -225,7 +289,7 @@ export default function ProfilePage() {
                 {catLoading ? (
                   [1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-3xl animate-pulse border border-slate-100" />)
                 ) : categories.length === 0 ? (
-                  <div className="bg-white rounded-[32px] p-16 text-center border border-slate-100"><p className="text-[12px] font-bold text-slate-300 uppercase tracking-widest">Belum ada kategori</p></div>
+                  <div className="bg-white rounded-[32px] p-16 text-center border border-slate-100"><p className="text-[12px] font-bold text-slate-400 tracking-wider">Belum ada kategori</p></div>
                 ) : (
                   categories.map(cat => (
                     <div key={cat.id} className="bg-white rounded-[24px] p-5 shadow-sm border border-slate-100 animate-fade-in flex items-center gap-4 group">
@@ -244,7 +308,7 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button onClick={() => setEditingCat(cat)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#f1f5f9] text-[#f59e0b] active:scale-90 transition-all"><MdEdit size={18} /></button>
-                            <button onClick={() => handleDeleteCat(cat.id, cat.name)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#fee2e2] text-[#ef4444] active:scale-90 transition-all"><MdDeleteOutline size={18} /></button>
+                            <button onClick={() => handleDeleteCat(cat.id, cat.name)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#fee2e2] text-[#ef4444] active:scale-90 transition-all"><IoTrash size={16} /></button>
                           </div>
                         </>
                       )}

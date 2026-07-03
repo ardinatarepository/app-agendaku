@@ -2,28 +2,25 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { 
-  MdVisibility, 
-  MdVisibilityOff 
-} from 'react-icons/md';
-
-import Logo from '../components/common/Logo';
+import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
+import { IoArrowForward } from 'react-icons/io5';
 
 export default function RegisterPage() {
   const [form, setForm]         = useState({ name: '', email: '', password: '', confirm: '' });
-  const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const { register }            = useAuth();
-  const navigate                = useNavigate();
+  const [showPass, setShowPass]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const { register }                  = useAuth();
+  const navigate                      = useNavigate();
 
   const set = (f) => (e) => setForm(p => ({ ...p, [f]: e.target.value }));
 
   const strength = (() => {
     const p = form.password;
     if (!p) return null;
-    if (p.length < 6)  return { label: 'Lemah', color: 'bg-red-400', w: 'w-1/3' };
-    if (p.length < 10) return { label: 'Sedang', color: 'bg-amber-400', w: 'w-2/3' };
-    return { label: 'Kuat', color: 'bg-emerald-400', w: 'w-full' };
+    if (p.length < 6)  return { label: 'Lemah',  color: 'bg-red-400',     w: 'w-1/3' };
+    if (p.length < 10) return { label: 'Sedang', color: 'bg-amber-400',   w: 'w-2/3' };
+    return               { label: 'Kuat',   color: 'bg-emerald-400',  w: 'w-full' };
   })();
 
   const handleSubmit = async (e) => {
@@ -43,48 +40,81 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-6 py-12">
-      <div className="w-full max-w-sm">
-        {/* Brand Section */}
-        <div className="text-center mb-12">
-          <Logo size="lg" stacked={true} className="mb-4" />
-          <p className="text-sm font-medium text-slate-500">Mulai kelola tugasmu dengan lebih profesional</p>
+    <div className="min-h-screen flex font-sans bg-white">
+      {/* ── LEFT PANEL (Branding) ── */}
+      <div className="hidden lg:flex lg:w-[45%] bg-[#1A1A1A] flex-col justify-between p-16 relative overflow-hidden">
+        {/* Logo */}
+        <div className="flex items-center gap-3 relative z-10">
+          <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain shrink-0" />
+          <span className="font-black text-xl tracking-tighter text-white">
+            Agenda<span className="text-[#FACC15]">Ku</span>
+          </span>
         </div>
 
-        {/* Register Card */}
-        <div className="bg-white p-10 rounded-[32px] shadow-premium border border-slate-50">
-          <h2 className="text-xl font-black text-slate-800 mb-8">Daftar Akun</h2>
-          
+        {/* Main Title & Subtitle */}
+        <div className="relative z-10 my-auto">
+          <h2 className="text-6xl font-black text-white tracking-tight leading-[1.05] mb-4">
+            Mulai<br />
+            <span className="text-[#FACC15]">Sekarang!</span>
+          </h2>
+          <p className="text-base font-semibold text-white/50 leading-relaxed max-w-sm">
+            Mulai kelola Agenda harianmu tanpa drama.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10">
+          <p className="text-xs font-bold text-white/20">&copy; {new Date().getFullYear()} AgendaKu. All Rights Reserved.</p>
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL (Form) ── */}
+      <div className="w-full lg:w-[55%] flex items-center justify-center px-8 py-12">
+        <div className="w-full max-w-sm">
+          {/* Mobile Logo Only */}
+          <div className="lg:hidden flex justify-center mb-8">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain shrink-0" />
+              <span className="font-black text-lg tracking-tighter text-[#1A1A1A]">
+                Agenda<span className="text-[#FACC15]">Ku</span>
+              </span>
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-black text-center text-[#1A1A1A] mb-8 tracking-tight">Daftar</h1>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Nama Lengkap</label>
-              <input 
-                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
-                placeholder="Nama kamu" 
-                value={form.name} 
-                onChange={set('name')} 
-                required 
-                autoFocus 
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Nama Lengkap</label>
+              <input
+                className="w-full h-14 px-5 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                placeholder="Masukan nama Anda"
+                value={form.name}
+                onChange={set('name')}
+                required
+                autoFocus
               />
             </div>
+
             <div>
-              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Email</label>
-              <input 
-                type="email" 
-                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none" 
-                placeholder="email@contoh.com" 
-                value={form.email} 
-                onChange={set('email')} 
-                required 
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Email</label>
+              <input
+                type="email"
+                className="w-full h-14 px-5 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                placeholder="nama@email.com"
+                value={form.email}
+                onChange={set('email')}
+                required
               />
             </div>
+
             <div>
-              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Password</label>
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
-                  className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
-                  placeholder="Min. 6 karakter"
+                  className="w-full h-14 px-5 pr-12 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                  placeholder="Min. 8 karakter"
                   value={form.password}
                   onChange={set('password')}
                   required
@@ -92,52 +122,62 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
-                  {showPass ? <MdVisibilityOff size={22} /> : <MdVisibility size={22} />}
+                  {showPass ? <MdVisibilityOff size={20} className="text-[#1A1A1A]" /> : <MdVisibility size={20} className="text-[#1A1A1A]" />}
                 </button>
               </div>
               {strength && (
                 <div className="mt-2 px-1">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Kekuatan: {strength.label}</span>
-                  </div>
-                  <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <span className="text-[10px] font-bold text-slate-400 tracking-wider">Kekuatan: {strength.label}</span>
+                  <div className="h-1 w-full bg-slate-200 rounded-full overflow-hidden mt-1">
                     <div className={`h-full ${strength.color} ${strength.w} transition-all duration-500`} />
                   </div>
                 </div>
               )}
             </div>
+
             <div>
-              <label className="text-sm font-bold text-slate-400 mb-2 block ml-1">Konfirmasi Password</label>
-              <input
-                type={showPass ? 'text' : 'password'}
-                className="w-full h-14 px-6 bg-white border border-slate-100 rounded-2xl font-bold text-slate-700 focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
-                placeholder="Ulangi password"
-                value={form.confirm}
-                onChange={set('confirm')}
-                required
-              />
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Konfirmasi Password</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  className="w-full h-14 px-5 pr-12 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                  placeholder="Ulangi password"
+                  value={form.confirm}
+                  onChange={set('confirm')}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showConfirm ? <MdVisibilityOff size={20} className="text-[#1A1A1A]" /> : <MdVisibility size={20} className="text-[#1A1A1A]" />}
+                </button>
+              </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full h-16 bg-[#1E1E1E] text-white rounded-[20px] text-base font-black shadow-premium active:scale-95 transition-all flex items-center justify-center mt-4"
-            >
-              {loading ? 'Mendaftar...' : 'Buat Akun'}
-            </button>
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-14 bg-[#FACC15] text-[#1A1A1A] border-[3px] border-[#1A1A1A] rounded-full font-bold text-base shadow-[0px_4px_0px_0px_#1A1A1A] hover:translate-y-[2px] hover:shadow-[0px_2px_0px_0px_#1A1A1A] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center"
+              >
+                {loading ? 'Mendaftar...' : 'Daftar Akun'}
+              </button>
+            </div>
           </form>
-        </div>
 
-        {/* Footer Link */}
-        <div className="mt-10 text-center">
-          <p className="text-sm font-medium text-slate-500">
-            Sudah punya akun?{' '}
-            <Link to="/login" className="text-slate-800 font-black hover:underline underline-offset-4">
-              Masuk di sini
-            </Link>
-          </p>
+          {/* Switch Link */}
+          <div className="mt-8 text-center">
+            <p className="text-xs font-bold text-slate-400">
+              Sudah punya akun?{' '}
+              <Link to="/login" className="text-[#1A1A1A] hover:underline">
+                Masuk di sini
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { StatusBar, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { isToday } from 'date-fns';
 import { taskAPI } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { setTabBarVisible, resetTabBarVisible } from '../utils/tabBarControl';
 import { rescheduleAllNotifications } from '../utils/notifications';
-import { isToday, isOverdue, isNearDeadline } from '../utils/helpers';
+import { isOverdue, isNearDeadline } from '../utils/helpers';
 
 export const useDashboard = (navigation) => {
   const qc = useQueryClient();
@@ -49,23 +50,17 @@ export const useDashboard = (navigation) => {
   // Derived Data - Pastikan logika sama dengan TaskListScreen
   const stats = data?.stats || {};
 
-  // Tugas Terlewat (Hanya yang belum SELESAI, sudah lewat, dan dalam 24 jam terakhir)
-  const tugasTerlewat = allTasks.filter(t => {
-    if (t.status === 'SELESAI' || !t.deadline || !isOverdue(t.deadline)) return false;
-    const deadlineDate = new Date(t.deadline);
-    const diffInHours = (new Date() - deadlineDate) / (1000 * 60 * 60);
-    return diffInHours <= 24;
-  });
+  // Tugas Terlewat - Gunakan data dari dashboard API (sudah benar dari server)
+  const tugasTerlewat = data?.tugasTerlewat || [];
 
   // Mendekati Deadline (Hanya yang belum SELESAI dan dalam rentang 3 hari)
   const tugasDeadline = allTasks.filter(t => t.status !== 'SELESAI' && t.deadline && !isOverdue(t.deadline) && isNearDeadline(t.deadline));
 
-  // Agenda Hari Ini (Hanya yang belum SELESAI, jatuh tempo hari ini, dan BELUM terlewat)
+  // Agenda Hari Ini (Hanya yang belum SELESAI, jatuh tempo hari ini)
   const tugasHariIni = allTasks.filter(t => 
     t.status !== 'SELESAI' && 
     t.deadline && 
-    isToday(new Date(t.deadline)) && 
-    !isOverdue(t.deadline)
+    isToday(new Date(t.deadline))
   );
 
   // Filter logic untuk statistik Minggu Ini

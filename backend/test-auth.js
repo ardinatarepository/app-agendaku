@@ -1,7 +1,7 @@
 async function test() {
   try {
     console.log('Registering...');
-    const regRes = await fetch('https://app-agendaku-production.up.railway.app/api/auth/register', {
+    const regRes = await fetch('http://localhost:5000/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -14,7 +14,7 @@ async function test() {
     console.log('Register Success:', regData);
 
     console.log('Logging in...');
-    const logRes = await fetch('https://app-agendaku-production.up.railway.app/api/auth/login', {
+    const logRes = await fetch('http://localhost:5000/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

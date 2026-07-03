@@ -1,11 +1,12 @@
 import { 
-  IoPlayOutline, 
-  IoCheckmarkCircleOutline, 
-  IoTimeOutline, 
-  IoListOutline, 
+  IoPlay, 
+  IoCheckmarkCircle, 
+  IoTime, 
+  IoList, 
   IoChevronForward,
   IoCalendarOutline,
-  IoCheckmark
+  IoCheckmark,
+  IoCheckmarkCircleOutline
 } from 'react-icons/io5';
 import { useDashboard, useTasks } from '../hooks';
 import { AVATAR_BASE_URL } from '../api';
@@ -22,7 +23,7 @@ const StatCard = ({ label, value, onClick, variant, icon }) => (
       {icon}
     </div>
     <p className="text-[30px] font-archivo leading-none">{value}</p>
-    <p className="text-[10px] font-archivo uppercase tracking-[0.1em] opacity-60 mt-2">{label}</p>
+    <p className="text-[10px] font-archivo tracking-[0.1em] opacity-60 mt-2">{label}</p>
   </button>
 );
 
@@ -32,9 +33,9 @@ const MilestoneProgress = ({ stats }) => {
   const percent = total > 0 ? Math.round((selesai / total) * 100) : 0;
 
   const steps = [
-    { id: 1, label: 'BAGUS', threshold: 25 },
-    { id: 2, label: 'KEREN', threshold: 50 },
-    { id: 3, label: 'RAJIN', threshold: 100 },
+    { id: 1, label: 'Bagus', threshold: 25 },
+    { id: 2, label: 'Keren', threshold: 50 },
+    { id: 3, label: 'Rajin', threshold: 100 },
   ];
 
   const getLatestCompletedId = (p) => {
@@ -68,7 +69,7 @@ const MilestoneProgress = ({ stats }) => {
               <div key={step.id} className="absolute top-0" style={{ left: `${step.threshold}%` }}>
                 {isLatest && (
                   <div className="absolute bottom-10 -translate-x-1/2 flex flex-col items-center animate-fade-in">
-                    <div className="bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-lg tracking-widest">
+                    <div className="bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-lg tracking-wide">
                       {step.label}
                     </div>
                     <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-slate-900 mt-[-1px]" />
@@ -101,24 +102,21 @@ export default function DashboardPage() {
   const tasks = allTasks || [];
   
   const tugasHariIni = tasks.filter(t => {
-    if (t.status === 'SELESAI' || !t.deadline) return false;
+    if (t.status === 'SELESAI' || t.status === 'TERLEWAT' || !t.deadline) return false;
     const dl = new Date(t.deadline); dl.setHours(0, 0, 0, 0);
     return dl.getTime() === today.getTime();
   });
 
   const tugasDeadline = tasks.filter(t => {
-    if (t.status === 'SELESAI' || !t.deadline) return false;
+    if (t.status === 'SELESAI' || t.status === 'TERLEWAT' || !t.deadline) return false;
     const dl = new Date(t.deadline);
     const now = new Date();
     const threeDays = new Date(); threeDays.setDate(threeDays.getDate() + 3);
     return dl >= now && dl <= threeDays;
   }).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
-  const tugasTerlewat = tasks.filter(t => {
-    if (t.status === 'SELESAI' || !t.deadline) return false;
-    const dl = new Date(t.deadline);
-    return dl < new Date();
-  }).sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
+  // Tugas Terlewat: gunakan data dari dashboard API (sudah benar dari server)
+  const tugasTerlewat = (data?.tugasTerlewat || []).sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
 
   if (isLoading) return <div className="p-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-[0.5em] text-xs">SISTEM MEMUAT...</div>;
 
@@ -132,64 +130,60 @@ export default function DashboardPage() {
       
       {/* Header (Top Bar) — EXACT MOBILE PARITY */}
       <div className="bg-white px-8 pt-16 pb-8 sm:px-12 lg:px-16 shadow-sm relative z-30 flex items-center justify-between">
-        <div className="max-w-[1200px] mx-auto flex-1 flex items-center justify-between">
+        <div className="max-w-[1650px] 2xl:max-w-[1850px] mx-auto flex-1 flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-archivo text-slate-400 tracking-[0.15em] mb-1">SELAMAT DATANG</p>
-            <h1 className="text-[32px] font-archivo text-black tracking-tighter mt-1.5 leading-none">Halo, {user?.name?.split(' ')[0]}</h1>
+            <p className="text-[11px] font-medium text-slate-400 tracking-wide mb-1">Selamat Datang</p>
+            <h1 className="text-[32px] font-bold text-black tracking-tight mt-1.5 leading-none">Halo, {user?.name?.split(' ')[0]}</h1>
           </div>
           <button 
-            onClick={() => navigate('/profile')}
-            className="w-[60px] h-[60px] rounded-[18px] bg-[#FACC15] border-2 border-white shadow-premium overflow-hidden flex items-center justify-center text-black text-2xl font-black transition-all hover:scale-105 active:scale-95"
+            onClick={() => navigate('/dashboard/profile')}
+            className="w-[60px] h-[60px] rounded-[18px] bg-[#FACC15] border-2 border-white shadow-premium overflow-hidden flex items-center justify-center text-black text-2xl font-black transition-all hover:scale-105 active:scale-95 relative"
           >
-            {user?.avatar ? (
+            <span className="absolute">{user?.name?.[0]?.toUpperCase()}</span>
+            {user?.avatar && (
               <img 
                 src={`${AVATAR_BASE_URL}${user.avatar}?t=${new Date().getTime()}`} 
                 alt="Avatar" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover absolute top-0 left-0 z-10"
                 onError={(e) => {
-                  if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
-                    const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
-                    if (filename) {
-                      e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
-                    }
-                  }
+                  e.target.style.display = 'none';
                 }}
               />
-            ) : user?.name?.[0]?.toUpperCase()}
+            )}
           </button>
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 lg:px-12 mt-8 space-y-8">
+      <div className="max-w-[1650px] 2xl:max-w-[1850px] mx-auto px-6 sm:px-8 lg:px-12 mt-8 space-y-8">
         
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
-            label="BERJALAN" 
+            label="Berjalan" 
             value={stats.sedangDikerjakan} 
             variant="stat-card-berjalan" 
-            icon={<IoPlayOutline size={22} />} 
+            icon={<IoPlay size={22} />} 
             onClick={() => goToTasks({ status: 'SEDANG_DIKERJAKAN' })} 
           />
           <StatCard 
-            label="SELESAI" 
+            label="Selesai" 
             value={stats.selesai} 
             variant="stat-card-selesai" 
-            icon={<IoCheckmarkCircleOutline size={22} />} 
+            icon={<IoCheckmarkCircle size={22} />} 
             onClick={() => goToTasks({ status: 'SELESAI' })} 
           />
           <StatCard 
-            label="TERLEWAT" 
+            label="Terlewat" 
             value={stats.terlewat} 
             variant="stat-card-terlewat" 
-            icon={<IoTimeOutline size={22} />} 
+            icon={<IoTime size={22} />} 
             onClick={() => goToTasks({ status: 'TERLEWAT' })} 
           />
           <StatCard 
-            label="TOTAL" 
+            label="Total" 
             value={stats.total} 
             variant="stat-card-total" 
-            icon={<IoListOutline size={22} />} 
+            icon={<IoList size={22} />} 
             onClick={() => goToTasks({})} 
           />
         </div>
@@ -199,9 +193,13 @@ export default function DashboardPage() {
             {/* Tugas Terlewat */}
             {tugasTerlewat.length > 0 && (
               <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
-                  <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Tugas Terlewat</h2>
-                  <IoChevronForward size={18} className="text-slate-400" />
+                <div 
+                  role="button"
+                  onClick={() => navigate('/dashboard/tasks?status=TERLEWAT')}
+                  className="px-6 py-5 border-b border-slate-50 flex justify-between items-center cursor-pointer hover:bg-red-50/30 transition-colors group"
+                >
+                  <h2 className="text-[17px] font-bold text-slate-800 tracking-tight group-hover:text-red-600 transition-colors">Tugas Terlewat</h2>
+                  <IoChevronForward size={18} className="text-slate-400 group-hover:text-red-500 transition-colors" />
                 </div>
                 <div className="divide-y divide-slate-50">
                   {tugasTerlewat.slice(0, 3).map(task => (
@@ -224,19 +222,23 @@ export default function DashboardPage() {
 
             {/* Mendekati Deadline */}
             <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
-                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Mendekati Deadline</h2>
-                <IoChevronForward size={18} className="text-slate-400" />
+              <div
+                role="button"
+                onClick={() => navigate('/dashboard/tasks?status=SEDANG_DIKERJAKAN')}
+                className="px-6 py-5 border-b border-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors group"
+              >
+                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight group-hover:text-black transition-colors">Mendekati Deadline</h2>
+                <IoChevronForward size={18} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
               </div>
               <div className="divide-y divide-slate-50">
                 {tugasDeadline.length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-slate-400">
                     <IoCheckmarkCircleOutline size={32} className="mb-2 opacity-20" />
-                    <p className="text-xs font-bold uppercase tracking-widest">Semua deadline aman</p>
+                    <p className="text-xs font-bold text-slate-400 tracking-wider">Semua deadline aman</p>
                   </div>
                 ) : (
                   tugasDeadline.slice(0, 3).map(task => (
-                    <div key={task.id} role="button" onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
+                    <div key={task.id} role="button" onClick={() => navigate(`/dashboard/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
                       <div className="flex items-center gap-3 flex-1 min-w-0 pr-8">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
                         <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
@@ -259,19 +261,23 @@ export default function DashboardPage() {
           <div className="space-y-8">
             {/* Agenda Hari Ini */}
             <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-slate-50 flex justify-between items-center">
-                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight">Agenda Hari Ini</h2>
-                <IoChevronForward size={18} className="text-slate-400" />
+              <div
+                role="button"
+                onClick={() => navigate('/dashboard/tasks?status=SEDANG_DIKERJAKAN')}
+                className="px-6 py-5 border-b border-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors group"
+              >
+                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight group-hover:text-black transition-colors">Agenda Hari Ini</h2>
+                <IoChevronForward size={18} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
               </div>
               <div className="divide-y divide-slate-50">
                 {tugasHariIni.length === 0 ? (
                   <div className="py-12 flex flex-col items-center text-slate-400">
                     <IoCalendarOutline size={32} className="mb-2 opacity-20" />
-                    <p className="text-xs font-bold uppercase tracking-widest">Tidak ada agenda</p>
+                    <p className="text-xs font-bold text-slate-400 tracking-wider">Tidak ada agenda</p>
                   </div>
                 ) : (
                   tugasHariIni.slice(0, 3).map(task => (
-                    <div key={task.id} role="button" onClick={() => navigate(`/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
+                    <div key={task.id} role="button" onClick={() => navigate(`/dashboard/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
                       <div className="flex items-center gap-3 flex-1 min-w-0 pr-8">
                         <div className="w-2.5 h-2.5 rounded-full bg-[#FACC15]" />
                         <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>

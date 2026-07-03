@@ -46,7 +46,7 @@ const CountdownTimer = ({ deadline }) => {
   return <Text style={styles.countdownText}>{timeLeft}</Text>;
 };
 
-const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, readonly, isHighlighted }) => {
+const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onAddSubtask, onSubtaskDelete, readonly, isHighlighted }) => {
   const [expanded, setExpanded] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 20 });
@@ -93,16 +93,16 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
   };
 
   const priorityConfig = {
-    TINGGI: { color: '#FF4444', symbol: 'T', bg: 'rgba(255, 68, 68, 0.15)' },
-    NORMAL: { color: '#F59E0B', symbol: 'N', bg: 'rgba(245, 158, 11, 0.15)' },
-    RENDAH: { color: '#94A3B8', symbol: 'R', bg: 'rgba(148, 163, 184, 0.15)' },
-  }[task.priority || 'NORMAL'];
+    TINGGI: { color: '#dc2626', symbol: 'T', bg: '#fee2e2' },
+    NORMAL: { color: '#b45309', symbol: 'N', bg: '#fef3c7' },
+    RENDAH: { color: '#475569', symbol: 'R', bg: '#f1f5f9' },
+  }[task.priority || 'NORMAL'] || { color: '#475569', symbol: 'N', bg: '#f1f5f9' };
 
   const statusConfig = {
-    SEDANG_DIKERJAKAN: { label: 'Berjalan', color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.15)' },
-    SELESAI: { label: 'Selesai', color: '#10b981', bg: '#ecfdf5' },
-    TERLEWAT: { label: 'Terlewat', color: '#ef4444', bg: '#fee2e2' },
-  }[task.status];
+    SEDANG_DIKERJAKAN: { label: 'BERJALAN', color: '#0284C7', bg: '#E0F2FE' },
+    SELESAI: { label: 'SELESAI', color: '#10B981', bg: '#ECFDF5' },
+    TERLEWAT: { label: 'TERLEWAT', color: '#EF4444', bg: '#FEE2E2' },
+  }[task.status] || { label: 'TUGAS', color: '#0284C7', bg: '#E0F2FE' };
 
   return (
     <>
@@ -196,17 +196,18 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
 
           {/* BADGES & PROGRESS ROW */}
           <View style={[styles.badgeContainer, { marginBottom: 8 }]}>
-            <View style={[styles.badgeStatus, { backgroundColor: statusConfig?.bg || '#DCFCE7' }]}>
-              <Text style={[styles.badgeStatusText, { color: statusConfig?.color || '#14532D' }]}>
-                {statusConfig?.label?.toUpperCase()}
+            <View style={[styles.badgeStatus, { backgroundColor: statusConfig?.bg || '#E0F2FE' }]}>
+              <Text style={[styles.badgeStatusText, { color: statusConfig?.color || '#0284C7' }]}>
+                {statusConfig?.label}
               </Text>
             </View>
 
-            <View style={styles.badgePriority}>
-              <Text style={styles.badgePriorityText}>{priorityConfig.symbol}</Text>
+            {/* Priority badge: uses dynamic bg & color from priorityConfig, same as web */}
+            <View style={[styles.badgePriority, { backgroundColor: priorityConfig.bg }]}>
+              <Text style={[styles.badgePriorityText, { color: priorityConfig.color }]}>{priorityConfig.symbol}</Text>
             </View>
             {task.category && (
-              <View style={styles.badgeCategory}>
+              <View style={[styles.badgeCategory, { backgroundColor: task.category.color }]}>
                 <Text style={styles.badgeCategoryText}>{task.category.name.charAt(0).toUpperCase()}</Text>
               </View>
             )}
@@ -241,20 +242,31 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange, onSubtaskToggle, onA
             {task.subtasks?.length > 0 && (
               <View style={styles.subtaskBox}>
                 {task.subtasks.map(st => (
-                  <TouchableOpacity 
-                    key={st.id} 
-                    style={styles.subtaskItem}
-                    onPress={() => onSubtaskToggle(task.id, st.id, !st.isDone)}
-                  >
-                    <Ionicons 
-                      name={st.isDone ? "checkmark-circle" : "ellipse-outline"} 
-                      size={18} 
-                      color={st.isDone ? COLORS.primary : "#D1D5DB"} 
-                    />
-                    <Text style={[styles.subtaskText, st.isDone && styles.subtaskTextDone]}>
-                      {st.title}
-                    </Text>
-                  </TouchableOpacity>
+                  <View key={st.id} style={styles.subtaskRow}>
+                    <TouchableOpacity 
+                      style={styles.subtaskItem}
+                      onPress={() => onSubtaskToggle(task.id, st.id, !st.isDone)}
+                    >
+                      <Ionicons 
+                        name={st.isDone ? "checkmark-circle" : "ellipse-outline"} 
+                        size={18} 
+                        color={st.isDone ? COLORS.primary : "#D1D5DB"} 
+                      />
+                      <Text style={[styles.subtaskText, st.isDone && styles.subtaskTextDone]}>
+                        {st.title}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {!readonly && (
+                      <TouchableOpacity 
+                        onPress={() => onSubtaskDelete && onSubtaskDelete(task.id, st.id)}
+                        hitSlop={8}
+                        style={styles.subtaskDeleteBtn}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 ))}
               </View>
             )}
@@ -308,11 +320,12 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 12, // Reduced from 16
-    marginBottom: 12, // Reduced from 16
+    padding: 12,
+    marginBottom: 12,
     ...SHADOW.sm,
     borderWidth: 1,
     borderColor: '#F1F5F9',
+    overflow: 'hidden',
   },
   cardOverdue: {
     backgroundColor: '#FEF2F2',
@@ -320,58 +333,64 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   cardHighlighted: {
-    borderColor: COLORS.primary,
+    borderColor: '#FACC15',
     borderWidth: 2,
     elevation: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: '#FACC15',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
   },
   cardFinished: { opacity: 0.6 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   dateWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dateText: { fontSize: 10, color: '#555555', ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' }, // Slightly smaller
+  dateText: { fontSize: 10, color: '#94A3B8', ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' },
   moreBtn: { padding: 2 },
-  mainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 }, // Reduced from 12
+  mainRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   checkbox: { marginRight: 12 },
   titleContainer: { flex: 1 },
-  titleText: { fontSize: 15, ...FONT.bold, color: '#000000' }, // Slightly smaller from 16
+  titleText: { fontSize: 15, ...FONT.bold, color: '#000000' },
   titleDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
   badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  badgeStatus: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeStatusText: { fontSize: 9, ...FONT.bold },
-  badgePriority: { backgroundColor: '#E0E7FF', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  badgePriorityText: { fontSize: 9, ...FONT.bold, color: '#3730A3' },
-  badgeCategory: { backgroundColor: '#FCE7F3', width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  badgeCategoryText: { fontSize: 9, ...FONT.bold, color: '#9D174D' },
-  expandedContent: { marginBottom: 12, paddingHorizontal: 4 },
-  descriptionText: { fontSize: 13, color: '#64748B', lineHeight: 18, marginBottom: 10, ...FONT.medium },
-  subtaskBox: { gap: 6 },
-  subtaskItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // Status badge: text-based like web (uppercase, small)
+  badgeStatus: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  badgeStatusText: { fontSize: 9, ...FONT.bold, letterSpacing: 0.5 },
+  // Priority badge: circle with letter, same as web
+  badgePriority: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  badgePriorityText: { fontSize: 9, ...FONT.black },
+  // Category badge: colored circle
+  badgeCategory: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#000' },
+  badgeCategoryText: { fontSize: 9, ...FONT.black, color: '#fff' },
+  expandedContent: { marginBottom: 12, paddingHorizontal: 4, borderTopWidth: 1, borderTopColor: '#F8FAFC', paddingTop: 14, marginTop: 4 },
+  descriptionText: { fontSize: 13, color: '#64748B', lineHeight: 20, marginBottom: 12, ...FONT.medium },
+  subtaskBox: { gap: 8 },
+  subtaskRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 2 },
+  subtaskItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  subtaskDeleteBtn: { padding: 4 },
   subtaskText: { fontSize: 13, color: '#334155', ...FONT.medium },
   subtaskTextDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+  /* ── Footer: matches web black bar exactly ── */
   footerRow: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
     backgroundColor: '#000000',
-    marginHorizontal: -12, // Matching card padding
-    marginBottom: -12, // Matching card padding
+    marginHorizontal: -12,
+    marginBottom: -12,
     marginTop: 10,
-    padding: 10, // Reduced from 12
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  countdownText: { fontSize: 10, color: COLORS.primary, ...FONT.medium, includeFontPadding: false, textAlignVertical: 'center' },
+  countdownText: { fontSize: 11, color: '#FACC15', ...FONT.black, letterSpacing: 0.5, includeFontPadding: false, textAlignVertical: 'center' },
   footerRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   progressDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#334155' },
   progressText: { fontSize: 10, color: '#334155', ...FONT.bold },
   
   // Inline Menu & Overlay
-  inlineMenu: { position: 'absolute', backgroundColor: '#fff', borderRadius: 12, width: 120, padding: 4, ...SHADOW.md, borderWidth: 1, borderColor: '#f1f5f9', zIndex: 1000 },
+  inlineMenu: { position: 'absolute', backgroundColor: '#fff', borderRadius: 12, width: 128, padding: 4, ...SHADOW.md, borderWidth: 1, borderColor: '#f1f5f9', zIndex: 1000 },
   inlineMenuItem: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 8 },
   inlineMenuText: { fontSize: 12, ...FONT.bold, color: COLORS.text },
   inlineMenuDivider: { height: 1, backgroundColor: '#f1f5f9', marginHorizontal: 4 },
@@ -390,19 +409,19 @@ const styles = StyleSheet.create({
   },
   undoTextTop: { fontSize: 11, ...FONT.bold, color: COLORS.danger },
   
+  /* Selesai button: matches web yellow rounded pill */
   doneBtnAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: COLORS.primary,
+    gap: 4,
+    backgroundColor: '#FACC15',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    ...SHADOW.sm,
   },
   doneBtnActionText: {
     fontSize: 12,
-    ...FONT.bold,
+    ...FONT.black,
     color: '#000',
     includeFontPadding: false,
     textAlignVertical: 'center',

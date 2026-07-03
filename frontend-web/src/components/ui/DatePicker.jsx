@@ -55,7 +55,7 @@ export default function DatePicker({ value, onSelect, onClose }) {
                 onClick={() => onSelect(dateStr)}
                 className={`relative aspect-square flex items-center justify-center text-sm rounded-full transition-all group
                   ${isSelected ? 'bg-black text-[#FACC15] shadow-lg scale-110 font-black' : 
-                    isToday ? 'bg-[#FEF9C3] text-black font-bold' : 'text-slate-700 hover:bg-slate-50 font-bold'}
+                    isToday ? 'bg-[#FACC15] text-black font-bold' : 'text-slate-700 hover:bg-slate-50 font-bold'}
                 `}
               >
                 {day}

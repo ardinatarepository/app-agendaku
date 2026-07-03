@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { Button, Input, Toast } from './ui';
+import { Toast } from './ui';
 import { COLORS, FONT, RADIUS, SHADOW, STATUS_CONFIG, PRIORITY_CONFIG } from '../utils/theme';
 import { parseNaturalLanguage, cleanTitle, classifyWord } from '../utils/smartParser';
 
@@ -88,24 +88,60 @@ function CustomDatePicker({ visible, value, onSelect, onClose }) {
   );
 }
 
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
 function CustomTimePicker({ visible, value, onSelect, onClose }) {
   const [tempTime, setTempTime] = useState(value || '12:00');
   const [hh, mm] = tempTime.split(':');
   
   const ITEM_HEIGHT = 44;
   const VISIBLE_ITEMS = 3;
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-  const mins = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+  const hourScrollRef = useRef(null);
+  const minScrollRef = useRef(null);
+
+  // Sync scroll positions and initial state when the modal opens
+  useEffect(() => {
+    if (visible) {
+      const initialTime = value || '12:00';
+      setTempTime(initialTime);
+      const [h, m] = initialTime.split(':');
+      
+      const hIdx = HOURS.indexOf(h);
+      const mIdx = MINUTES.indexOf(m);
+      
+      // Delay slightly to ensure layout has completed
+      const timer = setTimeout(() => {
+        if (hourScrollRef.current && hIdx !== -1) {
+          hourScrollRef.current.scrollTo({ y: hIdx * ITEM_HEIGHT, animated: false });
+        }
+        if (minScrollRef.current && mIdx !== -1) {
+          minScrollRef.current.scrollTo({ y: mIdx * ITEM_HEIGHT, animated: false });
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, value]);
 
   const handleScroll = (type, event) => {
     const y = event.nativeEvent.contentOffset.y;
     const index = Math.round(y / ITEM_HEIGHT);
     if (type === 'h') {
-      const val = hours[index] || '00';
-      setTempTime(`${val}:${mm}`);
+      const val = HOURS[Math.max(0, Math.min(index, HOURS.length - 1))] || '00';
+      setTempTime(prev => {
+        const parts = prev.split(':');
+        const currentMin = parts[1] || '00';
+        return `${val}:${currentMin}`;
+      });
     } else {
-      const val = mins[index] || '00';
-      setTempTime(`${hh}:${val}`);
+      const val = MINUTES[Math.max(0, Math.min(index, MINUTES.length - 1))] || '00';
+      setTempTime(prev => {
+        const parts = prev.split(':');
+        const currentHour = parts[0] || '12';
+        return `${currentHour}:${val}`;
+      });
     }
   };
 
@@ -133,22 +169,24 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
               {/* Jam */}
               <View style={{ flex: 1, height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
                 <ScrollView 
+                  ref={hourScrollRef}
                   showsVerticalScrollIndicator={false}
                   snapToInterval={ITEM_HEIGHT}
                   decelerationRate="fast"
                   onMomentumScrollEnd={(e) => handleScroll('h', e)}
                   contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+                  nestedScrollEnabled={true}
                 >
-                  {hours.map(h => (
-                    <View key={h} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ 
-                        fontSize: h === hh ? 24 : 18, 
-                        ...FONT.bold, 
-                        color: h === hh ? '#000000' : COLORS.textMuted,
-                        opacity: h === hh ? 1 : 0.4
-                      }}>{h}</Text>
-                    </View>
-                  ))}
+                  {HOURS.map(h => {
+                    const isActive = h === hh;
+                    return (
+                      <View key={h} style={dpStyle.pickerItem}>
+                        <Text style={isActive ? dpStyle.pickerTextActive : dpStyle.pickerText}>
+                          {h}
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </ScrollView>
               </View>
 
@@ -157,22 +195,24 @@ function CustomTimePicker({ visible, value, onSelect, onClose }) {
               {/* Menit */}
               <View style={{ flex: 1, height: ITEM_HEIGHT * VISIBLE_ITEMS }}>
                 <ScrollView 
+                  ref={minScrollRef}
                   showsVerticalScrollIndicator={false}
                   snapToInterval={ITEM_HEIGHT}
                   decelerationRate="fast"
                   onMomentumScrollEnd={(e) => handleScroll('m', e)}
                   contentContainerStyle={{ paddingVertical: ITEM_HEIGHT }}
+                  nestedScrollEnabled={true}
                 >
-                  {mins.map(m => (
-                    <View key={m} style={{ height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ 
-                        fontSize: m === mm ? 24 : 18, 
-                        ...FONT.bold, 
-                        color: m === mm ? '#000000' : COLORS.textMuted,
-                        opacity: m === mm ? 1 : 0.4
-                      }}>{m}</Text>
-                    </View>
-                  ))}
+                  {MINUTES.map(m => {
+                    const isActive = m === mm;
+                    return (
+                      <View key={m} style={dpStyle.pickerItem}>
+                        <Text style={isActive ? dpStyle.pickerTextActive : dpStyle.pickerText}>
+                          {m}
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </ScrollView>
               </View>
             </View>
@@ -301,7 +341,15 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
     // Auto-clean judul sebelum submit (hapus kata kunci jadwal)
     const result = parseNaturalLanguage(form.title, categories);
     const finalTitle = result ? cleanTitle(form.title, result.wordsToRemove) : form.title;
-    onSubmit({ ...form, title: finalTitle, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline });
+    let finalSubtasks = [...form.subtasks];
+    if (result && result.subtasks && result.subtasks.length > 0) {
+      result.subtasks.forEach(nst => {
+        if (!finalSubtasks.some(pst => pst.title.toLowerCase() === nst.title.toLowerCase())) {
+          finalSubtasks.push(nst);
+        }
+      });
+    }
+    onSubmit({ ...form, title: finalTitle, categoryId: form.categoryId ? parseInt(form.categoryId) : null, deadline: finalDeadline, subtasks: finalSubtasks });
   };
 
   const handleSmartInput = (text, shouldClean = false) => {
@@ -358,18 +406,9 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
             style={{ flex: 1 }}
           >
             <View style={mStyle.dragArea}><View style={mStyle.handle} /></View>
+            {/* ── Header ── */}
             <View style={mStyle.header}>
-              <TouchableOpacity onPress={closeSheet} style={mStyle.cancelBtn}>
-                <Text style={mStyle.cancel}>Batal</Text>
-              </TouchableOpacity>
-              <View style={{ flex: 1 }} />
-              <TouchableOpacity 
-                onPress={handleSubmit} 
-                disabled={isLoading} 
-                style={[mStyle.saveBtn, isLoading && { opacity: 0.5 }]}
-              >
-                <Text style={mStyle.save}>Simpan</Text>
-              </TouchableOpacity>
+              <Text style={mStyle.headerTitle}>{task ? 'Edit Tugas' : 'Tambah Tugas'}</Text>
             </View>
 
             <ScrollView 
@@ -410,14 +449,14 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                 </View>
               )}
 
+              {/* ── Nama Tugas ── */}
               <View style={mStyle.inputGroup}>
-                <Text style={mStyle.label}>Nama Tugas *</Text>
+                <Text style={mStyle.label}>Nama Tugas</Text>
                 <View style={mStyle.richInputContainer}>
-                  {/* Layer Input (di bawah, teks putih = tak terlihat) */}
                   <TextInput
                     style={mStyle.hiddenTextInput}
-                    placeholder="Cth: Buat makalah besok urgent"
-                    placeholderTextColor={COLORS.textLight}
+                    placeholder="Masukan nama tugas anda"
+                    placeholderTextColor="#94A3B8"
                     value={form.title}
                     onChangeText={(v) => {
                       const result = parseNaturalLanguage(v, categories);
@@ -444,8 +483,6 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                     textContentType="none"
                     keyboardType={Platform.OS === 'android' ? 'visible-password' : 'default'}
                   />
-
-                  {/* Layer Warna (di atas, sentuhan tembus) */}
                   <View style={mStyle.colorLayer} pointerEvents="none">
                     <Text style={mStyle.colorText}>
                       {form.title ? form.title.split(' ').map((word, i) => {
@@ -453,9 +490,9 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                         let color = COLORS.text;
                         if (type === 'date') color = '#D97706';
                         if (type === 'time') color = '#EA580C';
-                        if (type === 'priority_high') color = '#DC2626'; // Red
-                        if (type === 'priority_normal') color = '#F59E0B'; // Amber
-                        if (type === 'priority_low') color = '#64748B'; // Slate Grey
+                        if (type === 'priority_high') color = '#DC2626';
+                        if (type === 'priority_normal') color = '#F59E0B';
+                        if (type === 'priority_low') color = '#64748B';
                         if (type === 'recurrence') color = '#3B82F6';
                         if (type === 'status') color = '#10B981';
                         if (type === 'reminder') color = '#8B5CF6';
@@ -465,109 +502,244 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
                   </View>
                 </View>
                 {titleError ? <Text style={mStyle.errorText}>{titleError}</Text> : null}
-              </View>
-              <View style={{ height: 4 }} />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Ionicons name="flash" size={14} color="#EAB308" />
-                <Text style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: 'italic' }}>
-                  Smart Detect: Ketik "besok", "senin", atau "jam 2" untuk atur otomatis.
-                </Text>
-              </View>
-              <View style={{ height: 12 }} />
-              <Input label="Deskripsi (opsional)" placeholder="Deskripsi Tugas (Opsional)" value={form.description} onChangeText={set('description')} multiline />
-              
-              <Text style={mStyle.label}>Status</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-                {STATUSES.map(s => {
-                  const cfg = STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
-                  const active = form.status === s;
-                  return (
-                    <TouchableOpacity key={s} onPress={() => set('status')(s)} style={[mStyle.chip, active && { backgroundColor: cfg.bg, borderColor: cfg.dot }]}>
-                      <Text style={[mStyle.chipText, active && { color: cfg.text }]}>{cfg.label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              <Text style={mStyle.label}>Prioritas</Text>
-              <PrioritySelector value={form.priority} onChange={set('priority')} />
-
-              <Text style={mStyle.label}>Sub-Tugas</Text>
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                <TextInput style={[mStyle.input, { flex: 1, marginBottom: 0 }]} placeholder="Tambah sub-tugas..." value={newSubTask} onChangeText={setNewSubTask} />
-                <TouchableOpacity style={[mStyle.addBtn, { backgroundColor: COLORS.primary }]} onPress={addSubtask}><MaterialIcons name="add" size={24} color="#fff" /></TouchableOpacity>
-              </View>
-              {form.subtasks.map((st, i) => (
-                <View key={i} style={mStyle.subTaskItem}>
-                  <View style={mStyle.subTaskDot} />
-                  <Text style={mStyle.subTaskText}>{st.title}</Text>
-                  <TouchableOpacity onPress={() => removeSubtask(i)}><MaterialIcons name="delete-outline" size={20} color={COLORS.danger} /></TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 }}>
+                  <Ionicons name="flash" size={12} color="#EAB308" />
+                  <Text style={{ fontSize: 10, color: COLORS.textMuted, fontStyle: 'italic' }}>
+                    Smart Detect: Ketik "besok", "senin", atau "jam 2" untuk atur otomatis.
+                  </Text>
                 </View>
-              ))}
-
-              <Text style={mStyle.label}>Deadline & Waktu</Text>
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-                <TouchableOpacity style={[mStyle.datePickerBtn, { flex: 1 }]} onPress={() => setShowDatePicker(true)}>
-                  <Text style={[mStyle.datePickerText, !form.deadline && { color: COLORS.textLight }]}>{form.deadline || 'Pilih Tanggal'}</Text>
-                  <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[mStyle.datePickerBtn, { flex: 1 }]} 
-                  onPress={() => {
-                    if (!form.deadline) {
-                      const n = new Date();
-                      const dStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-                      setForm(p => ({ ...p, deadline: dStr }));
-                    }
-                    setShowTimePicker(true);
-                  }}
-                >
-                  <Text style={mStyle.datePickerText}>{form.time}</Text>
-                  <MaterialIcons name="access-time" size={20} color={COLORS.primary} />
-                </TouchableOpacity>
               </View>
 
-              <Text style={mStyle.label}>Ingatkan saya (Jam Sebelum Deadline)</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                {['0', '1', '2', '5', '12', '24'].map(h => {
-                  const active = form.reminderHours === h;
-                  return (
-                    <TouchableOpacity key={h} onPress={() => set('reminderHours')(h)} style={[mStyle.chip, active && { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
-                      <Text style={[mStyle.chipText, active && { color: '#b45309', ...FONT.bold }]}>{h === '0' ? 'Tidak Ada' : `${h} Jam`}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={[mStyle.label, { marginBottom: 0 }]}>Tugas Berulang</Text>
-                <TouchableOpacity onPress={() => setForm(p => ({ ...p, isRecurring: !p.isRecurring }))}>
-                  <MaterialIcons name={form.isRecurring ? "toggle-on" : "toggle-off"} size={40} color={form.isRecurring ? COLORS.success : COLORS.textMuted} />
-                </TouchableOpacity>
+              {/* ── Deskripsi ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Deskripsi (opsional)</Text>
+                <TextInput
+                  style={[mStyle.fieldInput, { height: 100, textAlignVertical: 'top', paddingTop: 14 }]}
+                  placeholder="Deskripsi tugas..."
+                  placeholderTextColor="#94A3B8"
+                  value={form.description}
+                  onChangeText={(v) => setForm(p => ({ ...p, description: v }))}
+                  multiline
+                />
               </View>
 
-              {form.isRecurring && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                  {[{ id: 'HARIAN', label: 'Harian' }, { id: 'MINGGUAN', label: 'Mingguan' }, { id: 'BULANAN', label: 'Bulanan' }].map(r => (
-                    <TouchableOpacity key={r.id} onPress={() => set('recurrence')(r.id)} style={[mStyle.chip, form.recurrence === r.id && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary }]}>
-                      <Text style={[mStyle.chipText, form.recurrence === r.id && { color: COLORS.primary }]}>{r.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+              {/* ── Status (hanya saat edit) ── */}
+              {task && (
+                <View style={mStyle.fieldGroup}>
+                  <Text style={mStyle.label}>Status</Text>
+                  <View style={mStyle.gridRow}>
+                    {STATUSES.map(s => {
+                      const cfg = STATUS_CONFIG[s] || STATUS_CONFIG['SEDANG_DIKERJAKAN'];
+                      const active = form.status === s;
+                      return (
+                        <TouchableOpacity
+                          key={s}
+                          onPress={() => setForm(p => ({ ...p, status: s }))}
+                          style={[
+                            mStyle.gridBtn,
+                            { borderRadius: 24 },
+                            active && { backgroundColor: cfg.bg, borderColor: cfg.dot, borderWidth: 1.5 }
+                          ]}
+                        >
+                          <Text style={[mStyle.gridBtnText, active && { color: cfg.text, ...FONT.bold }]}>
+                            {cfg.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
               )}
 
+              {/* ── Prioritas ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Prioritas</Text>
+                <View style={mStyle.gridRow}>
+                  {[['RENDAH', 'Rendah', '#FFFFFF', '#64748B'], ['NORMAL', 'Normal', '#FFFFFF', '#F59E0B'], ['TINGGI', 'Tinggi', '#FFFFFF', '#EF4444']].map(([key, label, activeTextColor, activeBgColor]) => {
+                    const active = form.priority === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        onPress={() => setForm(p => ({ ...p, priority: key }))}
+                        style={[
+                          mStyle.gridBtn,
+                          { borderRadius: 24, height: 44 },
+                          active ? { backgroundColor: activeBgColor, borderColor: activeBgColor, borderWidth: 0 } : { backgroundColor: '#F8FAFC', borderColor: '#F8FAFC', borderWidth: 0 }
+                        ]}
+                      >
+                        <Text style={[mStyle.gridBtnText, active ? { color: activeTextColor, ...FONT.bold } : { color: '#475569', ...FONT.medium }]}>
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
 
-              <Text style={mStyle.label}>Kategori</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                {categories.map(cat => (
-                  <TouchableOpacity key={cat.id} onPress={() => set('categoryId')(String(cat.id))} style={[mStyle.chip, form.categoryId === String(cat.id) && { backgroundColor: cat.color + '22', borderColor: cat.color }]}>
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color, marginRight: 6 }} />
-                    <Text style={[mStyle.chipText, form.categoryId === String(cat.id) && { color: cat.color, ...FONT.bold }]}>{cat.name}</Text>
+              {/* ── Sub-Tugas ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Sub Tugas</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <TextInput
+                    style={[mStyle.fieldInput, { flex: 1, height: 48, borderRadius: 24, paddingHorizontal: 20 }]}
+                    placeholder="Masukan Sub Tugas"
+                    placeholderTextColor="#94A3B8"
+                    value={newSubTask}
+                    onChangeText={setNewSubTask}
+                    onSubmitEditing={addSubtask}
+                    returnKeyType="done"
+                  />
+                  <TouchableOpacity style={mStyle.addSubBtnCircle} onPress={addSubtask}>
+                    <MaterialIcons name="add" size={24} color="#fff" />
                   </TouchableOpacity>
+                </View>
+                {form.subtasks.map((st, i) => (
+                  <View key={i} style={mStyle.subTaskItem}>
+                    <TouchableOpacity
+                      onPress={() => setForm(p => ({ ...p, subtasks: p.subtasks.map((s, idx) => idx === i ? { ...s, isDone: !s.isDone } : s) }))}
+                      style={[mStyle.subtaskCheckbox, st.isDone && mStyle.subtaskCheckboxDone]}
+                    >
+                      {st.isDone && <Text style={{ fontSize: 10, ...FONT.black, color: '#1A1A1A' }}>✓</Text>}
+                    </TouchableOpacity>
+                    <Text style={[mStyle.subTaskText, st.isDone && mStyle.subTaskTextDone]}>{st.title}</Text>
+                    <TouchableOpacity onPress={() => removeSubtask(i)} style={{ padding: 4 }}>
+                      <MaterialIcons name="delete-outline" size={20} color={COLORS.danger} />
+                    </TouchableOpacity>
+                  </View>
                 ))}
-              </ScrollView>
+              </View>
+
+              {/* ── Tanggal & Waktu ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Tanggal & Waktu</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity style={[mStyle.datePickerBtnCircle, { flex: 1 }]} onPress={() => setShowDatePicker(true)}>
+                    <Text style={[mStyle.datePickerText, !form.deadline && { color: '#94A3B8' }]}>{form.deadline || 'Tanggal & Waktu'}</Text>
+                    <Ionicons name="calendar-outline" size={18} color="#1A1A1A" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[mStyle.datePickerBtnCircle, { width: 120 }]}
+                    onPress={() => {
+                      if (!form.deadline) {
+                        const n = new Date();
+                        const dStr = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+                        setForm(p => ({ ...p, deadline: dStr }));
+                      }
+                      setShowTimePicker(true);
+                    }}
+                  >
+                    <Text style={mStyle.datePickerText}>{form.time}</Text>
+                    <Ionicons name="time-outline" size={18} color="#1A1A1A" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ── Kategori ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Kategori</Text>
+                <View style={mStyle.chipWrap}>
+                  <TouchableOpacity
+                    onPress={() => setForm(p => ({ ...p, categoryId: '' }))}
+                    style={[
+                      mStyle.chipRect,
+                      !form.categoryId ? { backgroundColor: '#0F172A', borderColor: '#0F172A' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }
+                    ]}
+                  >
+                    <Text style={[mStyle.chipRectText, !form.categoryId ? { color: '#FFFFFF', ...FONT.bold } : { color: '#475569' }]}>Semua</Text>
+                  </TouchableOpacity>
+                  {categories.map(cat => {
+                    const active = form.categoryId === String(cat.id);
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        onPress={() => setForm(p => ({ ...p, categoryId: String(cat.id) }))}
+                        style={[
+                          mStyle.chipRect,
+                          active ? { backgroundColor: '#FFFFFF', borderColor: cat.color, borderWidth: 1.5 } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }
+                        ]}
+                      >
+                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: cat.color, marginRight: 6 }} />
+                        <Text style={[mStyle.chipRectText, active ? { color: cat.color, ...FONT.bold } : { color: '#94A3B8' }]}>{cat.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── Ingatkan Saya ── */}
+              <View style={mStyle.fieldGroup}>
+                <Text style={mStyle.label}>Ingatkan saya</Text>
+                <View style={mStyle.chipWrap}>
+                  {[['0', 'Tidak Ada'], ['1', '1 Jam'], ['2', '2 Jam'], ['5', '5 Jam'], ['12', '12 Jam']].map(([val, lbl]) => {
+                    const active = form.reminderHours === val;
+                    return (
+                      <TouchableOpacity
+                        key={val}
+                        onPress={() => setForm(p => ({ ...p, reminderHours: val }))}
+                        style={[
+                          mStyle.chipRect,
+                          active ? { backgroundColor: '#FACC15', borderColor: '#FACC15' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }
+                        ]}
+                      >
+                        <Text style={[mStyle.chipRectText, active ? { color: '#000000', ...FONT.bold } : { color: '#94A3B8' }]}>
+                          {lbl}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── Tugas Berulang ── */}
+              <View style={[mStyle.fieldGroup, { marginBottom: 4 }]}>
+                <View style={mStyle.toggleRow}>
+                  <View>
+                    <Text style={[mStyle.label, { marginBottom: 2, marginTop: 0 }]}>Tugas Berulang</Text>
+                    <Text style={{ fontSize: 11, color: COLORS.textMuted }}>Ulangi tugas ini secara otomatis</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setForm(p => ({ ...p, isRecurring: !p.isRecurring }))}
+                    style={[mStyle.toggle, form.isRecurring && mStyle.toggleOn]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[mStyle.toggleThumb, form.isRecurring && mStyle.toggleThumbOn]} />
+                  </TouchableOpacity>
+                </View>
+
+                {form.isRecurring && (
+                  <View style={[mStyle.chipWrap, { marginTop: 10 }]}>
+                    {[['HARIAN', 'Harian'], ['MINGGUAN', 'Mingguan'], ['BULANAN', 'Bulanan']].map(([id, lbl]) => (
+                      <TouchableOpacity
+                        key={id}
+                        onPress={() => setForm(p => ({ ...p, recurrence: id }))}
+                        style={[
+                          mStyle.chipRect,
+                          form.recurrence === id ? { backgroundColor: '#FACC15', borderColor: '#FACC15' } : { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' }
+                        ]}
+                      >
+                        <Text style={[mStyle.chipRectText, form.recurrence === id ? { color: '#000000', ...FONT.bold } : { color: '#94A3B8' }]}>{lbl}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              <View style={{ height: 24 }} />
             </ScrollView>
-          </KeyboardAvoidingView>
+
+            {/* ── Footer: Batal / Simpan ── */}
+            <View style={mStyle.footer}>
+              <TouchableOpacity onPress={closeSheet} style={mStyle.cancelFooterBtn}>
+                <Text style={mStyle.cancelFooterText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={isLoading}
+                style={[mStyle.saveFooterBtn, isLoading && { opacity: 0.5 }]}
+              >
+                <Text style={mStyle.saveFooterText}>{isLoading ? '...' : 'Simpan'}</Text>
+              </TouchableOpacity>
+            </View>
 
           <CustomDatePicker visible={showDatePicker} value={form.deadline} onClose={() => setShowDatePicker(false)} onSelect={(date) => { setForm(p => ({ ...p, deadline: date })); setShowDatePicker(false); }} />
           <CustomTimePicker visible={showTimePicker} value={form.time} onClose={() => setShowTimePicker(false)} onSelect={(time) => { setForm(p => ({ ...p, time })); setShowTimePicker(false); }} />
@@ -578,6 +750,7 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
             type={toast.type} 
             onHide={() => setToast({ ...toast, visible: false })} 
           />
+          </KeyboardAvoidingView>
         </Animated.View>
       </View>
     </Modal>
@@ -586,54 +759,217 @@ export default function TaskFormModal({ visible, task, onClose, onSubmit, isLoad
 
 const mStyle = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)' },
-  sheet: { position: 'absolute', left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, ...SHADOW.lg, overflow: 'hidden' },
+  sheet: { position: 'absolute', left: 0, right: 0, backgroundColor: COLORS.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
   dragArea: { alignItems: 'center', paddingVertical: 12 },
   handle: { width: 40, height: 5, backgroundColor: COLORS.borderLight, borderRadius: 3 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight, backgroundColor: COLORS.surface },
-  cancelBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.danger },
-  saveBtn: { backgroundColor: COLORS.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10, ...SHADOW.sm },
-  cancel: { fontSize: 14, color: COLORS.danger, ...FONT.bold },
-  save: { fontSize: 14, color: '#000000', ...FONT.bold, textAlign: 'center' },
-  body: { padding: 20, paddingBottom: 100 },
-  richInputContainer: {
+
+  /* ── Header ── */
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight,
     backgroundColor: COLORS.surface,
+  },
+  headerTitle: {
+    fontSize: 20,
+    ...FONT.black,
+    color: '#1A1A1A',
+    letterSpacing: -0.3,
+  },
+
+  /* ── Body ── */
+  body: { padding: 20, paddingBottom: 20 },
+
+  /* ── Field group ── */
+  fieldGroup: { marginBottom: 16 },
+  label: { fontSize: 14, ...FONT.bold, color: '#1A1A1A', marginBottom: 8, marginTop: 0 },
+  fieldInput: {
+    height: 48,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 0,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    fontSize: 14,
+    color: '#1A1A1A',
+  },
+
+  /* ── Grid buttons (Prioritas / Status) ── */
+  gridRow: { flexDirection: 'row', gap: 8 },
+  gridBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 0,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridBtnText: { fontSize: 13, ...FONT.medium, color: '#94A3B8' },
+
+  /* ── Subtask ── */
+  addSubBtnCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1A1A1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subTaskItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    padding: 10,
+    paddingHorizontal: 14,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#94A3B8',
-    borderRadius: RADIUS.md,
-    minHeight: 48,
+    borderColor: '#F1F5F9',
+    gap: 10,
+  },
+  subTaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginRight: 10 },
+  subTaskText: { flex: 1, fontSize: 13, ...FONT.medium, color: '#334155' },
+  subTaskTextDone: { textDecorationLine: 'line-through', color: '#94A3B8' },
+  subtaskCheckbox: {
+    width: 24, height: 24,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#D1D5DB',
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subtaskCheckboxDone: {
+    backgroundColor: '#FACC15',
+    borderColor: '#FACC15',
+  },
+
+  /* ── Date picker button circle ── */
+  datePickerBtnCircle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    height: 48,
+  },
+  datePickerText: { fontSize: 13, ...FONT.medium, color: '#1A1A1A' },
+
+  /* ── Rect chips (Kategori, Reminder) ── */
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipRect: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  chipRectText: {
+    fontSize: 13,
+    ...FONT.medium,
+  },
+
+  /* ── Toggle (Tugas Berulang) ── */
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 16,
+  },
+  toggle: {
+    width: 50, height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E2E8F0',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleOn: { backgroundColor: '#FACC15' },
+  toggleThumb: {
+    width: 24, height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleThumbOn: { alignSelf: 'flex-end' },
+
+  /* ── Footer ── */
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cancelFooterBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#EF4444',
+  },
+  cancelFooterText: { fontSize: 14, ...FONT.bold, color: '#FFFFFF' },
+  saveFooterBtn: {
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#FACC15',
+  },
+  saveFooterText: { fontSize: 14, ...FONT.bold, color: '#1A1A1A' },
+
+  /* ── Smart Banner (retained) ── */
+  inputGroup: { marginBottom: 4 },
+  richInputContainer: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#1E293B',
+    borderRadius: 26,
+    minHeight: 52,
+    justifyContent: 'center',
     position: 'relative',
   },
   colorLayer: {
     position: 'absolute',
-    left: Platform.OS === 'ios' ? 19 : 14,
-    right: Platform.OS === 'ios' ? 19 : 14,
+    left: Platform.OS === 'ios' ? 20 : 20,
+    right: Platform.OS === 'ios' ? 20 : 20,
     top: 0,
     bottom: 0,
-    paddingTop: Platform.OS === 'ios' ? 20 : 12,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+    justifyContent: 'center',
+    paddingVertical: 14,
     zIndex: 3,
   },
   colorText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.text,
+    fontSize: 14,
+    color: '#000000',
     fontFamily: 'Poppins_400Regular',
   },
   hiddenTextInput: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    minHeight: 48,
+    fontSize: 14,
+    color: '#000000',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    minHeight: 52,
     backgroundColor: 'transparent',
     fontFamily: 'Poppins_400Regular',
-    textAlignVertical: 'top',
+    textAlignVertical: 'center',
     ...(Platform.OS === 'web' && { outlineStyle: 'none' }),
   },
   errorText: { color: COLORS.danger, fontSize: 12, marginTop: 4 },
-  datePickerText: { fontSize: 14, ...FONT.medium, color: COLORS.text },
-  inputGroup: { marginBottom: 4 },
   smartBanner: {
     backgroundColor: COLORS.primary,
     borderRadius: 12,
@@ -645,76 +981,27 @@ const mStyle = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1.5,
     borderColor: '#EAB308',
-    ...SHADOW.sm,
   },
-  smartBannerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
+  smartBannerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 8 },
   smartIconCircle: {
-    backgroundColor: '#FFFFFF',
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    flexShrink: 0,
-    ...SHADOW.xs,
+    backgroundColor: '#FFFFFF', width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center', marginRight: 8, flexShrink: 0,
   },
-  smartBannerText: {
-    fontSize: 12,
-    ...FONT.medium,
-    color: '#1E293B',
-    flex: 1,
-    lineHeight: 16,
-  },
-  smartBannerHighlight: {
-    ...FONT.bold,
-    color: '#0F172A',
-  },
-  smartBannerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  smartBannerText: { fontSize: 12, ...FONT.medium, color: '#1E293B', flex: 1, lineHeight: 16 },
+  smartBannerHighlight: { ...FONT.bold, color: '#0F172A' },
+  smartBannerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   smartApplyBtn: {
-    backgroundColor: '#16A34A',
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 32,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    gap: 4,
-    ...SHADOW.xs,
+    backgroundColor: '#16A34A', flexDirection: 'row', alignItems: 'center',
+    height: 32, paddingHorizontal: 10, borderRadius: 8, gap: 4,
   },
-  smartApplyText: {
-    fontSize: 11,
-    ...FONT.bold,
-    color: '#FFFFFF',
-    includeFontPadding: false,
-  },
+  smartApplyText: { fontSize: 11, ...FONT.bold, color: '#FFFFFF', includeFontPadding: false },
   smartDismissBtn: {
-    backgroundColor: '#EF4444',
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#EF4444', width: 32, height: 32, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center',
   },
-  section: { marginBottom: 20 },
-  label: { fontSize: 13, ...FONT.bold, color: '#334155', marginTop: 12, marginBottom: 8 },
-  datePickerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 48 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS.full, borderWidth: 1, borderColor: '#CBD5E1', marginRight: 8, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', flexDirection: 'row' },
-  chipText: { fontSize: 13, ...FONT.medium, color: '#475569', textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#94A3B8', borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.surface, marginBottom: 12 },
-  addBtn: { width: 44, height: 44, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
-  subTaskItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, backgroundColor: COLORS.surface, padding: 10, borderRadius: RADIUS.md, borderWidth: 1, borderColor: '#CBD5E1' },
-  subTaskDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.primary, marginRight: 10 },
-  subTaskText: { flex: 1, fontSize: 14, color: COLORS.text },
 });
+
+
 
 const prioStyle = StyleSheet.create({
   btn: { 
@@ -754,4 +1041,21 @@ const dpStyle = StyleSheet.create({
   footer: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
   btn: { paddingHorizontal: 12, paddingVertical: 8 },
   btnText: { fontSize: 14, ...FONT.semibold, color: '#000000' },
+  pickerItem: {
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerText: {
+    fontSize: 18,
+    ...FONT.bold,
+    color: COLORS.textMuted,
+    opacity: 0.4,
+  },
+  pickerTextActive: {
+    fontSize: 24,
+    ...FONT.bold,
+    color: '#000000',
+    opacity: 1,
+  },
 });

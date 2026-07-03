@@ -45,7 +45,7 @@ export default function ChangePasswordPage() {
       });
       setSuccess(true);
       toast.success('Password berhasil diperbarui!');
-      setTimeout(() => navigate('/profile'), 3000);
+      setTimeout(() => navigate('/dashboard/profile'), 3000);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Gagal mengubah password. Pastikan password lama benar.');
     } finally {
@@ -64,7 +64,7 @@ export default function ChangePasswordPage() {
           Password Anda telah berhasil diubah. Halaman akan otomatis kembali ke Profil dalam beberapa detik.
         </p>
         <button 
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate('/dashboard/profile')}
           className="w-full max-w-xs py-4 bg-[#1E1E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-widest shadow-premium active:scale-95 transition-all"
         >
           Kembali ke Profil Sekarang
@@ -78,7 +78,7 @@ export default function ChangePasswordPage() {
       {/* Header — White with border bottom to match EditProfilePage */}
       <div className="bg-white border-b border-slate-50 sticky top-0 z-10">
         <div className="max-w-[600px] mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => navigate('/profile')} className="p-2 -ml-2 text-slate-800">
+          <button onClick={() => navigate('/dashboard/profile')} className="p-2 -ml-2 text-slate-800">
             <MdArrowBack size={24} />
           </button>
           <h1 className="text-[15px] font-black text-slate-800 uppercase tracking-widest">Ubah Password</h1>
@@ -104,12 +104,12 @@ export default function ChangePasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Current Password */}
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Password Saat Ini</label>
+                <label className="text-[11px] font-bold text-slate-400 tracking-wider ml-1 mb-2 block">Password Saat Ini</label>
                 <div className="relative">
                   <MdLockOutline className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={22} />
                   <input 
                     type={showCurrent ? "text" : "password"}
-                    className="input pl-11 pr-11 bg-slate-50 border-transparent focus:bg-white font-bold" 
+                    className="input pl-11 pr-11 bg-slate-50 border-transparent focus:bg-white font-normal placeholder:font-normal" 
                     placeholder="Masukkan password lama"
                     value={form.currentPassword}
                     onChange={e => setForm({...form, currentPassword: e.target.value})}
@@ -127,12 +127,12 @@ export default function ChangePasswordPage() {
 
               {/* New Password */}
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Password Baru</label>
+                <label className="text-[11px] font-bold text-slate-400 tracking-wider ml-1 mb-2 block">Password Baru</label>
                 <div className="relative">
                   <MdLockOutline className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={22} />
                   <input 
                     type={showNew ? "text" : "password"}
-                    className="input pl-11 pr-11 bg-slate-50 border-transparent focus:bg-white font-bold" 
+                    className="input pl-11 pr-11 bg-slate-50 border-transparent focus:bg-white font-normal placeholder:font-normal" 
                     placeholder="Minimal 6 karakter"
                     value={form.newPassword}
                     onChange={e => setForm({...form, newPassword: e.target.value})}
@@ -150,12 +150,12 @@ export default function ChangePasswordPage() {
 
               {/* Confirm Password */}
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Konfirmasi Password Baru</label>
+                <label className="text-[11px] font-bold text-slate-400 tracking-wider ml-1 mb-2 block">Konfirmasi Password Baru</label>
                 <div className="relative">
                   <MdLockOutline className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={22} />
                   <input 
                     type={showNew ? "text" : "password"}
-                    className="input pl-11 bg-slate-50 border-transparent focus:bg-white font-bold" 
+                    className="input pl-11 bg-slate-50 border-transparent focus:bg-white font-normal placeholder:font-normal" 
                     placeholder="Ulangi password baru"
                     value={form.confirmPassword}
                     onChange={e => setForm({...form, confirmPassword: e.target.value})}

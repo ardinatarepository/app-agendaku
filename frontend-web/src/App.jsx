@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import AppLayout      from './components/layout/AppLayout';
+import LandingPage    from './pages/LandingPage';
 import LoginPage      from './pages/LoginPage';
 import RegisterPage   from './pages/RegisterPage';
 import DashboardPage  from './pages/DashboardPage';
@@ -20,21 +21,22 @@ const PrivateRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Guard: redirect ke / jika sudah login
+// Guard: redirect ke /dashboard jika sudah login
 const GuestRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  return !isAuthenticated ? children : <Navigate to="/" replace />;
+  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />;
 };
 
 function AppRoutes() {
   return (
     <Routes>
       {/* Guest routes */}
+      <Route path="/"         element={<GuestRoute><LandingPage /></GuestRoute>} />
       <Route path="/login"    element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
 
       {/* Protected routes */}
-      <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+      <Route path="/dashboard" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
         <Route index       element={<DashboardPage />} />
         <Route path="tasks"      element={<TasksPage />} />
         <Route path="categories" element={<CategoriesPage />} />

@@ -74,6 +74,11 @@ export const AuthProvider = ({ children }) => {
     // lastAvatar tetap ada di state & storage (per ID & global)
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    await authAPI.deleteAccount();
+    await logout();
+  }, [logout]);
+
   const refreshUser = useCallback(async () => {
     try {
       const res = await authAPI.getMe();
@@ -94,7 +99,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, lastAvatar, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, loading, lastAvatar, login, register, logout, refreshUser, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

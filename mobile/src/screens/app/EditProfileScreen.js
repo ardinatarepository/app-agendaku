@@ -370,7 +370,7 @@ const s = StyleSheet.create({
   deletePhotoText: { fontSize: 13, color: COLORS.danger, ...FONT.medium },
   form: { padding: 24, gap: 24 },
   inputGroup: { gap: 8 },
-  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, letterSpacing: 0.2 },
   input: { 
     backgroundColor: '#f8fafc',
     borderWidth: 1,

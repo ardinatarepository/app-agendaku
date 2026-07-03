@@ -238,7 +238,7 @@ const s = StyleSheet.create({
   infoText: { flex: 1, fontSize: 13, color: COLORS.textMuted, lineHeight: 18 },
   form: { paddingHorizontal: 24, gap: 24 },
   inputGroup: { gap: 8 },
-  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { fontSize: 13, ...FONT.bold, color: COLORS.textMuted, letterSpacing: 0.2 },
   passwordWrapper: {
     flexDirection: 'row',
     backgroundColor: '#f8fafc',

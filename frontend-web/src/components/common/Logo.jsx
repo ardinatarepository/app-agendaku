@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
-export default function Logo({ className = '', size = 'md', showText = true, stacked = false }) {
+export default function Logo({ className = '', size = 'md', showText = true, stacked = false, to }) {
   const sizes = {
     sm: { img: 'w-10 h-10', text: 'text-[22px] mt-[11px] leading-none' },
     md: { img: 'w-12 h-12', text: 'text-[28px] mt-[14px] leading-none' },
@@ -8,9 +9,14 @@ export default function Logo({ className = '', size = 'md', showText = true, sta
   };
 
   const s = sizes[size] || sizes.md;
+  const location = useLocation();
+  const linkTo = to || (location.pathname.startsWith('/dashboard') ? '/dashboard' : '/');
 
   return (
-    <div className={`flex ${stacked ? 'flex-col' : 'flex-row'} items-center gap-4 ${className}`}>
+    <Link 
+      to={linkTo}
+      className={`flex ${stacked ? 'flex-col' : 'flex-row'} items-center gap-4 cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all duration-200 ${className}`}
+    >
       {/* Icon Image */}
       <img 
         src="/logo.png" 
@@ -22,6 +28,6 @@ export default function Logo({ className = '', size = 'md', showText = true, sta
           Agenda<span className="text-[#FACC15]">Ku</span>
         </span>
       )}
-    </div>
+    </Link>
   );
 }

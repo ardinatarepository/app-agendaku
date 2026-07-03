@@ -64,7 +64,7 @@ export default function EditProfilePage() {
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
-        navigate('/profile');
+        navigate('/dashboard/profile');
       }, 2000);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Gagal memperbarui profil');
@@ -91,7 +91,7 @@ export default function EditProfilePage() {
       {/* Header */}
       <div className="bg-white border-b border-slate-50 sticky top-0 z-10">
         <div className="max-w-[600px] mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => navigate('/profile')} className="p-2 -ml-2 text-slate-800">
+          <button onClick={() => navigate('/dashboard/profile')} className="p-2 -ml-2 text-slate-800">
             <MdArrowBack size={24} />
           </button>
           <h1 className="text-[15px] font-black text-slate-800 uppercase tracking-widest">Edit Profil</h1>
@@ -103,29 +103,25 @@ export default function EditProfilePage() {
         {/* Avatar Section */}
         <div className="flex flex-col items-center mt-4 mb-8">
           <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-            <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] flex items-center justify-center text-black text-4xl font-black border border-slate-100 overflow-hidden shadow-premium">
-              {getAvatarUrl() ? (
+            <div className="w-28 h-28 rounded-[32px] bg-[#FACC15] flex items-center justify-center text-black text-4xl font-black border border-slate-100 overflow-hidden shadow-premium relative">
+              <span className="absolute">{user?.name?.[0]?.toUpperCase()}</span>
+              {getAvatarUrl() && (
                 <img 
                   src={getAvatarUrl()} 
                   alt="Avatar" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover absolute top-0 left-0 z-10"
                   onError={(e) => {
-                    if (!e.target.src.includes('app-agendaku-production.up.railway.app')) {
-                      const filename = e.target.src.split('/avatars/')[1]?.split('?')[0];
-                      if (filename) {
-                        e.target.src = `https://app-agendaku-production.up.railway.app/uploads/avatars/${filename}`;
-                      }
-                    }
+                    e.target.style.display = 'none';
                   }}
                 />
-              ) : user?.name?.[0]?.toUpperCase()}
+              )}
             </div>
             <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-black text-[#FACC15] rounded-full border-2 border-white flex items-center justify-center shadow-premium">
               <MdPhotoCamera size={18} />
             </div>
           </div>
           <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-          <p className="text-[10px] text-slate-400 mt-3 font-black uppercase tracking-widest">Ketuk untuk ganti foto</p>
+          <p className="text-[10px] text-slate-400 mt-3 font-bold tracking-wider">Ketuk untuk ganti foto</p>
           
           {(user?.avatar || selectedImage) && (
             <button 
@@ -140,19 +136,19 @@ export default function EditProfilePage() {
         {/* Form */}
         <form onSubmit={handleSave} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+            <label className="text-[11px] font-bold text-slate-400 tracking-wider ml-1">Nama Lengkap</label>
             <input 
-              className="input bg-[#f8fafc] border-[#e2e8f0] h-14 font-bold" 
+              className="input bg-[#f8fafc] border-[#e2e8f0] h-14 font-normal placeholder:font-normal" 
               value={name} onChange={e => setName(e.target.value)} 
               placeholder="Masukkan nama" required 
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+            <label className="text-[11px] font-bold text-slate-400 tracking-wider ml-1">Email</label>
             <input 
               type="email" 
-              className="input bg-[#f8fafc] border-[#e2e8f0] h-14 font-bold" 
+              className="input bg-[#f8fafc] border-[#e2e8f0] h-14 font-normal placeholder:font-normal" 
               value={email} onChange={e => setEmail(e.target.value)} 
               placeholder="Masukkan email" required 
             />

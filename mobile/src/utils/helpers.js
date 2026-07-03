@@ -24,13 +24,19 @@ export const groupTasksByDate = (tasks) => {
   const finishedSections = {};
 
   tasks.forEach(task => {
-    // Jika tugas sudah selesai, kelompokkan berdasarkan tanggal dibuat (createdAt)
+    // Tugas SELESAI: kelompokkan berdasarkan tanggal dibuat
     if (task.status === 'SELESAI') {
       const dateKey = formatDate(task.createdAt);
       if (!finishedSections[dateKey]) {
         finishedSections[dateKey] = { title: `Selesai: ${dateKey}`, data: [], icon: 'check-circle' };
       }
       finishedSections[dateKey].data.push(task);
+      return;
+    }
+
+    // Tugas TERLEWAT: selalu masuk ke section Terlewat
+    if (task.status === 'TERLEWAT') {
+      sections[0].data.push(task);
       return;
     }
 
@@ -47,6 +53,7 @@ export const groupTasksByDate = (tasks) => {
     } else if (isTomorrow(d)) {
       sections[2].data.push(task);
     } else if (isPast(d)) {
+      // Deadline sudah lewat tapi status belum TERLEWAT: masuk Terlewat juga
       sections[0].data.push(task);
     } else if (isAfter(d, today)) {
       sections[3].data.push(task);

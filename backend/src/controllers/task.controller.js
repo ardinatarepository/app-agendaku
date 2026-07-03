@@ -26,18 +26,28 @@ const getAllTasks = async (req, res, next) => {
       console.error('Prisma Auto-Update Error (getAllTasks):', err);
     }
 
+    // Auto-hapus tugas SELESAI & TERLEWAT yang sudah lebih dari 7 hari
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    try {
+      await prisma.task.deleteMany({
+        where: {
+          userId: req.user.id,
+          status: { in: ['SELESAI', 'TERLEWAT'] },
+          updatedAt: { lt: sevenDaysAgo }
+        }
+      });
+    } catch (err) {
+      console.error('Prisma Auto-Delete Error (getAllTasks):', err);
+    }
+
     const where = { userId: req.user.id };
 
     if (status) {
-      if (status === 'TERLEWAT') {
-        where.status = { not: 'SELESAI' };
-        where.deadline = { lt: new Date() };
-      } else {
-        where.status = status;
-      }
+      where.status = status;
     } else if (all !== 'true') {
-      // Default: Sembunyikan yang sudah selesai di tab "Semua"
-      where.status = { not: 'SELESAI' };
+      // Default: Sembunyikan yang sudah selesai dan terlewat di tab "Semua"
+      where.status = { notIn: ['SELESAI', 'TERLEWAT'] };
     }
     if (priority)   where.priority   = priority;
     if (categoryId) where.categoryId = parseInt(categoryId);
@@ -95,6 +105,21 @@ const getDashboard = async (req, res, next) => {
       console.error('Prisma Auto-Update Error (getDashboard):', err);
     }
 
+    // Auto-hapus tugas SELESAI & TERLEWAT yang sudah lebih dari 7 hari
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    try {
+      await prisma.task.deleteMany({
+        where: {
+          userId,
+          status: { in: ['SELESAI', 'TERLEWAT'] },
+          updatedAt: { lt: sevenDaysAgo }
+        }
+      });
+    } catch (err) {
+      console.error('Prisma Auto-Delete Error (getDashboard):', err);
+    }
+
     const in3days = new Date(now);
     in3days.setDate(in3days.getDate() + 3);
 
@@ -121,9 +146,13 @@ const getDashboard = async (req, res, next) => {
         orderBy: { deadline: 'asc' },
         take: 5,
       }),
-      // Tugas Terlewat (peringatan di dashboard)
+      // Tugas Terlewat (peringatan di dashboard) - hanya 7 hari terakhir
       prisma.task.findMany({
-        where: { userId, status: 'TERLEWAT' },
+        where: { 
+          userId, 
+          status: 'TERLEWAT',
+          deadline: { gte: sevenDaysAgo }
+        },
         include: { category: { select: { id: true, name: true, color: true } } },
         orderBy: { deadline: 'desc' },
         take: 3,

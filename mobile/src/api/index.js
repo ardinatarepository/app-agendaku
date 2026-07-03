@@ -9,6 +9,7 @@ export const authAPI = {
   updateProfile: (data) => api.post('/auth/profile', data),
   deleteAvatar:  () => api.delete('/auth/avatar'),
   changePassword: (data) => api.put('/auth/password', data),
+  deleteAccount: () => api.delete('/auth/me'),
 };
 
 export const taskAPI = {

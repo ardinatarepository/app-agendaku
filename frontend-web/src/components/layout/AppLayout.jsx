@@ -10,10 +10,10 @@ import Logo from '../common/Logo';
 import ConfirmModal from '../ui/ConfirmModal';
 
 const NAV = [
-  { to: '/',           icon: 'https://cdn-icons-png.flaticon.com/512/9440/9440315.png',   label: 'Dashboard' },
-  { to: '/tasks',      icon: 'https://cdn-icons-png.flaticon.com/512/6831/6831818.png',   label: 'Tugas'     },
-  { to: '/calendar',   icon: 'https://cdn-icons-png.flaticon.com/512/10156/10156100.png', label: 'Kalender'  },
-  { to: '/profile',    icon: 'https://cdn-icons-png.flaticon.com/512/9131/9131549.png',   label: 'Profil'    },
+  { to: '/dashboard',           icon: 'https://cdn-icons-png.flaticon.com/512/9440/9440315.png',   label: 'Dashboard' },
+  { to: '/dashboard/tasks',      icon: 'https://cdn-icons-png.flaticon.com/512/6831/6831818.png',   label: 'Tugas'     },
+  { to: '/dashboard/calendar',   icon: 'https://cdn-icons-png.flaticon.com/512/10156/10156100.png', label: 'Kalender'  },
+  { to: '/dashboard/profile',    icon: 'https://cdn-icons-png.flaticon.com/512/9131/9131549.png',   label: 'Profil'    },
 ];
 
 export default function AppLayout() {
@@ -46,6 +46,7 @@ export default function AppLayout() {
             <NavLink
               key={to}
               to={to}
+              end={to === '/dashboard'}
               className={({ isActive }) =>
                 `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
                   isActive ? 'bg-[#F8FAFC]' : 'hover:bg-slate-50/50'
@@ -93,9 +94,9 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
         
         {/* Mobile Top Bar */}
-        <header className="md:hidden h-16 bg-white border-b border-slate-50 flex items-center justify-between px-6 shrink-0 z-30">
-          <Logo size="sm" />
-          <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400">
+        <header className="hidden h-16 bg-white border-b border-slate-50 flex items-center justify-between px-6 shrink-0 z-30">
+          <Logo size="sm" className="hidden" />
+          <div className="hidden w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 ml-auto">
             <MdNotificationsNone size={22} />
           </div>
         </header>
@@ -111,7 +112,7 @@ export default function AppLayout() {
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === '/dashboard'}
               className={({ isActive }) =>
                 `flex-1 flex flex-col items-center gap-1 py-4 transition-all duration-150 relative ${
                   isActive ? 'text-[#1E1E1E]' : 'text-slate-300'

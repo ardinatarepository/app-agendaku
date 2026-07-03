@@ -174,13 +174,18 @@ export default function CalendarScreen({ navigation }) {
   })();
 
   const handleTaskPress = (task) => {
-    navigation.navigate('Tugas');
+    navigation.navigate('Tugas', {
+      highlightId: task.id,
+      initialFilter: { status: task.status },
+      timestamp: Date.now(),
+    });
   };
 
   const handleAddAtDate = () => {
     navigation.navigate('Tugas', { 
       openAddModal: true, 
-      initialDate: selectedDate 
+      initialDate: selectedDate,
+      timestamp: Date.now() // Force route param change in React Navigation
     });
   };
 
@@ -299,8 +304,11 @@ export default function CalendarScreen({ navigation }) {
               {selectedTasks.map(task => (
                 <TaskMiniCard key={task.id} task={task} onPress={handleTaskPress} />
               ))}
-              <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddAtDate}>
-                <Text style={styles.addMoreText}>+ Tambah Tugas di tanggal ini</Text>
+              <TouchableOpacity style={styles.addMoreBtn} onPress={handleAddAtDate} activeOpacity={0.8}>
+                <View style={styles.addMoreIconCircle}>
+                  <MaterialIcons name="add" size={12} color="#000000" />
+                </View>
+                <Text style={styles.addMoreText}>Tambah Tugas di tanggal ini</Text>
               </TouchableOpacity>
             </>
           )}
@@ -344,8 +352,30 @@ const styles = StyleSheet.create({
   emptyCard: { padding: 8 },
   addBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center' },
   addBtnText: { color: '#000000', fontSize: 13, ...FONT.semibold, textAlign: 'center' },
-  addMoreBtn: { marginTop: 12, padding: 14, borderRadius: RADIUS.lg, borderWidth: 1.5, borderColor: '#CBD5E1', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  addMoreText: { fontSize: 13, color: '#64748B', ...FONT.semibold, textAlign: 'center' },
+  addMoreBtn: { 
+    marginTop: 16, 
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12, 
+    paddingHorizontal: 20,
+    borderRadius: 12, 
+    borderWidth: 2, 
+    borderColor: '#000000', 
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'center',
+    minWidth: 240,
+  },
+  addMoreIconCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FACC15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMoreText: { fontSize: 12, color: '#000000', ...FONT.bold, textAlign: 'center' },
 });
 
 const cal = StyleSheet.create({

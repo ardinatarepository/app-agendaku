@@ -12,7 +12,7 @@ function hasWord(text, keyword) {
 // ─── Daftar Keyword Terpusat ───────────────────────────────────────────────
 export const SMART_KEYWORDS = {
   date: ['besok', 'tomorrow', 'lusa', 'hari', 'ini', 'today', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu', 'seminggu', 'sebulan', 'setahun', 'bulan', 'tahun', 'depan', 'akhir'],
-  time: ['jam', 'at', 'nanti', 'sore', 'malam', 'pagi'],
+  time: ['jam', 'at', 'nanti', 'sore', 'malam', 'pagi', 'pukul', 'waktu'],
   priority_high: [
     'urgent', 'penting', 'segera', 'asap', 'tinggi', 'high', 'darurat', 'mendesak', 
     'critical', 'crucial', 'vital', 'utama', 'cepat', 'lekas', 'wajib', 'serius', 
@@ -23,7 +23,8 @@ export const SMART_KEYWORDS = {
   priority_normal: [
     'normal', 'sedang', 'biasa', 'medium', 'standard', 'standar', 'average', 
     'rutin', 'menengah', 'moderate', 'default', 'reguler', 'biasa-biasa', 
-    'secukupnya', 'sekadarnya', 'intermediat', 'intermediate', 'standart', 'regular'
+    'secukupnya', 'sekadarnya', 'intermediat', 'intermediate', 'standart', 'regular',
+    'wajar', 'seperti biasa'
   ],
   priority_low: [
     'santai', 'rendah', 'low', 'fleksibel', 'senggang', 'optional', 'opsional', 
@@ -226,7 +227,7 @@ export function parseNaturalLanguage(text, categories = []) {
   }
 
   // --- 5. Deteksi Sub-tugas ---
-  const subtaskRegex = /(?:subtugas|sub-tugas|dengan sub|dengan subtugas|termasuk sub)\s*(?::)?\s*([^.]+)/i;
+  const subtaskRegex = /(?:subtugas|sub-tugas|dengan sub|dengan subtugas|termasuk sub|tugas tambahan|tugas lain|tambah tugas|poin)\s*(?::)?\s*([^.]+)/i;
   const subMatch = text.match(subtaskRegex);
   if (subMatch) {
     const rawItems = subMatch[1];

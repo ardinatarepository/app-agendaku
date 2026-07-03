@@ -68,6 +68,7 @@ export default function DashboardScreen({ navigation }) {
           tugasHariIni={tugasHariIni}
           onTaskPress={handleTaskPress}
           onSectionPress={goToTasks}
+          isLoading={isLoading}
         />
 
         <DashboardProgress 
