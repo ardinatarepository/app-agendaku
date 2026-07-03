@@ -2,15 +2,29 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure upload directory exists
-const uploadDir = path.resolve(process.cwd(), 'uploads/avatars');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// On Vercel (serverless), filesystem is read-only except /tmp
+const isVercel = !!process.env.VERCEL;
+const uploadDir = isVercel
+  ? path.join('/tmp', 'uploads/avatars')
+  : path.resolve(process.cwd(), 'uploads/avatars');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Could not create upload directory:', err.message);
 }
 
 // Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Ensure dir exists at request time too (for serverless cold starts)
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    } catch (e) { /* ignore */ }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -37,3 +51,4 @@ const uploadAvatar = multer({
 });
 
 module.exports = { uploadAvatar };
+
