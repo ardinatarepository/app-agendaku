@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, Image,
-  Alert, StyleSheet, TextInput, Switch, StatusBar, Platform,
+  Alert, StyleSheet, TextInput, Switch, StatusBar, Platform, Modal,
 } from 'react-native';
+import { ColorPicker, fromHsv } from 'react-native-color-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from '@react-navigation/native';
@@ -43,6 +44,26 @@ export default function ProfileScreen({ navigation }) {
   const [catColor, setCatColor] = useState('#6366f1');
   const [showCatForm, setShowCatForm] = useState(false);
   const [editingCat,  setEditingCat]  = useState(null); // { id, name, color }
+
+  // Color picker modal state
+  const [colorPickerVisible, setColorPickerVisible] = useState(false);
+  const [colorPickerTarget, setColorPickerTarget] = useState('add'); // 'add' | 'edit'
+  const [tempColor, setTempColor] = useState('#6366f1');
+
+  const openColorPicker = (target, currentColor) => {
+    setColorPickerTarget(target);
+    setTempColor(currentColor);
+    setColorPickerVisible(true);
+  };
+
+  const confirmColor = () => {
+    if (colorPickerTarget === 'add') {
+      setCatColor(tempColor);
+    } else {
+      setEditingCat(e => ({ ...e, color: tempColor }));
+    }
+    setColorPickerVisible(false);
+  };
 
   // Notifikasi state
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -288,6 +309,33 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Color Picker Modal */}
+      <Modal visible={colorPickerVisible} transparent animationType="fade" onRequestClose={() => setColorPickerVisible(false)}>
+        <View style={s.cpOverlay}>
+          <View style={s.cpModal}>
+            <Text style={s.cpTitle}>Pilih Warna</Text>
+            <ColorPicker
+              color={tempColor}
+              onColorChange={color => setTempColor(fromHsv(color))}
+              style={{ width: 260, height: 260 }}
+              hideSliders={false}
+            />
+            <View style={s.cpPreviewRow}>
+              <View style={[s.cpSwatch, { backgroundColor: tempColor }]} />
+              <Text style={s.cpHex}>{tempColor.toUpperCase()}</Text>
+            </View>
+            <View style={s.cpActions}>
+              <TouchableOpacity style={s.cpBtnCancel} onPress={() => setColorPickerVisible(false)}>
+                <Text style={s.cpBtnCancelText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.cpBtnConfirm} onPress={confirmColor}>
+                <Text style={s.cpBtnConfirmText}>Pilih</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Form tambah */}
       {showCatForm && (
         <Card style={[s.card, { gap: 12 }]}>
@@ -308,6 +356,25 @@ export default function ProfileScreen({ navigation }) {
                 style={[s.colorDot, { backgroundColor: c }, catColor === c && s.colorDotActive]}
               />
             ))}
+            {/* Custom color picker button */}
+            <TouchableOpacity
+              onPress={() => openColorPicker('add', catColor)}
+              style={[
+                s.colorDot,
+                s.colorPickerBtn,
+                !PRESET_COLORS.includes(catColor) && { backgroundColor: catColor, borderStyle: 'solid', borderColor: COLORS.text },
+                !PRESET_COLORS.includes(catColor) && s.colorDotActive,
+              ]}
+            >
+              {PRESET_COLORS.includes(catColor) ? (
+                <Text style={s.colorPickerPlus}>+</Text>
+              ) : null}
+            </TouchableOpacity>
+          </View>
+          {/* Preview warna */}
+          <View style={s.colorPreviewRow}>
+            <View style={[s.colorPreviewDot, { backgroundColor: catColor }]} />
+            <Text style={s.colorPreviewText}>Warna: <Text style={{ color: COLORS.text, fontWeight: '700' }}>{catColor.toUpperCase()}</Text></Text>
           </View>
           <Button
             title={createMut.isPending ? 'Menyimpan...' : 'Simpan Kategori'}
@@ -351,6 +418,20 @@ export default function ProfileScreen({ navigation }) {
                       <TouchableOpacity key={c} onPress={() => setEditingCat(e => ({ ...e, color: c }))}
                         style={[s.colorDot, { backgroundColor: c }, editingCat.color === c && s.colorDotActive]} />
                     ))}
+                    {/* Custom color picker button for edit */}
+                    <TouchableOpacity
+                      onPress={() => openColorPicker('edit', editingCat.color)}
+                      style={[
+                        s.colorDot,
+                        s.colorPickerBtn,
+                        !PRESET_COLORS.includes(editingCat.color) && { backgroundColor: editingCat.color, borderStyle: 'solid', borderColor: COLORS.text },
+                        !PRESET_COLORS.includes(editingCat.color) && s.colorDotActive,
+                      ]}
+                    >
+                      {PRESET_COLORS.includes(editingCat.color) ? (
+                        <Text style={s.colorPickerPlus}>+</Text>
+                      ) : null}
+                    </TouchableOpacity>
                   </View>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity style={[s.editActionBtn, { borderColor: COLORS.border }]} onPress={() => setEditingCat(null)}>
@@ -496,9 +577,26 @@ const s = StyleSheet.create({
   saveNotifBtn:   { marginTop: 16, backgroundColor: COLORS.primary, borderRadius: RADIUS.md, paddingVertical: 12, alignItems: 'center' },
   saveNotifText:  { color: '#000000', fontSize: 14, ...FONT.bold },
   catInput:       { borderWidth: 1, borderColor: COLORS.border, borderRadius: RADIUS.md, paddingHorizontal: 12, height: 44, fontSize: 15, color: COLORS.text, backgroundColor: COLORS.bg },
-  colorRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  colorRow:       { flexDirection: 'row', flexWrap: 'wrap', gap: 10, alignItems: 'center' },
   colorDot:       { width: 28, height: 28, borderRadius: 14 },
   colorDotActive: { transform: [{ scale: 1.25 }], borderWidth: 2, borderColor: COLORS.text },
+  colorPickerBtn: { backgroundColor: '#f1f5f9', borderWidth: 2, borderStyle: 'dashed', borderColor: '#94a3b8', alignItems: 'center', justifyContent: 'center' },
+  colorPickerPlus: { fontSize: 16, color: '#94a3b8', fontWeight: '700', lineHeight: 20 },
+  colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2 },
+  colorPreviewDot: { width: 16, height: 16, borderRadius: 8 },
+  colorPreviewText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '500' },
+  // Color Picker Modal
+  cpOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  cpModal:         { backgroundColor: '#fff', borderRadius: 28, padding: 28, width: '100%', alignItems: 'center', maxWidth: 340 },
+  cpTitle:         { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 20 },
+  cpPreviewRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 16, marginBottom: 8 },
+  cpSwatch:        { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: '#e2e8f0' },
+  cpHex:           { fontSize: 15, fontWeight: '700', color: COLORS.text, letterSpacing: 1 },
+  cpActions:       { flexDirection: 'row', gap: 12, width: '100%', marginTop: 20 },
+  cpBtnCancel:     { flex: 1, paddingVertical: 13, borderRadius: 14, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', backgroundColor: '#f8fafc' },
+  cpBtnCancelText: { fontSize: 14, color: COLORS.textMuted, fontWeight: '600' },
+  cpBtnConfirm:    { flex: 1, paddingVertical: 13, borderRadius: 14, backgroundColor: COLORS.primary, alignItems: 'center' },
+  cpBtnConfirmText:{ fontSize: 14, fontWeight: '700', color: '#000' },
   skeleton:       { height: 58, backgroundColor: COLORS.borderLight, borderRadius: RADIUS.lg, marginBottom: 8 },
   catCard:        { marginBottom: 8 },
   catRow:         { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },

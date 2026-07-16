@@ -280,7 +280,34 @@ export default function ProfilePage() {
               {showCatForm && (
                 <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 space-y-6 animate-fade-in">
                   <input value={catName} onChange={e => setCatName(e.target.value)} placeholder="Nama kategori..." className="w-full h-14 px-6 rounded-2xl bg-slate-50 border border-slate-100 text-[15px] font-semibold outline-none focus:bg-white focus:border-[#FACC15] transition-all" autoFocus />
-                  <div className="flex flex-wrap gap-2.5 justify-center py-1">{PRESET_COLORS.map(c => <button key={c} onClick={() => setCatColor(c)} className={`w-9 h-9 rounded-full transition-all ${catColor === c ? 'scale-110 ring-2 ring-black ring-offset-2' : ''}`} style={{ backgroundColor: c }} />)}</div>
+                  <div className="flex flex-wrap gap-2.5 justify-center items-center py-1">
+                    {PRESET_COLORS.map(c => (
+                      <button key={c} onClick={() => setCatColor(c)} className={`w-9 h-9 rounded-full transition-all ${catColor === c ? 'scale-110 ring-2 ring-black ring-offset-2' : 'hover:scale-105'}`} style={{ backgroundColor: c }} />
+                    ))}
+                    {/* Custom color picker */}
+                    <label
+                      title="Pilih warna kustom"
+                      className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer border-2 border-dashed transition-all hover:scale-105 relative overflow-hidden ${
+                        !PRESET_COLORS.includes(catColor) ? 'ring-2 ring-black ring-offset-2 scale-110 border-transparent' : 'border-slate-300'
+                      }`}
+                      style={{ backgroundColor: !PRESET_COLORS.includes(catColor) ? catColor : 'white' }}
+                    >
+                      {PRESET_COLORS.includes(catColor) && (
+                        <span className="text-slate-400 font-bold text-lg leading-none select-none">+</span>
+                      )}
+                      <input
+                        type="color"
+                        value={catColor}
+                        onChange={e => setCatColor(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </label>
+                  </div>
+                  {/* Preview warna terpilih */}
+                  <div className="flex items-center gap-3 px-1">
+                    <div className="w-5 h-5 rounded-full shadow-sm flex-shrink-0" style={{ backgroundColor: catColor }} />
+                    <span className="text-[13px] font-semibold text-slate-500">Warna terpilih: <span className="font-bold text-black">{catColor.toUpperCase()}</span></span>
+                  </div>
                   <button onClick={handleSaveCat} disabled={createCat.isPending} className="w-full py-4 bg-[#FACC15] text-black text-[14px] font-bold rounded-2xl uppercase shadow-lg">{createCat.isPending ? 'Menyimpan...' : 'Simpan Kategori'}</button>
                 </div>
               )}
@@ -296,7 +323,29 @@ export default function ProfilePage() {
                       {editingCat?.id === cat.id ? (
                         <div className="flex-1 space-y-4">
                           <input value={editingCat.name} onChange={e => setEditingCat({...editingCat, name: e.target.value})} className="w-full h-12 px-5 rounded-xl bg-slate-50 border-transparent font-semibold text-[15px] outline-none" autoFocus />
-                          <div className="flex flex-wrap gap-2.5">{PRESET_COLORS.map(c => <button key={c} onClick={() => setEditingCat({...editingCat, color: c})} className={`w-7 h-7 rounded-full transition-all ${editingCat.color === c ? 'scale-110 ring-2 ring-black ring-offset-1' : ''}`} style={{ backgroundColor: c }} />)}</div>
+                          <div className="flex flex-wrap gap-2 items-center">
+                            {PRESET_COLORS.map(c => (
+                              <button key={c} onClick={() => setEditingCat({...editingCat, color: c})} className={`w-7 h-7 rounded-full transition-all ${editingCat.color === c ? 'scale-110 ring-2 ring-black ring-offset-1' : 'hover:scale-105'}`} style={{ backgroundColor: c }} />
+                            ))}
+                            {/* Custom color picker for edit */}
+                            <label
+                              title="Pilih warna kustom"
+                              className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer border-2 border-dashed transition-all hover:scale-105 relative overflow-hidden ${
+                                !PRESET_COLORS.includes(editingCat.color) ? 'ring-2 ring-black ring-offset-1 scale-110 border-transparent' : 'border-slate-300'
+                              }`}
+                              style={{ backgroundColor: !PRESET_COLORS.includes(editingCat.color) ? editingCat.color : 'white' }}
+                            >
+                              {PRESET_COLORS.includes(editingCat.color) && (
+                                <span className="text-slate-400 font-bold text-sm leading-none select-none">+</span>
+                              )}
+                              <input
+                                type="color"
+                                value={editingCat.color}
+                                onChange={e => setEditingCat({...editingCat, color: e.target.value})}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                            </label>
+                          </div>
                           <div className="flex gap-2.5 pt-2"><button onClick={() => setEditingCat(null)} className="flex-1 py-3 text-slate-400 text-[11px] font-semibold rounded-xl bg-slate-50 uppercase tracking-widest">Batal</button><button onClick={() => handleUpdateCat(cat.id)} className="flex-1 py-3 bg-[#FACC15] text-black text-[11px] font-semibold rounded-xl uppercase tracking-widest">Simpan</button></div>
                         </div>
                       ) : (
