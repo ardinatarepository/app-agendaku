@@ -17,6 +17,7 @@ export default function DashboardScreen({ navigation }) {
     tugasTerlewat,
     tugasMingguIni,
     tugasHariIni,
+    tugasAkanDatang,
     isLoading,
     refreshing,
     handleRefresh,
@@ -66,6 +67,7 @@ export default function DashboardScreen({ navigation }) {
           tugasTerlewat={tugasTerlewat}
           tugasDeadline={tugasDeadline}
           tugasHariIni={tugasHariIni}
+          tugasAkanDatang={tugasAkanDatang}
           onTaskPress={handleTaskPress}
           onSectionPress={goToTasks}
           isLoading={isLoading}

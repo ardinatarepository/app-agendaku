@@ -89,7 +89,7 @@ export const DashboardStats = ({ stats, tugasMingguIniCount, isLoading, onStatPr
 };
 
 // ─── Sections (Tasks) ────────────────────────────────────────────────────────
-export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, onTaskPress, onSectionPress, isLoading }) => {
+export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, tugasAkanDatang = [], onTaskPress, onSectionPress, isLoading }) => {
   if (isLoading) {
     return (
       <View style={{ paddingBottom: 0 }}>
@@ -174,6 +174,28 @@ export const DashboardSections = ({ tugasTerlewat, tugasDeadline, tugasHariIni, 
                 <Text style={styles.itemTitle} numberOfLines={1}>{truncateByWords(item.title, 4)}</Text>
                 <View style={styles.rightContent}>
                   <Text style={styles.todayText}>Hari ini</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </View>
+
+      <View style={styles.dashboardSection}>
+        <TouchableOpacity style={styles.sectionHead} onPress={() => onSectionPress({ status: 'SEDANG_DIKERJAKAN' })}>
+          <Text style={styles.sectionTitle}>Mendatang</Text>
+          <Ionicons name="chevron-forward" size={18} color="#000000" />
+        </TouchableOpacity>
+        <View style={styles.sectionBody}>
+          {tugasAkanDatang.length === 0 ? (
+            <View style={styles.emptyState}><Text style={styles.emptyText}>Tidak ada tugas mendatang.</Text></View>
+          ) : (
+            tugasAkanDatang.slice(0, 3).map((item, index, arr) => (
+              <TouchableOpacity key={item.id} style={[styles.itemRow, index === arr.length - 1 && { borderBottomWidth: 0 }]} onPress={() => onTaskPress(item.id, item.status)}>
+                <View style={styles.indigoDot} />
+                <Text style={styles.itemTitle} numberOfLines={1}>{truncateByWords(item.title, 4)}</Text>
+                <View style={styles.rightContent}>
+                  <Text style={styles.timeText}>{format(new Date(item.deadline), 'dd MMM')}</Text>
                 </View>
               </TouchableOpacity>
             ))
@@ -309,6 +331,7 @@ const styles = StyleSheet.create({
   itemRow:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
   overdueBar:      { width: 3, height: 26, backgroundColor: '#EF4444', borderRadius: 1.5, marginRight: 12 },
   yellowDot:       { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#FACC15', marginRight: 12 },
+  indigoDot:       { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#6366F1', marginRight: 12 },
   itemTitle:       { flex: 1, fontSize: 13.5, ...FONT.medium, color: '#0F172A' },
   itemMeta:        { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
   itemDate:        { fontSize: 11.5, color: '#64748B', ...FONT.medium },

@@ -40,20 +40,20 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex font-sans bg-white">
+    <div className="min-h-screen flex font-sans bg-[#F9F8F4] lg:bg-white">
       {/* ── LEFT PANEL (Branding) ── */}
       <div className="hidden lg:flex lg:w-[45%] bg-[#1A1A1A] flex-col justify-between p-16 relative overflow-hidden">
         {/* Logo */}
         <div className="flex items-center gap-3 relative z-10">
           <img src="/logo.png" alt="Logo" className="w-9 h-9 object-contain shrink-0" />
-          <span className="font-black text-xl tracking-tighter text-white">
+          <span className="font-black text-xl tracking-tighter text-white font-archivo">
             Agenda<span className="text-[#FACC15]">Ku</span>
           </span>
         </div>
 
         {/* Main Title & Subtitle */}
         <div className="relative z-10 my-auto">
-          <h2 className="text-6xl font-black text-white tracking-tight leading-[1.05] mb-4">
+          <h2 className="text-6xl font-black text-white tracking-tight leading-[1.05] mb-4 font-archivo">
             Mulai<br />
             <span className="text-[#FACC15]">Sekarang!</span>
           </h2>
@@ -73,21 +73,21 @@ export default function RegisterPage() {
         <div className="w-full max-w-sm">
           {/* Mobile Logo Only */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain shrink-0" />
-              <span className="font-black text-lg tracking-tighter text-[#1A1A1A]">
+            <div className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="Logo" className="w-11 h-11 object-contain shrink-0" />
+              <span className="font-archivo font-black text-[22px] tracking-tighter text-[#1A1A1A]">
                 Agenda<span className="text-[#FACC15]">Ku</span>
               </span>
             </div>
           </div>
 
-          <h1 className="text-3xl font-black text-center text-[#1A1A1A] mb-8 tracking-tight">Daftar</h1>
+          <h1 className="text-[34px] font-black text-center text-[#1A1A1A] mb-8 tracking-tight font-archivo">Daftar</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Nama Lengkap</label>
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2 font-archivo">Nama Lengkap</label>
               <input
-                className="w-full h-14 px-5 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                className="w-full h-14 px-5 bg-[#EBEBEB] border-2 border-transparent rounded-2xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
                 placeholder="Masukan nama Anda"
                 value={form.name}
                 onChange={set('name')}
@@ -97,10 +97,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Email</label>
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2 font-archivo">Email</label>
               <input
                 type="email"
-                className="w-full h-14 px-5 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                className="w-full h-14 px-5 bg-[#EBEBEB] border-2 border-transparent rounded-2xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
                 placeholder="nama@email.com"
                 value={form.email}
                 onChange={set('email')}
@@ -109,11 +109,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Password</label>
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2 font-archivo">Password</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
-                  className="w-full h-14 px-5 pr-12 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                  className="w-full h-14 px-5 pr-12 bg-[#EBEBEB] border-2 border-transparent rounded-2xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
                   placeholder="Min. 8 karakter"
                   value={form.password}
                   onChange={set('password')}
@@ -138,11 +138,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-[#1A1A1A] mb-2">Konfirmasi Password</label>
+              <label className="block text-sm font-bold text-[#1A1A1A] mb-2 font-archivo">Konfirmasi Password</label>
               <div className="relative">
                 <input
                   type={showConfirm ? 'text' : 'password'}
-                  className="w-full h-14 px-5 pr-12 bg-[#EFF1F4] border-2 border-transparent rounded-xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
+                  className="w-full h-14 px-5 pr-12 bg-[#EBEBEB] border-2 border-transparent rounded-2xl font-semibold text-[#1A1A1A] placeholder:text-slate-400 focus:outline-none focus:border-black transition-all"
                   placeholder="Ulangi password"
                   value={form.confirm}
                   onChange={set('confirm')}
@@ -162,7 +162,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-14 bg-[#FACC15] text-[#1A1A1A] border-[3px] border-[#1A1A1A] rounded-full font-bold text-base shadow-[0px_4px_0px_0px_#1A1A1A] hover:translate-y-[2px] hover:shadow-[0px_2px_0px_0px_#1A1A1A] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center"
+                className="w-full h-14 bg-[#FACC15] text-[#1A1A1A] border-[3px] border-[#1A1A1A] rounded-full font-bold text-base shadow-[0px_4px_0px_0px_#1A1A1A] hover:translate-y-[2px] hover:shadow-[0px_2px_0px_0px_#1A1A1A] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center font-archivo"
               >
                 {loading ? 'Mendaftar...' : 'Daftar Akun'}
               </button>
@@ -173,7 +173,7 @@ export default function RegisterPage() {
           <div className="mt-8 text-center">
             <p className="text-xs font-bold text-slate-400">
               Sudah punya akun?{' '}
-              <Link to="/login" className="text-[#1A1A1A] hover:underline">
+              <Link to="/login" className="text-[#1A1A1A] hover:underline font-bold">
                 Masuk di sini
               </Link>
             </p>

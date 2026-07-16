@@ -15,6 +15,14 @@ const generateToken = (userId) => {
   );
 };
 
+// Helper: dapatkan direktori avatar (adaptif Vercel)
+const getAvatarDir = () => {
+  const isVercel = !!process.env.VERCEL;
+  return isVercel
+    ? path.join('/tmp', 'uploads/avatars')
+    : path.resolve(process.cwd(), 'uploads/avatars');
+};
+
 // POST /api/auth/register
 const register = async (req, res, next) => {
   try {
@@ -128,7 +136,17 @@ const updateProfile = async (req, res, next) => {
       // Generate filename unik
       const extension = base64Image.split(';')[0].split('/')[1];
       const filename = `avatar-${userId}-${Date.now()}.${extension}`;
-      const uploadPath = path.join(process.cwd(), 'uploads/avatars', filename);
+      
+      const avatarDir = getAvatarDir();
+      try {
+        if (!fs.existsSync(avatarDir)) {
+          fs.mkdirSync(avatarDir, { recursive: true });
+        }
+      } catch (err) {
+        console.warn('Gagal membuat folder avatar:', err.message);
+      }
+
+      const uploadPath = path.join(avatarDir, filename);
 
       // Simpan file dari base64
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
@@ -138,7 +156,7 @@ const updateProfile = async (req, res, next) => {
 
       // Hapus foto lama jika ada
       if (oldAvatar) {
-        const oldPath = path.join(process.cwd(), 'uploads/avatars', oldAvatar);
+        const oldPath = path.join(avatarDir, oldAvatar);
         fs.access(oldPath, fs.constants.F_OK, (err) => {
           if (!err) {
             fs.unlink(oldPath, (err) => {
@@ -185,7 +203,7 @@ const deleteAvatar = async (req, res, next) => {
     }
 
     // 1. Hapus file fisik
-    const filePath = path.join(process.cwd(), 'uploads/avatars', user.avatar);
+    const filePath = path.join(getAvatarDir(), user.avatar);
     fs.access(filePath, fs.constants.F_OK, (err) => {
       if (!err) {
         fs.unlink(filePath, (err) => {
@@ -218,7 +236,7 @@ const deleteMe = async (req, res, next) => {
 
     // Hapus file avatar fisik jika ada
     if (user.avatar) {
-      const filePath = path.join(process.cwd(), 'uploads/avatars', user.avatar);
+      const filePath = path.join(getAvatarDir(), user.avatar);
       fs.access(filePath, fs.constants.F_OK, (err) => {
         if (!err) {
           fs.unlink(filePath, (err) => {

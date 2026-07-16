@@ -1,4 +1,4 @@
-// Screen Register - Mobile (Redesigned to match web version)
+// Screen Register - Mobile (Clean Design v2)
 
 import { useState } from 'react';
 import {
@@ -9,13 +9,19 @@ import {
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import { AlertModal } from '../../components/ui';
-import { COLORS, RADIUS, FONT, SHADOW } from '../../utils/theme';
+import { FONT } from '../../utils/theme';
+
+const BG   = '#FFFFFF';
+const INK  = '#1A1A1A';
+const GOLD = '#FACC15';
+const GRAY = '#EFF1F4';
 
 export default function RegisterScreen({ navigation }) {
   const [form, setForm]           = useState({ name: '', email: '', password: '', confirm: '' });
   const [loading, setLoading]     = useState(false);
   const [alertInfo, setAlertInfo] = useState({ visible: false, title: '', message: '', variant: 'danger', action: null });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
   const { register } = useAuth();
 
   const set = (f) => (v) => setForm(p => ({ ...p, [f]: v }));
@@ -59,11 +65,8 @@ export default function RegisterScreen({ navigation }) {
       });
     } catch (err) {
       let msg = 'Registrasi gagal. Coba lagi.';
-      if (!err.response) {
-        msg = 'Server tidak dapat dijangkau. Pastikan koneksi internet kamu aktif.';
-      } else if (err.response.data?.message) {
-        msg = err.response.data.message;
-      }
+      if (!err.response) msg = 'Server tidak dapat dijangkau. Pastikan koneksi internet kamu aktif.';
+      else if (err.response.data?.message) msg = err.response.data.message;
       setAlertInfo({ visible: true, title: 'Registrasi Gagal', message: msg, variant: 'danger', action: null });
     } finally {
       setLoading(false);
@@ -73,37 +76,18 @@ export default function RegisterScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={styles.root}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A1A" />
+      <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── HEADER / BRAND PANEL ── */}
-        <View style={styles.headerPanel}>
-          {/* Logo */}
-          <View style={styles.logoRow}>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoLetter}>A</Text>
-            </View>
-            <Text style={styles.logoText}>
-              Agenda<Text style={styles.logoAccent}>Ku</Text>
-            </Text>
-          </View>
-
-          {/* Headline */}
-          <View style={styles.headline}>
-            <Text style={styles.headlineMain}>Mulai</Text>
-            <Text style={[styles.headlineMain, styles.headlineAccent]}>Sekarang!</Text>
-            <Text style={styles.headlineSub}>Mulai kelola Agenda harianmu tanpa drama.</Text>
-          </View>
-        </View>
-
-        {/* ── FORM PANEL ── */}
-        <View style={styles.formPanel}>
-          <Text style={styles.formTitle}>Daftar</Text>
+        {/* ── FORM CONTAINER ── */}
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Daftar</Text>
 
           {/* Nama Lengkap */}
           <View style={styles.fieldGroup}>
@@ -138,7 +122,7 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.fieldLabel}>Password</Text>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={[styles.input, { paddingRight: 48 }]}
+                style={[styles.input, { paddingRight: 50 }]}
                 placeholder="Min. 8 karakter"
                 placeholderTextColor="#94A3B8"
                 value={form.password}
@@ -153,7 +137,7 @@ export default function RegisterScreen({ navigation }) {
                 <MaterialIcons
                   name={showPassword ? 'visibility-off' : 'visibility'}
                   size={22}
-                  color="#1A1A1A"
+                  color="#94A3B8"
                 />
               </TouchableOpacity>
             </View>
@@ -175,40 +159,38 @@ export default function RegisterScreen({ navigation }) {
             <Text style={styles.fieldLabel}>Konfirmasi Password</Text>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={[styles.input, { paddingRight: 48 }]}
+                style={[styles.input, { paddingRight: 50 }]}
                 placeholder="Ulangi password"
                 placeholderTextColor="#94A3B8"
                 value={form.confirm}
                 onChangeText={set('confirm')}
-                secureTextEntry={!showPassword}
+                secureTextEntry={!showConfirm}
               />
               <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
+                onPress={() => setShowConfirm(!showConfirm)}
                 style={styles.eyeBtn}
                 activeOpacity={0.7}
               >
                 <MaterialIcons
-                  name={showPassword ? 'visibility-off' : 'visibility'}
+                  name={showConfirm ? 'visibility-off' : 'visibility'}
                   size={22}
-                  color="#1A1A1A"
+                  color="#94A3B8"
                 />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <TouchableOpacity
-            style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+            style={[styles.submitBtn, loading && { opacity: 0.7 }]}
             onPress={handleRegister}
             activeOpacity={0.85}
             disabled={loading}
           >
-            <Text style={styles.submitBtnText}>
-              {loading ? 'Mendaftar...' : 'Daftar Akun'}
-            </Text>
+            <Text style={styles.submitText}>{loading ? 'Mendaftar...' : 'Daftar Akun'}</Text>
           </TouchableOpacity>
 
-          {/* Switch Link */}
+          {/* Footer link */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Sudah punya akun? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
@@ -230,113 +212,54 @@ export default function RegisterScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: BG,
+  },
+  scrollView: {
+    flex: 1,
   },
   scroll: {
     flexGrow: 1,
-  },
-
-  /* ── Header Panel (Dark) ── */
-  headerPanel: {
-    backgroundColor: '#1A1A1A',
-    paddingHorizontal: 28,
-    paddingTop: Platform.OS === 'ios' ? 70 : 56,
-    paddingBottom: 40,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 36,
-  },
-  logoBox: {
-    width: 36,
-    height: 36,
-    backgroundColor: '#FACC15',
-    borderRadius: 10,
-    alignItems: 'center',
     justifyContent: 'center',
-  },
-  logoLetter: {
-    fontSize: 18,
-    ...FONT.black,
-    color: '#1A1A1A',
-  },
-  logoText: {
-    fontSize: 20,
-    ...FONT.black,
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  logoAccent: {
-    color: '#FACC15',
-  },
-  headline: {
-    marginBottom: 4,
-  },
-  headlineMain: {
-    fontSize: 48,
-    ...FONT.black,
-    color: '#FFFFFF',
-    lineHeight: 52,
-    letterSpacing: -1,
-  },
-  headlineAccent: {
-    color: '#FACC15',
-  },
-  headlineSub: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.4)',
-    ...FONT.semibold,
-    marginTop: 12,
-    lineHeight: 20,
+    paddingHorizontal: 36,
+    paddingVertical: 40,
   },
 
-  /* ── Form Panel (White) ── */
-  formPanel: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 28,
-    paddingTop: 36,
-    paddingBottom: 48,
-    minHeight: 400,
+  /* Form */
+  formContainer: {
+    width: '100%',
   },
-  formTitle: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     ...FONT.black,
-    color: '#1A1A1A',
+    color: INK,
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 36,
     letterSpacing: -0.5,
   },
 
-  /* ── Fields ── */
+  /* Fields */
   fieldGroup: {
-    marginBottom: 18,
+    marginBottom: 20,
   },
   fieldLabel: {
-    fontSize: 13,
+    fontSize: 14,
     ...FONT.bold,
-    color: '#1A1A1A',
+    color: INK,
     marginBottom: 8,
   },
   inputWrapper: {
     position: 'relative',
   },
   input: {
-    height: 54,
-    backgroundColor: '#EFF1F4',
-    borderRadius: 14,
+    height: 52,
+    backgroundColor: GRAY,
+    borderRadius: 16,
     paddingHorizontal: 18,
-    fontSize: 15,
-    ...FONT.semibold,
-    color: '#1A1A1A',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    fontSize: 14,
+    ...FONT.regular,
+    color: INK,
   },
   eyeBtn: {
     position: 'absolute',
@@ -347,21 +270,21 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 
-  /* ── Strength ── */
+  /* Strength */
   strengthWrap: {
     marginTop: 8,
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   strengthLabel: {
     fontSize: 10,
     ...FONT.bold,
-    color: '#94A3B8',
+    color: '#9CA3AF',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   strengthBar: {
     height: 4,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E5E7EB',
     borderRadius: 99,
     flexDirection: 'row',
     overflow: 'hidden',
@@ -370,46 +293,43 @@ const styles = StyleSheet.create({
     borderRadius: 99,
   },
 
-  /* ── Submit Button ── */
+  /* Submit */
   submitBtn: {
     height: 54,
-    backgroundColor: '#FACC15',
-    borderRadius: 999,
+    backgroundColor: GOLD,
+    borderRadius: 27,
     borderWidth: 3,
-    borderColor: '#1A1A1A',
+    borderColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
-    shadowColor: '#1A1A1A',
+    marginTop: 12,
+    shadowColor: INK,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 4,
   },
-  submitBtnDisabled: {
-    opacity: 0.7,
-  },
-  submitBtnText: {
+  submitText: {
     fontSize: 16,
     ...FONT.bold,
-    color: '#1A1A1A',
+    color: INK,
   },
 
-  /* ── Footer ── */
+  /* Footer */
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 24,
   },
   footerText: {
     fontSize: 13,
-    ...FONT.bold,
-    color: '#94A3B8',
+    ...FONT.semibold,
+    color: '#6B7280',
   },
   footerLink: {
     fontSize: 13,
     ...FONT.bold,
-    color: '#1A1A1A',
+    color: INK,
     textDecorationLine: 'underline',
   },
 });

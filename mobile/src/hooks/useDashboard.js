@@ -63,6 +63,16 @@ export const useDashboard = (navigation) => {
     isToday(new Date(t.deadline))
   );
 
+  // Tugas yang Akan Datang (Hanya yang belum SELESAI/TERLEWAT, deadline besok atau seterusnya)
+  const todayVal = new Date(); todayVal.setHours(0, 0, 0, 0);
+  const tomorrowVal = new Date(todayVal); tomorrowVal.setDate(tomorrowVal.getDate() + 1);
+  const tugasAkanDatang = allTasks.filter(t => 
+    t.status !== 'SELESAI' && 
+    t.status !== 'TERLEWAT' &&
+    t.deadline && 
+    new Date(t.deadline).getTime() >= tomorrowVal.getTime()
+  ).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
   // Filter logic untuk statistik Minggu Ini
   const now = new Date();
   const startOfWeek = new Date(now);
@@ -131,6 +141,7 @@ export const useDashboard = (navigation) => {
     tugasTerlewat,
     tugasMingguIni,
     tugasHariIni,
+    tugasAkanDatang,
     isLoading,
     refreshing,
     handleRefresh,

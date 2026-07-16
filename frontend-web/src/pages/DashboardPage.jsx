@@ -118,6 +118,13 @@ export default function DashboardPage() {
   // Tugas Terlewat: gunakan data dari dashboard API (sudah benar dari server)
   const tugasTerlewat = (data?.tugasTerlewat || []).sort((a, b) => new Date(b.deadline) - new Date(a.deadline));
 
+  const tugasAkanDatang = tasks.filter(t => {
+    if (t.status === 'SELESAI' || t.status === 'TERLEWAT' || !t.deadline) return false;
+    const dl = new Date(t.deadline); dl.setHours(0, 0, 0, 0);
+    const tom = new Date(today); tom.setDate(tom.getDate() + 1);
+    return dl.getTime() >= tom.getTime();
+  }).sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+
   if (isLoading) return <div className="p-20 text-center font-black text-slate-300 animate-pulse uppercase tracking-[0.5em] text-xs">SISTEM MEMUAT...</div>;
 
   const goToTasks = (filter = {}) => {
@@ -251,6 +258,38 @@ export default function DashboardPage() {
                           {format(new Date(task.deadline), 'HH:mm')}
                         </p>
                       </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Tugas yang Akan Datang */}
+            <div className="bg-white rounded-[18px] shadow-premium border border-slate-50 overflow-hidden">
+              <div
+                role="button"
+                onClick={() => navigate('/dashboard/tasks?status=SEDANG_DIKERJAKAN')}
+                className="px-6 py-5 border-b border-slate-50 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors group"
+              >
+                <h2 className="text-[17px] font-bold text-slate-800 tracking-tight group-hover:text-black transition-colors">Mendatang</h2>
+                <IoChevronForward size={18} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+              </div>
+              <div className="divide-y divide-slate-50">
+                {tugasAkanDatang.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center text-slate-400">
+                    <IoCalendarOutline size={32} className="mb-2 opacity-20" />
+                    <p className="text-xs font-bold text-slate-400 tracking-wider">Tidak ada tugas mendatang</p>
+                  </div>
+                ) : (
+                  tugasAkanDatang.slice(0, 3).map(task => (
+                    <div key={task.id} role="button" onClick={() => navigate(`/dashboard/tasks?status=SEDANG_DIKERJAKAN&highlightId=${task.id}`)} className="w-full flex items-center justify-between gap-4 px-6 py-5 hover:bg-slate-50 transition-colors group cursor-pointer">
+                      <div className="flex items-center gap-3 flex-1 min-w-0 pr-8">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#6366f1]" />
+                        <p className="font-medium text-slate-800 text-[15px] truncate group-hover:text-black transition-colors">{task.title}</p>
+                      </div>
+                      <p className="text-[12px] font-semibold text-slate-400">
+                        {format(new Date(task.deadline), 'dd MMM')}
+                      </p>
                     </div>
                   ))
                 )}
